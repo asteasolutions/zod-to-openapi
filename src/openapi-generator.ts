@@ -94,7 +94,10 @@ export class OpenAPIGenerator {
     }
 
     if (zodSchema instanceof ZodBoolean) {
-      return { type: 'boolean' };
+      return {
+        type: 'boolean',
+        nullable: isNullable ? true : undefined
+      };
     }
 
     if (zodSchema instanceof ZodArray) {
