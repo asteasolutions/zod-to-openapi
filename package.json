@@ -1,19 +1,23 @@
 {
   "name": "zod-to-openapi",
-  "version": "1.0.0",
+  "version": "0.2.1",
   "description": "",
   "main": "dist/index.js",
+  "files": ["dist", "package.json"],
   "dependencies": {
     "lodash": "^4.17.21",
     "openapi3-ts": "^2.0.1",
-    "typescript": "^4.3.5",
-    "zod": "^3.5.1"
+    "typescript": "^4.3.5"
   },
   "devDependencies": {
     "@types/jest": "^26.0.24",
     "@types/lodash": "^4.14.171",
     "jest": "^27.0.6",
-    "ts-jest": "^27.0.3"
+    "ts-jest": "^27.0.3",
+    "zod": "~3.5.1"
+  },
+  "peerDependencies": {
+    "zod": "~3.5.1"
   },
   "scripts": {
     "build": "tsc",

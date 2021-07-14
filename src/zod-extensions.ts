@@ -1,5 +1,5 @@
 import { SchemaObject } from 'openapi3-ts';
-import { z, ZodSchema } from 'zod';
+import { ZodSchema } from 'zod';
 
 export interface ZodOpenAPIMetadata extends SchemaObject {
   name?: string;

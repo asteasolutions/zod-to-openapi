@@ -1,5 +1,5 @@
 import { ReferenceObject, SchemaObject, SchemasObject } from 'openapi3-ts';
-import { ZodArray, ZodBoolean, ZodIntersection, ZodNull, ZodNullable, ZodNumber, ZodObject, ZodOptional, ZodRawShape, ZodSchema, ZodString, ZodUndefined, ZodUnion } from 'zod';
+import { ZodArray, ZodBoolean, ZodIntersection, ZodNull, ZodNullable, ZodNumber, ZodObject, ZodOptional, ZodRawShape, ZodSchema, ZodString, ZodUnion } from 'zod';
 import { flatMap, isNil, isUndefined, mapValues, omit, omitBy } from 'lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 
