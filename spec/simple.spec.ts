@@ -75,6 +75,19 @@ describe('Simple', () => {
     })
   });
 
+  it('supports minLength / maxLength on arrays', () => {
+    expectSchema([
+      z.array(z.string()).min(5).max(10).openapi({ name: 'Array' })
+    ], {
+      Array: {
+        type: 'array',
+        items: { type: 'string' },
+        minItems: 5,
+        maxItems: 10
+      }
+    })
+  });
+
   it('supports union types', () => {
     expectSchema([
       z.string().or(z.number()).openapi({ name: 'Test' })

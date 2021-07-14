@@ -1,5 +1,5 @@
 import { ReferenceObject, SchemaObject, SchemasObject } from 'openapi3-ts';
-import { ZodArray, ZodBoolean, ZodIntersection, ZodNullable, ZodNumber, ZodObject, ZodOptional, ZodRawShape, ZodSchema, ZodString, ZodUnion } from 'zod';
+import { ZodArray, ZodBoolean, ZodIntersection, ZodNull, ZodNullable, ZodNumber, ZodObject, ZodOptional, ZodRawShape, ZodSchema, ZodString, ZodUndefined, ZodUnion } from 'zod';
 import { flatMap, isNil, isUndefined, mapValues, omit, omitBy } from 'lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 
@@ -51,10 +51,14 @@ export class OpenAPIGenerator {
     isNullable: boolean,
     hasOpenAPIType: boolean
   ): SchemaObject {
+    if (zodSchema instanceof ZodNull) {
+      return { type: 'null' };
+    }
+
     if (zodSchema instanceof ZodString) {
       return {
         type: 'string',
-        nullable: isNullable ? true : undefined,
+        nullable: isNullable ? true : undefined
       };
     }
 
@@ -100,8 +104,8 @@ export class OpenAPIGenerator {
         type: 'array',
         items: this.generateSingle(itemType),
 
-        // minItems: zodSchema.
-        // maxItems: ...
+        minItems: zodSchema._def.minLength?.value,
+        maxItems: zodSchema._def.maxLength?.value
       };
     }
 
