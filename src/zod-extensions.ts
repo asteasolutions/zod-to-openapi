@@ -21,15 +21,18 @@ declare module 'zod' {
 //
 // }
 
-ZodSchema.prototype.openapi = function(openapi) {
+ZodSchema.prototype.openapi = function (openapi) {
   return new (this as any).constructor({
     ...this._def,
-    openapi
+    openapi: {
+      ...this._def.openapi,
+      ...openapi,
+    },
   });
 };
 
 const zodOptional = ZodSchema.prototype.optional as any;
-(ZodSchema.prototype.optional as any) = function(this: any, ...args: any[]) {
+(ZodSchema.prototype.optional as any) = function (this: any, ...args: any[]) {
   const result = zodOptional.apply(this, args);
 
   result._def.openapi = this._def.openapi;
@@ -38,7 +41,7 @@ const zodOptional = ZodSchema.prototype.optional as any;
 };
 
 const zodNullable = ZodSchema.prototype.nullable as any;
-(ZodSchema.prototype.nullable as any) = function(this: any, ...args: any[]) {
+(ZodSchema.prototype.nullable as any) = function (this: any, ...args: any[]) {
   const result = zodNullable.apply(this, args);
 
   result._def.openapi = this._def.openapi;

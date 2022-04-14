@@ -1,8 +1,8 @@
 import { ZodSchema } from 'zod';
 
-export class SchemaRegistry {
+export class ParamsRegistry {
   public readonly schemas: {
-    type: 'schema';
+    type: 'parameter';
     schema: ZodSchema<unknown>;
   }[] = [];
 
@@ -12,7 +12,7 @@ export class SchemaRegistry {
     const currentMetadata = zodSchema._def.openapi;
     const schemaWithMetadata = zodSchema.openapi({ ...currentMetadata, name });
 
-    this.schemas.push({ type: 'schema', schema: schemaWithMetadata });
+    this.schemas.push({ type: 'parameter', schema: schemaWithMetadata });
 
     return schemaWithMetadata;
   }
