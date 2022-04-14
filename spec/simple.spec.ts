@@ -215,7 +215,9 @@ describe('Simple', () => {
       schema,
     }));
 
-    const { components } = new OpenAPIGenerator(definitions).generate();
+    const { components } = new OpenAPIGenerator(
+      definitions
+    ).generateComponents();
 
     expect(components?.['schemas']).toEqual(openAPISchemas);
   }

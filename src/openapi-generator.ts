@@ -6,6 +6,13 @@ import {
   RequestBodyObject,
   PathItemObject,
   PathObject,
+  OpenAPIObject,
+  InfoObject,
+  ServerObject,
+  SecurityRequirementObject,
+  TagObject,
+  ExternalDocumentationObject,
+  ComponentsObject,
 } from 'openapi3-ts';
 import {
   ZodArray,
@@ -46,14 +53,48 @@ type OpenAPIDefinitions =
   | { type: 'parameter'; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig };
 
+// This is essentially OpenAPIObject without the components and paths keys.
+// Omit does not work, since OpenAPIObject extends ISpecificationExtension
+// and is infered as { [key: number]: any; [key: string]: any }
+interface OpenAPIObjectConfig {
+  openapi: string;
+  info: InfoObject;
+  servers?: ServerObject[];
+  security?: SecurityRequirementObject[];
+  tags?: TagObject[];
+  externalDocs?: ExternalDocumentationObject;
+}
+
 export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
 
-  constructor(private definitions: OpenAPIDefinitions[]) {}
+  constructor(
+    private definitions: OpenAPIDefinitions[],
+    private config?: OpenAPIObjectConfig
+  ) {}
 
-  generate(): SchemasObject {
+  generateDocs(): OpenAPIObject {
+    if (!this.config) {
+      throw new Error(
+        'No config was provided when creating the OpenAPIGenerator'
+      );
+    }
+
+    this.definitions.forEach((definition) => this.generateSingle(definition));
+
+    return {
+      ...this.config,
+      components: {
+        schemas: this.schemaRefs,
+        parameters: this.paramRefs,
+      },
+      paths: this.pathRefs,
+    };
+  }
+
+  generateComponents(): ComponentsObject {
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
@@ -61,7 +102,6 @@ export class OpenAPIGenerator {
         schemas: this.schemaRefs,
         parameters: this.paramRefs,
       },
-      paths: this.pathRefs,
     };
   }
 
@@ -104,20 +144,18 @@ export class OpenAPIGenerator {
 
     const required = !zodSchema.isOptional() && !zodSchema.isNullable();
 
-    const schema = this.generateSingleSchema(zodSchema, false);
+    const schema = this.generateSingleSchema(zodSchema, false, false);
 
     const result: ParameterObject = {
       in: 'path',
       // TODO: Is this valid? I think so since parameters are only defined from registries
       name: schemaName as string,
       schema,
+      required,
       // TODO: Fix types and check for possibly wrong data
       ...(metadata
         ? (this.buildMetadata(metadata) as Partial<ParameterObject>)
         : {}),
-      // TODO: Is this needed
-      required,
-      // allowReserved: true,
     };
 
     if (saveIfNew && schemaName) {
@@ -127,9 +165,11 @@ export class OpenAPIGenerator {
     return result;
   }
 
+  // TODO: Named parameters and smaller functions
   private generateSingleSchema(
     zodSchema: ZodSchema<any>,
-    saveIfNew: boolean
+    saveIfNew: boolean,
+    withMetaData = true
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapOptional(zodSchema);
     const metadata = zodSchema._def.openapi
@@ -152,7 +192,7 @@ export class OpenAPIGenerator {
           !!metadata?.type,
           saveIfNew
         ),
-        ...(metadata ? this.buildMetadata(metadata) : {}),
+        ...(withMetaData && metadata ? this.buildMetadata(metadata) : {}),
       },
       isUndefined
     );
