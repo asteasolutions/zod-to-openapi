@@ -1,5 +1,5 @@
 import { SchemaObject } from 'openapi3-ts';
-import { ZodSchema } from 'zod';
+import { z } from 'zod';
 
 export interface ZodOpenAPIMetadata extends SchemaObject {
   name?: string;
@@ -13,38 +13,40 @@ declare module 'zod' {
   abstract class ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
     openapi<T extends ZodSchema<any>>(this: T, metadata: ZodOpenAPIMetadata): T;
   }
-
-  // function openapi(metadata: ZodOpenAPIMetadata): typeof z;
 }
 
-// z.openapi = function(metadata) {
-//
-// }
+export function extendZodWithOpenApi(zod: typeof z) {
+  zod.ZodSchema.prototype.openapi = function (openapi) {
+    return new (this as any).constructor({
+      ...this._def,
+      openapi: {
+        ...this._def.openapi,
+        ...openapi,
+      },
+    });
+  };
 
-ZodSchema.prototype.openapi = function (openapi) {
-  return new (this as any).constructor({
-    ...this._def,
-    openapi: {
-      ...this._def.openapi,
-      ...openapi,
-    },
-  });
-};
+  const zodOptional = zod.ZodSchema.prototype.optional as any;
+  (zod.ZodSchema.prototype.optional as any) = function (
+    this: any,
+    ...args: any[]
+  ) {
+    const result = zodOptional.apply(this, args);
 
-const zodOptional = ZodSchema.prototype.optional as any;
-(ZodSchema.prototype.optional as any) = function (this: any, ...args: any[]) {
-  const result = zodOptional.apply(this, args);
+    result._def.openapi = this._def.openapi;
 
-  result._def.openapi = this._def.openapi;
+    return result;
+  };
 
-  return result;
-};
+  const zodNullable = zod.ZodSchema.prototype.nullable as any;
+  (zod.ZodSchema.prototype.nullable as any) = function (
+    this: any,
+    ...args: any[]
+  ) {
+    const result = zodNullable.apply(this, args);
 
-const zodNullable = ZodSchema.prototype.nullable as any;
-(ZodSchema.prototype.nullable as any) = function (this: any, ...args: any[]) {
-  const result = zodNullable.apply(this, args);
+    result._def.openapi = this._def.openapi;
 
-  result._def.openapi = this._def.openapi;
-
-  return result;
-};
+    return result;
+  };
+}

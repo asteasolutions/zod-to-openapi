@@ -1,8 +1,11 @@
 import { OpenAPIGenerator } from '../src/openapi-generator';
-import { OpenApiBuilder, SchemasObject } from 'openapi3-ts';
+import { SchemasObject } from 'openapi3-ts';
 import { z, ZodSchema } from 'zod';
 
-import '../src/zod-extensions';
+import { extendZodWithOpenApi } from '../src/zod-extensions';
+
+// TODO: setupTests.ts
+extendZodWithOpenApi(z);
 
 describe('Simple', () => {
   it('generates OpenAPI schema for simple types', () => {
