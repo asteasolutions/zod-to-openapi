@@ -2,7 +2,6 @@ import {
   ReferenceObject,
   SchemaObject,
   ParameterObject,
-  SchemasObject,
   RequestBodyObject,
   PathItemObject,
   PathObject,
@@ -13,6 +12,7 @@ import {
   TagObject,
   ExternalDocumentationObject,
   ComponentsObject,
+  ParameterLocation,
 } from 'openapi3-ts';
 import {
   ZodArray,
@@ -50,12 +50,12 @@ type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
 
 type OpenAPIDefinitions =
   | { type: 'schema'; schema: ZodSchema<any> }
-  | { type: 'parameter'; schema: ZodSchema<any> }
+  | { type: 'parameter'; location: ParameterLocation; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig };
 
 // This is essentially OpenAPIObject without the components and paths keys.
 // Omit does not work, since OpenAPIObject extends ISpecificationExtension
-// and is infered as { [key: number]: any; [key: string]: any }
+// and is inferred as { [key: number]: any; [key: string]: any }
 interface OpenAPIObjectConfig {
   openapi: string;
   info: InfoObject;
@@ -109,7 +109,11 @@ export class OpenAPIGenerator {
     definition: OpenAPIDefinitions
   ): SchemaObject | ParameterObject | ReferenceObject {
     if (definition.type === 'parameter') {
-      return this.generateSingleParameter(definition.schema, true);
+      return this.generateSingleParameter(
+        definition.schema,
+        definition.location,
+        true
+      );
     }
 
     if (definition.type === 'schema') {
@@ -125,18 +129,30 @@ export class OpenAPIGenerator {
 
   private generateSingleParameter(
     zodSchema: ZodSchema<any>,
+    location: ParameterLocation,
     saveIfNew: boolean,
     externalName?: string
   ): ParameterObject | ReferenceObject {
-    const innerSchema = this.unwrapOptional(zodSchema);
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
+    const metadata = this.getMetadata(zodSchema);
 
-    const schemaName = metadata?.name ?? externalName;
-    //TODO: Throw error if missing.
+    /**
+     * TODOs
+     * External name should come as priority in case there is known schema?
+     * Basically a schema is one thing, it's name in query is another.
+     *
+     * The externalName should not be a reason to "use it from the object".
+     * An error should be thrown instead :thinking:
+     */
 
-    if (schemaName && this.paramRefs[schemaName]) {
+    const schemaName = externalName ?? metadata?.name;
+
+    if (!schemaName) {
+      throw new Error(
+        'Unknown parameter name, please specify `name` and other OpenAPI props using `ZodSchema.openapi`'
+      );
+    }
+
+    if (this.paramRefs[schemaName]) {
       return {
         $ref: `#/components/parameters/${schemaName}`,
       };
@@ -147,9 +163,8 @@ export class OpenAPIGenerator {
     const schema = this.generateSingleSchema(zodSchema, false, false);
 
     const result: ParameterObject = {
-      in: 'path',
-      // TODO: Is this valid? I think so since parameters are only defined from registries
-      name: schemaName as string,
+      in: location,
+      name: schemaName,
       schema,
       required,
       // TODO: Fix types and check for possibly wrong data
@@ -212,12 +227,7 @@ export class OpenAPIGenerator {
     }
 
     const schema = this.generateSingleSchema(bodySchema, false);
-
-    const innerSchema = this.unwrapOptional(bodySchema);
-
-    const metadata = bodySchema._def.openapi
-      ? bodySchema._def.openapi
-      : innerSchema._def.openapi;
+    const metadata = this.getMetadata(bodySchema);
 
     return {
       description: metadata?.description,
@@ -230,13 +240,15 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getParamsDoc(
-    paramsSchema: ZodType<unknown> | undefined
+  private getParamsByLocation(
+    paramsSchema: ZodType<unknown> | undefined,
+    location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
     if (!paramsSchema) {
       return [];
     }
 
+    // TODO: Should the paramsSchema be restricted to an object?
     if (paramsSchema instanceof ZodObject) {
       const propTypes = paramsSchema._def.shape() as ZodRawShape;
 
@@ -249,12 +261,37 @@ export class OpenAPIGenerator {
             return undefined;
           }
 
-          return this.generateSingleParameter(propSchema, false, name);
+          return this.generateSingleParameter(
+            propSchema,
+            location,
+            false,
+            name
+          );
         })
       );
     }
 
     return [];
+  }
+
+  private getParameters(
+    request: RouteConfig['request'] | undefined
+  ): (ParameterObject | ReferenceObject)[] {
+    if (!request) {
+      return [];
+    }
+
+    const pathParams = this.getParamsByLocation(request.params, 'path');
+    const queryParams = this.getParamsByLocation(request.query, 'query');
+    const headerParams = compact(
+      request.headers?.map((header) =>
+        this.generateSingleParameter(header, 'header', false)
+      )
+    );
+
+    // What happens if a schema is defined as a parameter externally but is
+    // used here as a header for example
+    return [...pathParams, ...queryParams, ...headerParams];
   }
 
   private generateSingleRoute(route: RouteConfig) {
@@ -266,7 +303,7 @@ export class OpenAPIGenerator {
         summary: route.summary,
 
         // TODO: Header parameters
-        parameters: this.getParamsDoc(route.request?.params),
+        parameters: this.getParameters(route.request),
 
         requestBody: this.getBodyDoc(route.request?.body),
 
@@ -410,8 +447,10 @@ export class OpenAPIGenerator {
       return {};
     }
 
+    // TODO: Better error name (so that a random build of 100 schemas can be traced)
     throw new Error(
-      'Unknown zod object type, please specify `type` and other OpenAPI props using `ZodSchema.openapi`'
+      'Unknown zod object type, please specify `type` and other OpenAPI props using `ZodSchema.openapi`' +
+        JSON.stringify(zodSchema._def)
     );
   }
 
@@ -448,12 +487,12 @@ export class OpenAPIGenerator {
     return omitBy(omit(metadata, 'name'), isNil);
   }
 
-  private getName(zodSchema: ZodSchema<any>) {
+  private getMetadata(zodSchema: ZodSchema<any>) {
     const innerSchema = this.unwrapOptional(zodSchema);
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
       : innerSchema._def.openapi;
 
-    return metadata?.name;
+    return metadata;
   }
 }
