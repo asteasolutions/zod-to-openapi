@@ -1,6 +1,6 @@
 {
   "name": "@asteasolutions/zod-to-openapi",
-  "version": "1.0.0",
+  "version": "0.3.4",
   "description": "Builds OpenAPI schemas from Zod schemas",
   "main": "dist/index.js",
   "files": [
