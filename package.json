@@ -1,14 +1,24 @@
 {
   "name": "@asteasolutions/zod-to-openapi",
   "version": "1.0.0",
-  "description": "",
+  "description": "Builds OpenAPI schemas from Zod schemas",
   "main": "dist/index.js",
   "files": [
     "dist",
-    "package.json"
+    "package.json",
+    "LICENSE",
+    "README.md"
   ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
   "dependencies": {
     "lodash": "^4.17.21"
+  },
+  "peerDependencies": {
+    "zod": "~3.14.4"
   },
   "devDependencies": {
     "@types/jest": "^27.4.1",
@@ -19,14 +29,6 @@
     "typescript": "^4.6.3",
     "yaml": "^2.0.0",
     "zod": "~3.14.4"
-  },
-  "peerDependencies": {
-    "zod": "~3.14.4"
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "jest",
-    "prepublishOnly": "npm run build"
   },
   "author": "Astea Solutions <info@asteasolutions.com>",
   "license": "MIT"
