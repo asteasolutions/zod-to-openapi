@@ -35,6 +35,8 @@ jobs:
 
       - run: git show
       - run: |
+          git fetch origin master
+
           TAG_NAME="${{github.event.release.tag_name}}"
           LAST_COMMIT_ID="$(git rev-parse $TAG_NAME)"
           MASTER_COMMIT_ID="$(git rev-parse origin/master)"
