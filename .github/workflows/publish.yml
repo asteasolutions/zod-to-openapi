@@ -18,6 +18,10 @@ jobs:
       - run: npm ci
       - run: npm test
 
+      - run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'georgyangelov@users.noreply.github.com'
+
       # Update the version in the package files
       - run: |
           GIT_TAG="${{github.event.release.tag_name}}"
