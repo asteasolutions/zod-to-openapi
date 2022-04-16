@@ -49,5 +49,5 @@ jobs:
 
       # See https://stackoverflow.com/a/24849501
       - run: |
-          git tag -f -a "${{github.event.release.tag_name}}" HEAD
+          git tag -f "${{github.event.release.tag_name}}" HEAD
           git push -f origin "refs/tags/${{github.event.release.tag_name}}"
