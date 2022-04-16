@@ -37,7 +37,7 @@ jobs:
       - run: |
           TAG_NAME="${{github.event.release.tag_name}}"
           LAST_COMMIT_ID="$(git rev-parse $TAG_NAME)"
-          MASTER_COMMIT_ID="$(git rev-parse master)"
+          MASTER_COMMIT_ID="$(git rev-parse origin/master)"
 
           if [ "$LAST_COMMIT_ID" = "$MASTER_COMMIT_ID" ]; then
             git push origin HEAD:master
