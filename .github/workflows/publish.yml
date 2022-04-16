@@ -29,15 +29,15 @@ jobs:
           npm version "$NEW_VERSION" --allow-same-version --git-tag-version=false
       - run: git add package* && git commit -m "Release $NEW_VERSION"
 
-      - run: npm publish --access=public
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_PUBLISH_TOKEN}}
+      # - run: npm publish --access=public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{secrets.NPM_PUBLISH_TOKEN}}
 
       - run: git show
       - run: |
           TAG_NAME="${{github.event.release.tag_name}}"
-          LAST_COMMIT_ID="${git rev-parse $TAG_NAME}"
-          MASTER_COMMIT_ID="${git rev-parse master}"
+          LAST_COMMIT_ID="$(git rev-parse $TAG_NAME)"
+          MASTER_COMMIT_ID="$(git rev-parse master)"
 
           if [ "$LAST_COMMIT_ID" = "$MASTER_COMMIT_ID" ]; then
             git push origin HEAD:master
