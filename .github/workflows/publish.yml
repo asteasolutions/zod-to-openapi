@@ -30,9 +30,9 @@ jobs:
           npm version "$NEW_VERSION" --allow-same-version --git-tag-version=false
           git add package* && git commit -m "Release $NEW_VERSION"
 
-      # - run: npm publish --access=public
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{secrets.NPM_PUBLISH_TOKEN}}
+      - run: npm publish --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_PUBLISH_TOKEN}}
 
       - run: git show
       - run: |
