@@ -20,14 +20,15 @@ jobs:
 
       - run: |
           git config --global user.name 'GitHub Actions'
-          git config --global user.email 'georgyangelov@users.noreply.github.com'
+          git config --global user.email 'github-actions@localhost'
 
       # Update the version in the package files
       - run: |
           GIT_TAG="${{github.event.release.tag_name}}"
           NEW_VERSION="${GIT_TAG/v/}"
+
           npm version "$NEW_VERSION" --allow-same-version --git-tag-version=false
-      - run: git add package* && git commit -m "Release $NEW_VERSION"
+          git add package* && git commit -m "Release $NEW_VERSION"
 
       # - run: npm publish --access=public
       #   env:
