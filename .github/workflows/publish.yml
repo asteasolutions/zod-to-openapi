@@ -34,7 +34,16 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.NPM_PUBLISH_TOKEN}}
 
       - run: git show
-      - run: git push
+      - run: |
+          TAG_NAME="${{github.event.release.tag_name}}"
+          LAST_COMMIT_ID="${git rev-parse $TAG_NAME}"
+          MASTER_COMMIT_ID="${git rev-parse master}"
+
+          if [ "$LAST_COMMIT_ID" = "$MASTER_COMMIT_ID" ]; then
+            git push origin HEAD:master
+          else
+            echo "Not pushing to master because the tag we're operating on is behind"
+          fi
 
       # See https://stackoverflow.com/a/24849501
       - run: |
