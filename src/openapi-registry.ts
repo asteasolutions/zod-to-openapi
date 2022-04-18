@@ -1,6 +1,6 @@
 import { flatMap } from 'lodash';
 import { ParameterLocation } from 'openapi3-ts';
-import { ZodSchema, ZodType } from 'zod';
+import { ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
@@ -14,14 +14,12 @@ export interface RouteConfig {
   method: Method;
   path: string;
   request?: {
-    params?: ZodType<unknown>;
-    query?: ZodType<unknown>;
+    params?: ZodObject<any>;
+    query?: ZodObject<any>;
     body?: ZodType<unknown>;
     headers?: ZodType<unknown>[];
   };
   response: ZodType<unknown>;
-  // Used to validate and log if missing
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errors?: any[];
 }
 

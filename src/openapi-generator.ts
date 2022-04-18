@@ -236,23 +236,18 @@ export class OpenAPIGenerator {
   }
 
   private getParamsByLocation(
-    paramsSchema: ZodType<unknown> | undefined,
+    paramsSchema: ZodObject<any> | undefined,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
     if (!paramsSchema) {
       return [];
     }
 
-    // TODO: Only ZodObject accepted
-    if (paramsSchema instanceof ZodObject) {
-      const propTypes = paramsSchema._def.shape() as ZodRawShape;
+    const propTypes = paramsSchema._def.shape() as ZodRawShape;
 
-      return Object.entries(propTypes).map(([name, propSchema]) => {
-        return this.generateSingleParameter(propSchema, location, false, name);
-      });
-    }
-
-    return [this.generateSingleParameter(paramsSchema, location, false)];
+    return Object.entries(propTypes).map(([name, propSchema]) => {
+      return this.generateSingleParameter(propSchema, location, false, name);
+    });
   }
 
   private getParameters(
