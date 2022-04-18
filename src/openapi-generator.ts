@@ -58,24 +58,13 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
 
-  constructor(
-    private definitions: OpenAPIDefinitions[],
-    private config?: OpenAPIObjectConfig
-  ) {}
+  constructor(private definitions: OpenAPIDefinitions[]) {}
 
-  // TODO: generateRoot maybe?
-  generateDocs(): OpenAPIObject {
-    // TODO: Maybe pass as parameter
-    if (!this.config) {
-      throw new Error(
-        'No config was provided when creating the OpenAPIGenerator'
-      );
-    }
-
+  generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
-      ...this.config,
+      ...config,
       components: {
         schemas: this.schemaRefs,
         parameters: this.paramRefs,
@@ -306,18 +295,19 @@ export class OpenAPIGenerator {
   private generateSingleRoute(route: RouteConfig) {
     const responseSchema = this.generateInnerSchema(route.response);
 
+    const { method, path, request, response, ...pathItemConfig } = route;
+
     const routeDoc: PathItemObject = {
-      [route.method]: {
-        description: route.description,
-        summary: route.summary,
+      [method]: {
+        ...pathItemConfig,
 
-        parameters: this.getParameters(route.request),
+        parameters: this.getParameters(request),
 
-        requestBody: this.getBodyDoc(route.request?.body),
+        requestBody: this.getBodyDoc(request?.body),
 
         responses: {
           [200]: {
-            description: route.response._def.openapi?.description,
+            description: response._def.openapi?.description,
             content: {
               'application/json': {
                 schema: responseSchema,
@@ -329,8 +319,8 @@ export class OpenAPIGenerator {
       },
     };
 
-    this.pathRefs[route.path] = {
-      ...this.pathRefs[route.path],
+    this.pathRefs[path] = {
+      ...this.pathRefs[path],
       ...routeDoc,
     };
 

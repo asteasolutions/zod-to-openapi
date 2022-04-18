@@ -1,10 +1,10 @@
 import { flatMap } from 'lodash';
-import { PathItemObject } from 'openapi3-ts';
+import { OperationObject } from 'openapi3-ts';
 import { ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
-export interface RouteConfig extends PathItemObject {
+export interface RouteConfig extends Partial<OperationObject> {
   // TODO: THose are optional in the interface
   summary: string;
   description: string;
