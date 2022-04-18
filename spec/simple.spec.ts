@@ -33,6 +33,35 @@ describe('Simple', () => {
     );
   });
 
+  fit('generates OpenAPI schema for nested objects', () => {
+    expectSchema(
+      [
+        z
+          .object({
+            test: z.object({
+              id: z.string().openapi({ description: 'The entity id' }),
+            }),
+          })
+          .openapi({ name: 'NestedObject' }),
+      ],
+      {
+        NestedObject: {
+          type: 'object',
+          required: ['test'],
+          properties: {
+            test: {
+              type: 'object',
+              required: ['id'],
+              properties: {
+                id: { type: 'string', description: 'The entity id' },
+              },
+            },
+          },
+        },
+      }
+    );
+  });
+
   it('supports string literals', () => {
     expectSchema([z.literal('John Doe').openapi({ name: 'Literal' })], {
       Literal: { type: 'string', enum: ['John Doe'] },
