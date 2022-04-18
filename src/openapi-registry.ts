@@ -1,22 +1,20 @@
 import { flatMap } from 'lodash';
-import { ZodObject, ZodSchema, ZodType } from 'zod';
+import { PathItemObject } from 'openapi3-ts';
+import { ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
-/**
- * TODO: Should the headers really be an array. Is it array of strings
- * TODO: Should the query/params be narrowed down to ZodObject :thinking:
- */
-export interface RouteConfig {
+export interface RouteConfig extends PathItemObject {
+  // TODO: THose are optional in the interface
   summary: string;
   description: string;
+  //
+
   method: Method;
   path: string;
   request?: {
-    params?: ZodObject<any>;
-    query?: ZodObject<any>;
+    parameters?: ZodType<unknown>[];
     body?: ZodType<unknown>;
-    headers?: ZodType<unknown>[];
   };
   response: ZodType<unknown>;
   errors?: any[];
@@ -78,11 +76,6 @@ export class OpenAPIRegistry {
    * Registers a new path that would be generated under paths:
    */
   registerPath(route: RouteConfig) {
-    // const { path } = config;
-
-    // TODO: Is this for here. Maybe not
-    // const parsedPath = path.replace(/:/g, '{').replace(/{[a-zA-Z]+/g, '$&}');
-
     this._definitions.push({
       type: 'route',
       route,

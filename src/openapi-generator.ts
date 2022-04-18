@@ -12,7 +12,6 @@ import {
   TagObject,
   ExternalDocumentationObject,
   ComponentsObject,
-  ParameterLocation,
 } from 'openapi3-ts';
 import {
   ZodArray,
@@ -108,7 +107,7 @@ export class OpenAPIGenerator {
     definition: OpenAPIDefinitions
   ): SchemaObject | ParameterObject | ReferenceObject {
     if (definition.type === 'parameter') {
-      return this.generateSingleParameter(definition.schema, undefined, true);
+      return this.generateParameterDefinition(definition.schema);
     }
 
     if (definition.type === 'schema') {
@@ -122,29 +121,48 @@ export class OpenAPIGenerator {
     throw new Error('Invalid definition type');
   }
 
-  // TODO: Named properties. Maybe separate functions would suffice and saveIfNew + externalName might me correlated
-  private generateSingleParameter(
-    zodSchema: ZodSchema<any>,
-    location: ParameterLocation | undefined,
-    saveIfNew: boolean,
-    externalName?: string
+  private generateParameterDefinition(
+    zodSchema: ZodSchema<any>
   ): ParameterObject | ReferenceObject {
     const metadata = this.getMetadata(
       zodSchema
     ) as Partial<ZodOpenAPIParameterMetadata>;
 
-    /**
-     * TODOs
-     * External name should come as priority in case there is known schema?
-     * Basically a schema is one thing, it's name in query is another.
-     *
-     * The externalName should not be a reason to "use it from the object".
-     * An error should be thrown instead :thinking:
-     */
+    const result = this.generateParameter(zodSchema);
 
-    const paramName = externalName ?? metadata?.name;
+    if (metadata?.refId) {
+      this.paramRefs[metadata.refId] = result;
+    }
 
-    const paramLocation = location ?? metadata?.in;
+    return result;
+  }
+
+  private generateInlineParameter(
+    zodSchema: ZodSchema<any>
+  ): ParameterObject | ReferenceObject {
+    const metadata = this.getMetadata(
+      zodSchema
+    ) as Partial<ZodOpenAPIParameterMetadata>;
+    const existingRef = metadata?.refId
+      ? this.paramRefs[metadata.refId]
+      : undefined;
+
+    if (existingRef) {
+      return {
+        $ref: `#/components/parameters/${metadata.refId}`,
+      };
+    }
+
+    return this.generateParameter(zodSchema);
+  }
+
+  private generateParameter(zodSchema: ZodSchema<any>): ParameterObject {
+    const metadata = this.getMetadata(
+      zodSchema
+    ) as Partial<ZodOpenAPIParameterMetadata>;
+
+    const paramName = metadata?.name;
+    const paramLocation = metadata?.in;
 
     if (!paramName) {
       throw new Error(
@@ -152,35 +170,24 @@ export class OpenAPIGenerator {
       );
     }
 
+    // TODO: Might add custom errors.
     if (!paramLocation) {
       throw new Error(
-        'Missing parameter location, please specify `in` and other OpenAPI props using `ZodSchema.openapi`'
+        `Missing parameter location for parameter ${paramName}, please specify \`in\` and other OpenAPI props using \`ZodSchema.openapi\``
       );
-    }
-
-    if (metadata?.refId && this.paramRefs[metadata.refId]) {
-      return {
-        $ref: `#/components/parameters/${metadata.refId}`,
-      };
     }
 
     const required = !zodSchema.isOptional() && !zodSchema.isNullable();
 
     const schema = this.generateSingleSchema(zodSchema, false, false);
 
-    const result: ParameterObject = {
+    return {
       in: paramLocation,
       name: paramName,
       schema,
       required,
       ...(metadata ? this.buildMetadata(metadata) : {}),
     };
-
-    if (saveIfNew && metadata?.refId) {
-      this.paramRefs[metadata.refId] = result;
-    }
-
-    return result;
   }
 
   // TODO: Named parameters and smaller functions
@@ -244,21 +251,6 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getParamsByLocation(
-    paramsSchema: ZodObject<any> | undefined,
-    location: ParameterLocation
-  ): (ParameterObject | ReferenceObject)[] {
-    if (!paramsSchema) {
-      return [];
-    }
-
-    const propTypes = paramsSchema._def.shape() as ZodRawShape;
-
-    return Object.entries(propTypes).map(([name, propSchema]) => {
-      return this.generateSingleParameter(propSchema, location, false, name);
-    });
-  }
-
   private getParameters(
     request: RouteConfig['request'] | undefined
   ): (ParameterObject | ReferenceObject)[] {
@@ -266,17 +258,11 @@ export class OpenAPIGenerator {
       return [];
     }
 
-    const pathParams = this.getParamsByLocation(request.params, 'path');
-    const queryParams = this.getParamsByLocation(request.query, 'query');
-    const headerParams = compact(
-      request.headers?.map((header) =>
-        this.generateSingleParameter(header, 'header', false)
-      )
+    const parameters = request.parameters?.map((param) =>
+      this.generateInlineParameter(param)
     );
 
-    // TODO: What happens a schema is defined as a header parameter externally
-    // but is used here as a header
-    return [...pathParams, ...queryParams, ...headerParams];
+    return parameters ?? [];
   }
 
   private generateSingleRoute(route: RouteConfig) {
@@ -415,9 +401,11 @@ export class OpenAPIGenerator {
       return {};
     }
 
-    // TODO: Better error name (so that a random build of 100 schemas can be traced)
+    const refId = this.getMetadata(zodSchema)?.refId;
+    const errorFor = refId ? ` for ${refId}` : '';
+
     throw new Error(
-      'Unknown zod object type, please specify `type` and other OpenAPI props using `ZodSchema.openapi`' +
+      `Unknown zod object type${errorFor}, please specify \`type\` and other OpenAPI props using \`ZodSchema.openapi\`. The current schema is: ` +
         JSON.stringify(zodSchema._def)
     );
   }
