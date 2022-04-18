@@ -41,7 +41,10 @@ import {
   omit,
   omitBy,
 } from 'lodash';
-import { ZodOpenAPIMetadata } from './zod-extensions';
+import {
+  ZodOpenAPIMetadata,
+  ZodOpenAPIParameterMetadata,
+} from './zod-extensions';
 import { OpenAPIDefinitions, RouteConfig } from './openapi-registry';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
@@ -105,11 +108,7 @@ export class OpenAPIGenerator {
     definition: OpenAPIDefinitions
   ): SchemaObject | ParameterObject | ReferenceObject {
     if (definition.type === 'parameter') {
-      return this.generateSingleParameter(
-        definition.schema,
-        definition.location,
-        true
-      );
+      return this.generateSingleParameter(definition.schema, undefined, true);
     }
 
     if (definition.type === 'schema') {
@@ -126,11 +125,13 @@ export class OpenAPIGenerator {
   // TODO: Named properties. Maybe separate functions would suffice and saveIfNew + externalName might me correlated
   private generateSingleParameter(
     zodSchema: ZodSchema<any>,
-    location: ParameterLocation,
+    location: ParameterLocation | undefined,
     saveIfNew: boolean,
     externalName?: string
   ): ParameterObject | ReferenceObject {
-    const metadata = this.getMetadata(zodSchema);
+    const metadata = this.getMetadata(
+      zodSchema
+    ) as Partial<ZodOpenAPIParameterMetadata>;
 
     /**
      * TODOs
@@ -143,9 +144,17 @@ export class OpenAPIGenerator {
 
     const paramName = externalName ?? metadata?.name;
 
+    const paramLocation = location ?? metadata?.in;
+
     if (!paramName) {
       throw new Error(
-        'Unknown parameter name, please specify `name` and other OpenAPI props using `ZodSchema.openapi`'
+        'Missing parameter name, please specify `name` and other OpenAPI props using `ZodSchema.openapi`'
+      );
+    }
+
+    if (!paramLocation) {
+      throw new Error(
+        'Missing parameter location, please specify `in` and other OpenAPI props using `ZodSchema.openapi`'
       );
     }
 
@@ -160,7 +169,7 @@ export class OpenAPIGenerator {
     const schema = this.generateSingleSchema(zodSchema, false, false);
 
     const result: ParameterObject = {
-      in: location,
+      in: paramLocation,
       name: paramName,
       schema,
       required,
@@ -469,7 +478,7 @@ export class OpenAPIGenerator {
 
   // The open api metadata can come in any format - ParameterObject/SchemaObject.
   // We leave it up to the user to define it and take care of it
-  private buildMetadata(metadata: ZodOpenAPIMetadata) {
+  private buildMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
     return omitBy(omit(metadata, 'name', 'refId'), isNil);
   }
 

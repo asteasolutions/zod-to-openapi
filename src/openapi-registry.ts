@@ -1,5 +1,4 @@
 import { flatMap } from 'lodash';
-import { ParameterLocation } from 'openapi3-ts';
 import { ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
@@ -25,7 +24,7 @@ export interface RouteConfig {
 
 export type OpenAPIDefinitions =
   | { type: 'schema'; schema: ZodSchema<any> }
-  | { type: 'parameter'; location: ParameterLocation; schema: ZodSchema<any> }
+  | { type: 'parameter'; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig };
 
 export class OpenAPIRegistry {
@@ -44,12 +43,11 @@ export class OpenAPIRegistry {
   /**
    * Registers a new component schema under /components/schemas/${name}
    */
-  register<T extends ZodSchema<any>>(name: string, zodSchema: T) {
+  register<T extends ZodSchema<any>>(refId: string, zodSchema: T) {
     const currentMetadata = zodSchema._def.openapi;
     const schemaWithMetadata = zodSchema.openapi({
       ...currentMetadata,
-      refId: name,
-      name,
+      refId,
     });
 
     this._definitions.push({ type: 'schema', schema: schemaWithMetadata });
@@ -60,20 +58,16 @@ export class OpenAPIRegistry {
   /**
    * Registers a new parameter schema under /components/parameters/${name}
    */
-  registerParameter<T extends ZodSchema<any>>(
-    config: { name: string; location: ParameterLocation },
-    zodSchema: T
-  ) {
+  registerParameter<T extends ZodSchema<any>>(refId: string, zodSchema: T) {
     const currentMetadata = zodSchema._def.openapi;
     const schemaWithMetadata = zodSchema.openapi({
       ...currentMetadata,
-      refId: config.name,
-      name: currentMetadata?.name ?? config.name,
+      name: currentMetadata?.name ?? refId,
+      refId,
     });
 
     this._definitions.push({
       type: 'parameter',
-      location: config.location,
       schema: schemaWithMetadata,
     });
 
