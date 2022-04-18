@@ -8,7 +8,7 @@ type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
  * TODO: Should the headers really be an array. Is it array of strings
  * TODO: Should the query/params be narrowed down to ZodObject :thinking:
  */
-interface RouteConfig {
+export interface RouteConfig {
   summary: string;
   description: string;
   method: Method;
@@ -25,7 +25,7 @@ interface RouteConfig {
   errors?: any[];
 }
 
-type OpenAPIDefinitions =
+export type OpenAPIDefinitions =
   | { type: 'schema'; schema: ZodSchema<any> }
   | { type: 'parameter'; location: ParameterLocation; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig };

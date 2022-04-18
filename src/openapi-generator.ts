@@ -42,15 +42,10 @@ import {
   omitBy,
 } from 'lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
-import { RouteConfig } from './router';
+import { OpenAPIDefinitions, RouteConfig } from './openapi-registry';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
-
-type OpenAPIDefinitions =
-  | { type: 'schema'; schema: ZodSchema<any> }
-  | { type: 'parameter'; location: ParameterLocation; schema: ZodSchema<any> }
-  | { type: 'route'; route: RouteConfig };
 
 // This is essentially OpenAPIObject without the components and paths keys.
 // Omit does not work, since OpenAPIObject extends ISpecificationExtension

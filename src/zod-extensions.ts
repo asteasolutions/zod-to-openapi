@@ -1,9 +1,17 @@
-import { SchemaObject } from 'openapi3-ts';
+import { ParameterObject, SchemaObject } from 'openapi3-ts';
 import { z } from 'zod';
 
-export interface ZodOpenAPIMetadata extends SchemaObject {
-  name?: string;
+export interface ZodOpenAPISchemaMetadata extends SchemaObject {
+  refId?: string;
 }
+
+export interface ZodOpenAPIParameterMetadata extends ParameterObject {
+  refId?: string;
+}
+
+export type ZodOpenAPIMetadata =
+  | ZodOpenAPISchemaMetadata
+  | ZodOpenAPIParameterMetadata;
 
 declare module 'zod' {
   interface ZodTypeDef {
@@ -11,7 +19,10 @@ declare module 'zod' {
   }
 
   abstract class ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
-    openapi<T extends ZodSchema<any>>(this: T, metadata: ZodOpenAPIMetadata): T;
+    openapi<T extends ZodSchema<any>>(
+      this: T,
+      metadata: Partial<ZodOpenAPIMetadata>
+    ): T;
   }
 }
 
