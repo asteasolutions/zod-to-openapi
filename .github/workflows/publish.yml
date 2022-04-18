@@ -1,0 +1,54 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-to-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm test
+
+      - run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions@localhost'
+
+      # Update the version in the package files
+      - run: |
+          GIT_TAG="${{github.event.release.tag_name}}"
+          NEW_VERSION="${GIT_TAG/v/}"
+
+          npm version "$NEW_VERSION" --allow-same-version --git-tag-version=false
+          git add package* && git commit -m "Release $NEW_VERSION"
+
+      - run: npm publish --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_PUBLISH_TOKEN}}
+
+      - run: git show
+      - run: |
+          git fetch origin master
+
+          TAG_NAME="${{github.event.release.tag_name}}"
+          LAST_COMMIT_ID="$(git rev-parse $TAG_NAME)"
+          MASTER_COMMIT_ID="$(git rev-parse origin/master)"
+
+          if [ "$LAST_COMMIT_ID" = "$MASTER_COMMIT_ID" ]; then
+            git push origin HEAD:master
+          else
+            echo "Not pushing to master because the tag we're operating on is behind"
+          fi
+
+      # See https://stackoverflow.com/a/24849501
+      - run: |
+          git tag -f "${{github.event.release.tag_name}}" HEAD
+          git push -f origin "refs/tags/${{github.event.release.tag_name}}"
