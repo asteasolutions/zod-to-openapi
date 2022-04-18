@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
+/**
+ * TODO: Should the headers really be an array. Is it array of strings
+ * TODO: Should the query/params be narrowed down to ZodObject :thinking:
+ */
+
 export interface RouteConfig {
   summary: string;
   description: string;
@@ -11,6 +16,7 @@ export interface RouteConfig {
     params?: z.ZodType<unknown>;
     query?: z.ZodType<unknown>;
     body?: z.ZodType<unknown>;
+    headers?: z.ZodType<unknown>[];
   };
   response: z.ZodType<unknown>;
   // Used to validate and log if missing
@@ -20,6 +26,8 @@ export interface RouteConfig {
 
 type MethodProps = Omit<RouteConfig, 'method'>;
 
+// TODO: Unify registries.
+// Allow for registries to accept initial values for refs?
 export class Router {
   private routes: RouteConfig[] = [];
 
