@@ -13,6 +13,7 @@ import {
   ExternalDocumentationObject,
   ComponentsObject,
   ParameterLocation,
+  ResponseObject,
 } from 'openapi3-ts';
 import {
   ZodArray,
@@ -37,7 +38,12 @@ import {
   ZodOpenAPIMetadata,
   ZodOpenAPIParameterMetadata,
 } from './zod-extensions';
-import { OpenAPIDefinitions, RouteConfig } from './openapi-registry';
+import {
+  OpenAPIDefinitions,
+  ResponseConfig,
+  RouteConfig,
+} from './openapi-registry';
+import { ZodVoid } from 'zod';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -302,7 +308,7 @@ export class OpenAPIGenerator {
     return result;
   }
 
-  private getBodyDoc(
+  private getRequestBody(
     bodySchema: ZodType<unknown> | undefined
   ): RequestBodyObject | undefined {
     if (!bodySchema) {
@@ -348,9 +354,11 @@ export class OpenAPIGenerator {
   }
 
   private generateSingleRoute(route: RouteConfig) {
-    const responseSchema = this.generateInnerSchema(route.response);
+    const { method, path, request, responses, ...pathItemConfig } = route;
 
-    const { method, path, request, response, ...pathItemConfig } = route;
+    const generatedResponses = mapValues(responses, (response) => {
+      return this.getResponse(response);
+    });
 
     const routeDoc: PathItemObject = {
       [method]: {
@@ -358,19 +366,9 @@ export class OpenAPIGenerator {
 
         parameters: this.getParameters(request),
 
-        requestBody: this.getBodyDoc(request?.body),
+        requestBody: this.getRequestBody(request?.body),
 
-        responses: {
-          [200]: {
-            description: response._def.openapi?.description,
-            content: {
-              'application/json': {
-                schema: responseSchema,
-              },
-            },
-          },
-          // TODO: errors
-        },
+        responses: generatedResponses,
       },
     };
 
@@ -380,6 +378,42 @@ export class OpenAPIGenerator {
     };
 
     return routeDoc;
+  }
+
+  private getResponse(
+    response: ResponseConfig
+  ): ResponseObject | ReferenceObject {
+    if (response instanceof ZodVoid) {
+      const metadata = this.getMetadata(response);
+
+      if (!metadata?.description) {
+        throw new Error(
+          'Missing response description. Please specify `description` and using `ZodSchema.openapi`.'
+        );
+      }
+
+      return {
+        description: metadata.description,
+      };
+    }
+
+    const metadata = this.getMetadata(response.schema);
+    const responseSchema = this.generateInnerSchema(response.schema);
+
+    if (!metadata?.description) {
+      throw new Error(
+        'Missing response description. Please specify `description` and using `ZodSchema.openapi`.'
+      );
+    }
+
+    return {
+      description: metadata.description,
+      content: {
+        [response.mediaType]: {
+          schema: responseSchema,
+        },
+      },
+    };
   }
 
   private toOpenAPISchema(
@@ -544,8 +578,9 @@ export class OpenAPIGenerator {
   }
 
   // The open api metadata can come in any format - ParameterObject/SchemaObject.
-  // We leave it up to the user to define it and take care of it
+  // We leave it up to the user to define it and take care of it.
   private buildMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
+    // A place to omit all custom keys added to the openapi
     return omitBy(omit(metadata, ['name', 'refId']), isNil);
   }
 

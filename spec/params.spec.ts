@@ -9,7 +9,12 @@ function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
   return {
     method: 'get',
     path: '/',
-    response: z.object({}),
+    responses: {
+      200: {
+        mediaType: 'application/json',
+        schema: z.object({}).openapi({ description: 'Response' }),
+      },
+    },
     ...props,
   };
 }

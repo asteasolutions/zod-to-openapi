@@ -1,15 +1,15 @@
 import { OperationObject } from 'openapi3-ts';
+import { ZodVoid } from 'zod';
 import { ZodObject } from 'zod';
 import { ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
-export interface RouteConfig extends Partial<OperationObject> {
-  // TODO: THose are optional in the interface
-  // summary: string;
-  // description: string;
-  //
+export type ResponseConfig =
+  | { mediaType: string; schema: ZodType<unknown> }
+  | ZodVoid;
 
+export interface RouteConfig extends OperationObject {
   method: Method;
   path: string;
   request?: {
@@ -18,7 +18,9 @@ export interface RouteConfig extends Partial<OperationObject> {
     query?: ZodObject<any>;
     headers?: ZodType<unknown>[];
   };
-  response: ZodType<unknown>;
+  responses: {
+    [key: number]: ResponseConfig;
+  };
   errors?: any[];
 }
 
