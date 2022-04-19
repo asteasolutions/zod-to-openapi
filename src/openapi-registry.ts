@@ -1,20 +1,22 @@
-import { flatMap } from 'lodash';
 import { OperationObject } from 'openapi3-ts';
+import { ZodObject } from 'zod';
 import { ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
 export interface RouteConfig extends Partial<OperationObject> {
   // TODO: THose are optional in the interface
-  summary: string;
-  description: string;
+  // summary: string;
+  // description: string;
   //
 
   method: Method;
   path: string;
   request?: {
-    parameters?: ZodType<unknown>[];
     body?: ZodType<unknown>;
+    params?: ZodObject<any>;
+    query?: ZodObject<any>;
+    headers?: ZodType<unknown>[];
   };
   response: ZodType<unknown>;
   errors?: any[];

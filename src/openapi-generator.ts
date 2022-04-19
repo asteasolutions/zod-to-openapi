@@ -12,6 +12,7 @@ import {
   TagObject,
   ExternalDocumentationObject,
   ComponentsObject,
+  ParameterLocation,
 } from 'openapi3-ts';
 import {
   ZodArray,
@@ -58,6 +59,7 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
 
+  // TODO: The order is very important here!
   constructor(private definitions: OpenAPIDefinitions[]) {}
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
@@ -118,9 +120,10 @@ export class OpenAPIGenerator {
     return result;
   }
 
-  private generateInlineParameter(
-    zodSchema: ZodSchema<any>
-  ): ParameterObject | ReferenceObject {
+  private generateInlineParameters(
+    zodSchema: ZodSchema<any>,
+    location: ParameterLocation
+  ): (ParameterObject | ReferenceObject)[] {
     const metadata = this.getMetadata(
       zodSchema
     ) as Partial<ZodOpenAPIParameterMetadata>;
@@ -129,12 +132,52 @@ export class OpenAPIGenerator {
       : undefined;
 
     if (existingRef) {
-      return {
-        $ref: `#/components/parameters/${metadata.refId}`,
-      };
+      if (existingRef.in !== location) {
+        throw new Error(
+          `The parameter ${existingRef.name} was created with \`in: ${existingRef.in}\` but was used as ${location} parameter`
+        );
+      }
+
+      return [
+        {
+          $ref: `#/components/parameters/${metadata.refId}`,
+        },
+      ];
     }
 
-    return this.generateParameter(zodSchema);
+    if (zodSchema instanceof ZodObject) {
+      const propTypes = zodSchema._def.shape() as ZodRawShape;
+
+      const parameters = Object.entries(propTypes).map(([key, schema]) => {
+        const innerMetadata = this.getMetadata(schema);
+
+        if (innerMetadata?.name && innerMetadata.name !== key) {
+          throw new Error(
+            `Conflicting name - a parameter was created with the key "${key}" in ${location} but has a name "${innerMetadata.name}" defined with \`.openapi()\`. Please use only one.`
+          );
+        }
+
+        if (innerMetadata?.in && innerMetadata.in !== location) {
+          throw new Error(
+            `Conflicting location - the parameter "${innerMetadata.name}" was created within "${location}" but has a in: "${innerMetadata.in}" property defined with \`.openapi()\`. Please use only one.`
+          );
+        }
+
+        return this.generateParameter(
+          schema.openapi({ name: key, in: location })
+        );
+      });
+
+      return parameters;
+    }
+
+    if (metadata?.in && metadata.in !== location) {
+      throw new Error(
+        `Conflicting location - the parameter "${metadata.name}" was created within "${location}" but has a in: "${metadata.in}" property defined with \`.openapi()\`. Please use only one.`
+      );
+    }
+
+    return [this.generateParameter(zodSchema.openapi({ in: location }))];
   }
 
   private generateParameter(zodSchema: ZodSchema<any>): ParameterObject {
@@ -191,10 +234,13 @@ export class OpenAPIGenerator {
       };
     }
 
-    return this.toOpenAPISchema(
-      innerSchema,
-      zodSchema.isNullable(),
-      !!metadata?.type
+    return omitBy(
+      this.toOpenAPISchema(
+        innerSchema,
+        zodSchema.isNullable(),
+        !!metadata?.type
+      ),
+      isUndefined
     );
   }
 
@@ -285,11 +331,20 @@ export class OpenAPIGenerator {
       return [];
     }
 
-    const parameters = request.parameters?.map((param) =>
-      this.generateInlineParameter(param)
-    );
+    const queryParameters = request.query
+      ? this.generateInlineParameters(request.query, 'query')
+      : [];
 
-    return parameters ?? [];
+    const pathParameters = request.params
+      ? this.generateInlineParameters(request.params, 'path')
+      : [];
+
+    const headerParameters =
+      request.headers?.flatMap((header) =>
+        this.generateInlineParameters(header, 'header')
+      ) ?? [];
+
+    return [...pathParameters, ...queryParameters, ...headerParameters];
   }
 
   private generateSingleRoute(route: RouteConfig) {
