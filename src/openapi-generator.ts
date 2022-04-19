@@ -495,6 +495,10 @@ export class OpenAPIGenerator {
     const propTypes = zodSchema._def.shape();
     const unknownKeysOption = zodSchema._unknownKeys as UnknownKeysParam;
 
+    const requiredProperties = Object.entries(propTypes)
+      .filter(([_key, type]) => !type.isOptional())
+      .map(([key, _type]) => key);
+
     return {
       type: 'object',
 
@@ -502,9 +506,7 @@ export class OpenAPIGenerator {
         this.generateInnerSchema(propSchema)
       ),
 
-      required: Object.entries(propTypes)
-        .filter(([_key, type]) => !type.isOptional())
-        .map(([key, _type]) => key),
+      required: requiredProperties.length > 0 ? requiredProperties : undefined,
 
       additionalProperties: unknownKeysOption === 'passthrough' || undefined,
 
