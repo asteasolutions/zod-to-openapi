@@ -31,7 +31,7 @@ import {
   ZodType,
   ZodUnion,
 } from 'zod';
-import { flatMap, isNil, isUndefined, mapValues, omit, omitBy } from 'lodash';
+import { isNil, isUndefined, mapValues, omit, omitBy } from './lib/lodash';
 import {
   ZodOpenAPIMetadata,
   ZodOpenAPIParameterMetadata,
@@ -464,7 +464,7 @@ export class OpenAPIGenerator {
 
     const options = schema._def.options as ZodSchema<any>[];
 
-    return flatMap(options, (option) => this.flattenUnionTypes(option));
+    return options.flatMap((option) => this.flattenUnionTypes(option));
   }
 
   private flattenIntersectionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {
@@ -489,7 +489,7 @@ export class OpenAPIGenerator {
   // The open api metadata can come in any format - ParameterObject/SchemaObject.
   // We leave it up to the user to define it and take care of it
   private buildMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
-    return omitBy(omit(metadata, 'name', 'refId'), isNil);
+    return omitBy(omit(metadata, ['name', 'refId']), isNil);
   }
 
   private getMetadata(zodSchema: ZodSchema<any>) {

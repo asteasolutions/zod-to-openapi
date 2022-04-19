@@ -31,9 +31,8 @@ export class OpenAPIRegistry {
   constructor(private parents?: OpenAPIRegistry[]) {}
 
   get definitions(): OpenAPIDefinitions[] {
-    const parentDefinitions = flatMap(
-      this.parents?.map((par) => par.definitions)
-    );
+    const parentDefinitions =
+      this.parents?.flatMap((par) => par.definitions) ?? [];
 
     return [...parentDefinitions, ...this._definitions];
   }
