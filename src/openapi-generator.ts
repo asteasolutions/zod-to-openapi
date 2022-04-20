@@ -65,7 +65,6 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
 
-  // TODO: The order is very important here!
   constructor(private definitions: OpenAPIDefinitions[]) {}
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
