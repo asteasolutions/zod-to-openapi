@@ -33,7 +33,7 @@ import {
   ZodType,
   ZodUnion,
 } from 'zod';
-import { isNil, isUndefined, mapValues, omit, omitBy } from './lib/lodash';
+import { isNil, mapValues, omit, omitBy } from './lib/lodash';
 import {
   ZodOpenAPIMetadata,
   ZodOpenAPIParameterMetadata,
@@ -266,7 +266,7 @@ export class OpenAPIGenerator {
         zodSchema.isNullable(),
         !!metadata?.type
       ),
-      isUndefined
+      isNil
     );
   }
 
@@ -295,7 +295,9 @@ export class OpenAPIGenerator {
       !!metadata?.type
     );
 
-    return metadata ? this.applyMetadata(result, metadata) : result;
+    return metadata
+      ? this.applyMetadata(result, metadata)
+      : omitBy(result, isNil);
   }
 
   private generateInnerSchema(
@@ -622,7 +624,7 @@ export class OpenAPIGenerator {
         ...initialData,
         ...this.buildMetadata(metadata),
       },
-      isUndefined
+      isNil
     );
   }
 }

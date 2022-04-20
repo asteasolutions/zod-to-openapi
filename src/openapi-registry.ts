@@ -21,7 +21,6 @@ export interface RouteConfig extends OperationObject {
   responses: {
     [key: number]: ResponseConfig;
   };
-  errors?: any[];
 }
 
 export type OpenAPIDefinitions =
