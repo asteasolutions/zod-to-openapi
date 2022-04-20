@@ -69,6 +69,8 @@ export class OpenAPIGenerator {
   constructor(private definitions: OpenAPIDefinitions[]) {}
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
+    this.sortDefinitions();
+
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
@@ -82,6 +84,8 @@ export class OpenAPIGenerator {
   }
 
   generateComponents(): ComponentsObject {
+    this.sortDefinitions();
+
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
@@ -90,6 +94,23 @@ export class OpenAPIGenerator {
         parameters: this.paramRefs,
       },
     };
+  }
+
+  private sortDefinitions() {
+    const generationOrder: OpenAPIDefinitions['type'][] = [
+      'schema',
+      'parameter',
+      'route',
+    ];
+
+    this.definitions.sort((left, right) => {
+      const leftIndex = generationOrder.findIndex((type) => type === left.type);
+      const rightIndex = generationOrder.findIndex(
+        (type) => type === right.type
+      );
+
+      return leftIndex - rightIndex;
+    });
   }
 
   private generateSingle(
