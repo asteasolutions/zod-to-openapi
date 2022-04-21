@@ -9,6 +9,18 @@
     "LICENSE",
     "README.md"
   ],
+  "keywords": [
+    "typescript",
+    "schema",
+    "type",
+    "openapi",
+    "zod"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asteasolutions/zod-to-openapi"
+  },
+  "homepage": "https://github.com/asteasolutions/zod-to-openapi",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "jest",
