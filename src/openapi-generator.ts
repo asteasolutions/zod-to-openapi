@@ -34,10 +34,7 @@ import {
   ZodUnion,
 } from 'zod';
 import { isNil, mapValues, omit, omitBy } from './lib/lodash';
-import {
-  ZodOpenAPIMetadata,
-  ZodOpenAPIParameterMetadata,
-} from './zod-extensions';
+import { ZodOpenAPIMetadata } from './zod-extensions';
 import {
   OpenAPIDefinitions,
   ResponseConfig,
@@ -65,11 +62,11 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
 
-  constructor(private definitions: OpenAPIDefinitions[]) {}
+  constructor(private definitions: OpenAPIDefinitions[]) {
+    this.sortDefinitions();
+  }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
-    this.sortDefinitions();
-
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
@@ -83,8 +80,6 @@ export class OpenAPIGenerator {
   }
 
   generateComponents(): ComponentsObject {
-    this.sortDefinitions();
-
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
@@ -133,9 +128,7 @@ export class OpenAPIGenerator {
   private generateParameterDefinition(
     zodSchema: ZodSchema<any>
   ): ParameterObject | ReferenceObject {
-    const metadata = this.getMetadata(
-      zodSchema
-    ) as Partial<ZodOpenAPIParameterMetadata>;
+    const metadata = this.getMetadata(zodSchema);
 
     const result = this.generateParameter(zodSchema);
 
@@ -150,14 +143,14 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<any>,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
-    const metadata = this.getMetadata(
-      zodSchema
-    ) as Partial<ZodOpenAPIParameterMetadata>;
+    const metadata = this.getMetadata(zodSchema);
+    const parameterMetadata = metadata?.param;
+
     const existingRef = metadata?.refId
       ? this.paramRefs[metadata.refId]
       : undefined;
 
-    if (existingRef) {
+    if (metadata?.refId && existingRef) {
       if (existingRef.in !== location) {
         throw new Error(
           `The parameter ${existingRef.name} was created with \`in: ${existingRef.in}\` but was used as ${location} parameter`
@@ -177,42 +170,52 @@ export class OpenAPIGenerator {
       const parameters = Object.entries(propTypes).map(([key, schema]) => {
         const innerMetadata = this.getMetadata(schema);
 
-        if (innerMetadata?.name && innerMetadata.name !== key) {
+        const innerParameterMetadata = innerMetadata?.param;
+
+        if (
+          innerParameterMetadata?.name &&
+          innerParameterMetadata.name !== key
+        ) {
           throw new Error(
-            `Conflicting name - a parameter was created with the key "${key}" in ${location} but has a name "${innerMetadata.name}" defined with \`.openapi()\`. Please use only one.`
+            `Conflicting name - a parameter was created with the key "${key}" in ${location} but has a name "${innerParameterMetadata.name}" defined with \`.openapi()\`. Please use only one.`
           );
         }
 
-        if (innerMetadata?.in && innerMetadata.in !== location) {
+        if (
+          innerParameterMetadata?.in &&
+          innerParameterMetadata.in !== location
+        ) {
           throw new Error(
-            `Conflicting location - the parameter "${innerMetadata.name}" was created within "${location}" but has a in: "${innerMetadata.in}" property defined with \`.openapi()\`. Please use only one.`
+            `Conflicting location - the parameter "${innerParameterMetadata.name}" was created within "${location}" but has a in: "${innerParameterMetadata.in}" property defined with \`.openapi()\`. Please use only one.`
           );
         }
 
         return this.generateParameter(
-          schema.openapi({ name: key, in: location })
+          schema.openapi({ param: { name: key, in: location } })
         );
       });
 
       return parameters;
     }
 
-    if (metadata?.in && metadata.in !== location) {
+    if (parameterMetadata?.in && parameterMetadata.in !== location) {
       throw new Error(
-        `Conflicting location - the parameter "${metadata.name}" was created within "${location}" but has a in: "${metadata.in}" property defined with \`.openapi()\`. Please use only one.`
+        `Conflicting location - the parameter "${parameterMetadata.name}" was created within "${location}" but has a in: "${parameterMetadata.in}" property defined with \`.openapi()\`. Please use only one.`
       );
     }
 
-    return [this.generateParameter(zodSchema.openapi({ in: location }))];
+    return [
+      this.generateParameter(zodSchema.openapi({ param: { in: location } })),
+    ];
   }
 
   private generateParameter(zodSchema: ZodSchema<any>): ParameterObject {
-    const metadata = this.getMetadata(
-      zodSchema
-    ) as Partial<ZodOpenAPIParameterMetadata>;
+    const metadata = this.getMetadata(zodSchema);
 
-    const paramName = metadata?.name;
-    const paramLocation = metadata?.in;
+    const paramMetadata = metadata?.param;
+
+    const paramName = paramMetadata?.name;
+    const paramLocation = paramMetadata?.in;
 
     if (!paramName) {
       throw new Error(
@@ -229,45 +232,15 @@ export class OpenAPIGenerator {
 
     const required = !zodSchema.isOptional() && !zodSchema.isNullable();
 
-    const schema = this.generatePlainSchema(zodSchema);
+    const schema = this.generateSimpleSchema(zodSchema);
 
     return {
       in: paramLocation,
       name: paramName,
       schema,
       required,
-      ...(metadata ? this.buildMetadata(metadata) : {}),
+      ...(paramMetadata ? this.buildParameterMetadata(paramMetadata) : {}),
     };
-  }
-
-  /**
-   * Generates an OpenAPI SchemaObject or a ReferenceObject without applying
-   * the metadata provided. i.e it generates a ref or a simple type
-   */
-  private generatePlainSchema(
-    zodSchema: ZodSchema<any>
-  ): SchemaObject | ReferenceObject {
-    const innerSchema = this.unwrapOptional(zodSchema);
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
-
-    const refId = metadata?.refId;
-
-    if (refId && this.schemaRefs[refId]) {
-      return {
-        $ref: `#/components/schemas/${refId}`,
-      };
-    }
-
-    return omitBy(
-      this.toOpenAPISchema(
-        innerSchema,
-        zodSchema.isNullable(),
-        !!metadata?.type
-      ),
-      isNil
-    );
   }
 
   /**
@@ -296,7 +269,7 @@ export class OpenAPIGenerator {
     );
 
     return metadata
-      ? this.applyMetadata(result, metadata)
+      ? this.applySchemaMetadata(result, metadata)
       : omitBy(result, isNil);
   }
 
@@ -310,7 +283,9 @@ export class OpenAPIGenerator {
       return simpleSchema;
     }
 
-    return metadata ? this.applyMetadata(simpleSchema, metadata) : simpleSchema;
+    return metadata
+      ? this.applySchemaMetadata(simpleSchema, metadata)
+      : simpleSchema;
   }
 
   private generateSchemaDefinition(zodSchema: ZodSchema<any>): SchemaObject {
@@ -320,7 +295,7 @@ export class OpenAPIGenerator {
     const simpleSchema = this.generateSimpleSchema(zodSchema);
 
     const result = metadata
-      ? this.applyMetadata(simpleSchema, metadata)
+      ? this.applySchemaMetadata(simpleSchema, metadata)
       : simpleSchema;
 
     if (refId) {
@@ -599,11 +574,15 @@ export class OpenAPIGenerator {
     return schema;
   }
 
-  // The open api metadata can come in any format - ParameterObject/SchemaObject.
-  // We leave it up to the user to define it and take care of it.
-  private buildMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
+  private buildSchemaMetadata(metadata: ZodOpenAPIMetadata) {
     // A place to omit all custom keys added to the openapi
-    return omitBy(omit(metadata, ['name', 'refId']), isNil);
+    return omitBy(omit(metadata, ['param', 'refId']), isNil);
+  }
+
+  private buildParameterMetadata(
+    metadata: Required<ZodOpenAPIMetadata>['param']
+  ) {
+    return omitBy(metadata, isNil);
   }
 
   private getMetadata(zodSchema: ZodSchema<any>) {
@@ -615,14 +594,14 @@ export class OpenAPIGenerator {
     return metadata;
   }
 
-  private applyMetadata(
+  private applySchemaMetadata(
     initialData: SchemaObject | ParameterObject,
     metadata: Partial<ZodOpenAPIMetadata>
   ): SchemaObject | ReferenceObject {
     return omitBy(
       {
         ...initialData,
-        ...this.buildMetadata(metadata),
+        ...this.buildSchemaMetadata(metadata),
       },
       isNil
     );
