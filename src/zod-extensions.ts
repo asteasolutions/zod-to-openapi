@@ -1,17 +1,10 @@
 import { ParameterObject, SchemaObject } from 'openapi3-ts';
 import { z } from 'zod';
 
-export interface ZodOpenAPISchemaMetadata extends SchemaObject {
+export interface ZodOpenAPIMetadata extends SchemaObject {
   refId?: string;
+  param?: Partial<ParameterObject>;
 }
-
-export interface ZodOpenAPIParameterMetadata extends ParameterObject {
-  refId?: string;
-}
-
-export type ZodOpenAPIMetadata =
-  | ZodOpenAPISchemaMetadata
-  | ZodOpenAPIParameterMetadata;
 
 declare module 'zod' {
   interface ZodTypeDef {
@@ -28,11 +21,17 @@ declare module 'zod' {
 
 export function extendZodWithOpenApi(zod: typeof z) {
   zod.ZodSchema.prototype.openapi = function (openapi) {
+    const { param, ...restOfOpenApi } = openapi ?? {};
+
     return new (this as any).constructor({
       ...this._def,
       openapi: {
         ...this._def.openapi,
-        ...openapi,
+        ...restOfOpenApi,
+        param: {
+          ...this._def.openapi?.param,
+          ...param,
+        },
       },
     });
   };

@@ -60,9 +60,13 @@ export class OpenAPIRegistry {
    */
   registerParameter<T extends ZodSchema<any>>(refId: string, zodSchema: T) {
     const currentMetadata = zodSchema._def.openapi;
+
     const schemaWithMetadata = zodSchema.openapi({
       ...currentMetadata,
-      name: currentMetadata?.name ?? refId,
+      param: {
+        ...currentMetadata?.param,
+        name: currentMetadata?.param?.name ?? refId,
+      },
       refId,
     });
 

@@ -75,7 +75,7 @@ describe('Routes', () => {
 
     it('generates a header parameter for route', () => {
       const routeParameters = generateParamsForRoute({
-        request: { headers: [z.string().openapi({ name: 'test' })] },
+        request: { headers: [z.string().openapi({ param: { name: 'test' } })] },
       });
 
       expect(routeParameters).toEqual([
@@ -91,9 +91,10 @@ describe('Routes', () => {
     });
 
     it('generates a reference parameter for route', () => {
-      const TestHeader = z
-        .string()
-        .openapi({ name: 'test', in: 'header', refId: 'TestHeader' });
+      const TestHeader = z.string().openapi({
+        refId: 'TestHeader',
+        param: { name: 'test', in: 'header' },
+      });
 
       const routeParameters = generateParamsForRoute(
         {
@@ -115,7 +116,7 @@ describe('Routes', () => {
           generateParamsForRoute({
             request: {
               query: z.object({
-                test: z.string().openapi({ name: 'another' }),
+                test: z.string().openapi({ param: { name: 'another' } }),
               }),
             },
           })
@@ -126,16 +127,19 @@ describe('Routes', () => {
         expect(() =>
           generateParamsForRoute({
             request: {
-              query: z.object({ test: z.string().openapi({ in: 'header' }) }),
+              query: z.object({
+                test: z.string().openapi({ param: { in: 'header' } }),
+              }),
             },
           })
         ).toThrowError(/^Conflicting location/);
       });
 
       it('throws an error in case of location mismatch with reference', () => {
-        const TestHeader = z
-          .string()
-          .openapi({ name: 'test', in: 'header', refId: 'TestHeader' });
+        const TestHeader = z.string().openapi({
+          refId: 'TestHeader',
+          param: { name: 'test', in: 'header' },
+        });
 
         expect(() =>
           generateParamsForRoute(
@@ -148,9 +152,10 @@ describe('Routes', () => {
       });
 
       it('throws an error in case of name mismatch with reference', () => {
-        const TestQuery = z
-          .string()
-          .openapi({ name: 'test', in: 'query', refId: 'TestQuery' });
+        const TestQuery = z.string().openapi({
+          refId: 'TestQuery',
+          param: { name: 'test', in: 'query' },
+        });
 
         expect(() =>
           generateParamsForRoute(
@@ -173,7 +178,7 @@ describe('Routes', () => {
       it('throws an error in case of missing location when registering a parameter', () => {
         const TestQuery = z
           .string()
-          .openapi({ name: 'test', refId: 'TestQuery' });
+          .openapi({ refId: 'TestQuery', param: { name: 'test' } });
 
         expect(() => generateParamsForRoute({}, [TestQuery])).toThrowError(
           /^Missing parameter location/
