@@ -50,7 +50,7 @@ z.string().openapi({ description: 'Some string' });
 ### Generating components
 
 The `OpenAPIRegistry` class is used as a utility for creating definitions that are then to be used to
-generate the OpenAPI document using the `OpenAPIGenerator` class. in order to generate components the `generateComponents` method should be used.
+generate the OpenAPI document using the `OpenAPIGenerator` class. In order to generate components the `generateComponents` method should be used.
 
 ```ts
 import {
@@ -248,10 +248,10 @@ export function generateOpenAPI() {
 
 You then use the exported `registry` object to register all schemas, parameters and routes where appropriate.
 
-Then you can create a script that can execute the exported `generateOpenAPI` function. This script can be executed as a part of you build step so that it can write the result to some file like `openapi-docs.json`.
+Then you can create a script that can execute the exported `generateOpenAPI` function. This script can be executed as a part of your build step so that it can write the result to some file like `openapi-docs.json`.
 
 ## Technologies
 
-- [Typescript](https://www.typescriptlang.org/) first.
+- [Typescript](https://www.typescriptlang.org/).
 - [Zod 3.x](https://github.com/colinhacks/zod).
 - [OpenAPI 3.x](https://github.com/metadevpro/openapi3-ts).
