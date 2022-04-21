@@ -45,7 +45,6 @@ describe('Routes', () => {
           name: 'test',
           required: true,
           schema: {
-            nullable: undefined,
             type: 'string',
           },
         },
@@ -63,7 +62,6 @@ describe('Routes', () => {
           name: 'test',
           required: true,
           schema: {
-            nullable: undefined,
             type: 'string',
           },
         },
@@ -81,7 +79,6 @@ describe('Routes', () => {
           name: 'test',
           required: true,
           schema: {
-            nullable: undefined,
             type: 'string',
           },
         },
