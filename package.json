@@ -10,7 +10,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },
