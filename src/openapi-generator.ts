@@ -65,11 +65,11 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
 
-  constructor(private definitions: OpenAPIDefinitions[]) {}
+  constructor(private definitions: OpenAPIDefinitions[]) {
+    this.sortDefinitions();
+  }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
-    this.sortDefinitions();
-
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
@@ -83,8 +83,6 @@ export class OpenAPIGenerator {
   }
 
   generateComponents(): ComponentsObject {
-    this.sortDefinitions();
-
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
