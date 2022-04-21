@@ -114,7 +114,7 @@ describe('Routes', () => {
               }),
             },
           })
-        ).toThrow();
+        ).toThrowError(/^Conflicting name/);
       });
 
       it('throws an error in case of location mismatch', () => {
@@ -124,7 +124,7 @@ describe('Routes', () => {
               query: z.object({ test: z.string().openapi({ in: 'header' }) }),
             },
           })
-        ).toThrow();
+        ).toThrowError(/^Conflicting location/);
       });
 
       it('throws an error in case of location mismatch with reference', () => {
@@ -139,7 +139,7 @@ describe('Routes', () => {
             },
             [TestHeader]
           )
-        ).toThrow();
+        ).toThrowError(/^Conflicting location/);
       });
 
       it('throws an error in case of name mismatch with reference', () => {
@@ -154,7 +154,7 @@ describe('Routes', () => {
             },
             [TestQuery]
           )
-        ).toThrow();
+        ).toThrowError(/^Conflicting name/);
       });
 
       it('throws an error in case of missing name', () => {
@@ -162,7 +162,7 @@ describe('Routes', () => {
           generateParamsForRoute({
             request: { headers: [z.string()] },
           })
-        ).toThrow();
+        ).toThrowError(/^Missing parameter name/);
       });
 
       it('throws an error in case of missing location when registering a parameter', () => {
@@ -170,7 +170,9 @@ describe('Routes', () => {
           .string()
           .openapi({ name: 'test', refId: 'TestQuery' });
 
-        expect(() => generateParamsForRoute({}, [TestQuery])).toThrow();
+        expect(() => generateParamsForRoute({}, [TestQuery])).toThrowError(
+          /^Missing parameter location/
+        );
       });
     });
 
