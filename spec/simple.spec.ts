@@ -1,43 +1,75 @@
 import { OpenAPIGenerator } from '../src/openapi-generator';
-import { OpenApiBuilder, SchemasObject } from 'openapi3-ts';
+import { SchemasObject } from 'openapi3-ts';
 import { z, ZodSchema } from 'zod';
 
-import '../src/zod-extensions';
+import { extendZodWithOpenApi } from '../src/zod-extensions';
+
+// TODO: setupTests.ts
+extendZodWithOpenApi(z);
 
 describe('Simple', () => {
   it('generates OpenAPI schema for simple types', () => {
-    expectSchema([z.string().openapi({ name: 'SimpleString' })], {
+    expectSchema([z.string().openapi({ refId: 'SimpleString' })], {
       SimpleString: { type: 'string' },
     });
   });
 
   it('generates OpenAPI schema for optional after the metadata', () => {
-    expectSchema([z.string().openapi({ name: 'SimpleString' }).optional()], {
+    expectSchema([z.string().openapi({ refId: 'SimpleString' }).optional()], {
       SimpleString: { type: 'string' },
     });
   });
 
   it('generates OpenAPI schema for optional before the metadata', () => {
-    expectSchema([z.string().optional().openapi({ name: 'SimpleString' })], {
+    expectSchema([z.string().optional().openapi({ refId: 'SimpleString' })], {
       SimpleString: { type: 'string' },
     });
   });
 
   it('generates schemas with metadata', () => {
     expectSchema(
-      [z.string().openapi({ name: 'SimpleString', description: 'test' })],
+      [z.string().openapi({ refId: 'SimpleString', description: 'test' })],
       { SimpleString: { type: 'string', description: 'test' } }
     );
   });
 
+  it('generates OpenAPI schema for nested objects', () => {
+    expectSchema(
+      [
+        z
+          .object({
+            test: z.object({
+              id: z.string().openapi({ description: 'The entity id' }),
+            }),
+          })
+          .openapi({ refId: 'NestedObject' }),
+      ],
+      {
+        NestedObject: {
+          type: 'object',
+          required: ['test'],
+          properties: {
+            test: {
+              type: 'object',
+              required: ['id'],
+              properties: {
+                id: { type: 'string', description: 'The entity id' },
+              },
+            },
+          },
+        },
+      }
+    );
+  });
+
   it('supports string literals', () => {
-    expectSchema([z.literal('John Doe').openapi({ name: 'Literal' })], {
+    expectSchema([z.literal('John Doe').openapi({ refId: 'Literal' })], {
       Literal: { type: 'string', enum: ['John Doe'] },
     });
   });
 
   it('supports number literals', () => {
-    expectSchema([z.literal(42).openapi({ name: 'Literal' })], {
+    expectSchema([z.literal(42).openapi({ refId: 'Literal' })], {
       Literal: { type: 'number', enum: [42] },
     });
   });
@@ -49,7 +81,7 @@ describe('Simple', () => {
   it('supports enums', () => {
     const schema = z
       .enum(['option1', 'option2'])
-      .openapi({ name: 'Enum', description: 'All possible options' });
+      .openapi({ refId: 'Enum', description: 'All possible options' });
 
     expectSchema([schema], {
       Enum: {
@@ -72,7 +104,7 @@ describe('Simple', () => {
     }
 
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
-      name: 'NativeEnum',
+      refId: 'NativeEnum',
       description: 'A native enum in zod',
     });
 
@@ -93,7 +125,7 @@ describe('Simple', () => {
     }
 
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
-      name: 'NativeEnum',
+      refId: 'NativeEnum',
       description: 'A native numbers enum in zod',
     });
 
@@ -107,14 +139,14 @@ describe('Simple', () => {
   });
 
   it('creates separate schemas and links them', () => {
-    const SimpleStringSchema = z.string().openapi({ name: 'SimpleString' });
+    const SimpleStringSchema = z.string().openapi({ refId: 'SimpleString' });
 
     const ObjectWithStringsSchema = z
       .object({
         str1: SimpleStringSchema.optional(),
         str2: SimpleStringSchema,
       })
-      .openapi({ name: 'ObjectWithStrings' });
+      .openapi({ refId: 'ObjectWithStrings' });
 
     expectSchema([SimpleStringSchema, ObjectWithStringsSchema], {
       SimpleString: { type: 'string' },
@@ -130,7 +162,7 @@ describe('Simple', () => {
   });
 
   it('supports arrays of strings', () => {
-    expectSchema([z.array(z.string()).openapi({ name: 'Array' })], {
+    expectSchema([z.array(z.string()).openapi({ refId: 'Array' })], {
       Array: {
         type: 'array',
         items: { type: 'string' },
@@ -140,7 +172,7 @@ describe('Simple', () => {
 
   it('supports minLength / maxLength on arrays', () => {
     expectSchema(
-      [z.array(z.string()).min(5).max(10).openapi({ name: 'Array' })],
+      [z.array(z.string()).min(5).max(10).openapi({ refId: 'Array' })],
       {
         Array: {
           type: 'array',
@@ -153,7 +185,7 @@ describe('Simple', () => {
   });
 
   it('supports union types', () => {
-    expectSchema([z.string().or(z.number()).openapi({ name: 'Test' })], {
+    expectSchema([z.string().or(z.number()).openapi({ refId: 'Test' })], {
       Test: {
         anyOf: [{ type: 'string' }, { type: 'number' }],
       },
@@ -165,7 +197,7 @@ describe('Simple', () => {
           .string()
           .or(z.number())
           .or(z.array(z.string()))
-          .openapi({ name: 'Test' }),
+          .openapi({ refId: 'Test' }),
       ],
       {
         Test: {
@@ -188,22 +220,25 @@ describe('Simple', () => {
       role: z.string(),
     });
 
-    expectSchema([z.intersection(Person, Employee).openapi({ name: 'Test' })], {
-      Test: {
-        allOf: [
-          {
-            type: 'object',
-            properties: { name: { type: 'string' } },
-            required: ['name'],
-          },
-          {
-            type: 'object',
-            properties: { role: { type: 'string' } },
-            required: ['role'],
-          },
-        ],
-      },
-    });
+    expectSchema(
+      [z.intersection(Person, Employee).openapi({ refId: 'Test' })],
+      {
+        Test: {
+          allOf: [
+            {
+              type: 'object',
+              properties: { name: { type: 'string' } },
+              required: ['name'],
+            },
+            {
+              type: 'object',
+              properties: { role: { type: 'string' } },
+              required: ['role'],
+            },
+          ],
+        },
+      }
+    );
   });
 
   function expectSchema(
