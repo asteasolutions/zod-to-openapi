@@ -1,15 +1,15 @@
 import { OperationObject } from 'openapi3-ts';
+import { ZodVoid } from 'zod';
 import { ZodObject } from 'zod';
 import { ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
-export interface RouteConfig extends Partial<OperationObject> {
-  // TODO: THose are optional in the interface
-  // summary: string;
-  // description: string;
-  //
+export type ResponseConfig =
+  | { mediaType: string; schema: ZodType<unknown> }
+  | ZodVoid;
 
+export interface RouteConfig extends OperationObject {
   method: Method;
   path: string;
   request?: {
@@ -18,8 +18,9 @@ export interface RouteConfig extends Partial<OperationObject> {
     query?: ZodObject<any>;
     headers?: ZodType<unknown>[];
   };
-  response: ZodType<unknown>;
-  errors?: any[];
+  responses: {
+    [statusCode: string]: ResponseConfig;
+  };
 }
 
 export type OpenAPIDefinitions =
@@ -59,9 +60,13 @@ export class OpenAPIRegistry {
    */
   registerParameter<T extends ZodSchema<any>>(refId: string, zodSchema: T) {
     const currentMetadata = zodSchema._def.openapi;
+
     const schemaWithMetadata = zodSchema.openapi({
       ...currentMetadata,
-      name: currentMetadata?.name ?? refId,
+      param: {
+        ...currentMetadata?.param,
+        name: currentMetadata?.param?.name ?? refId,
+      },
       refId,
     });
 
