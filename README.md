@@ -4,7 +4,7 @@ A library that uses zod schemas to generate an Open API Swagger documentation.
 
 1. [Purpose](#purpose)
 2. [Usage](#usage)
-   1. [Installation](#installation))
+   1. [Installation](#installation)
    2. [Expanding the zod functionalities](#expanding-the-zod-functionalities)
    3. [Generating components](#generating-components)
    4. [Registering schema definitions](#registering-schema-definitions)
@@ -252,6 +252,6 @@ Then you can create a script that can execute the exported `generateOpenAPI` fun
 
 ## Technologies
 
-- [Typescript](https://www.typescriptlang.org/).
-- [Zod 3.x](https://github.com/colinhacks/zod).
-- [OpenAPI 3.x](https://github.com/metadevpro/openapi3-ts).
+- [Typescript](https://www.typescriptlang.org/)
+- [Zod 3.x](https://github.com/colinhacks/zod)
+- [OpenAPI 3.x](https://github.com/metadevpro/openapi3-ts)
