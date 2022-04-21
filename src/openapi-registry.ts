@@ -19,7 +19,7 @@ export interface RouteConfig extends OperationObject {
     headers?: ZodType<unknown>[];
   };
   responses: {
-    [key: number]: ResponseConfig;
+    [statusCode: string]: ResponseConfig;
   };
 }
 
