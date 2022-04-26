@@ -10,6 +10,7 @@ A library that uses zod schemas to generate an Open API Swagger documentation.
    4. [Registering schema definitions](#registering-schema-definitions)
    5. [Registering parameter definitions](#registering-parameter-definitions)
    6. [Generating a full OpenAPI document](#generating-a-full-openapi-document)
+   - [Registering a path](#registering-a-path)
    7. [A full example](#a-full-example)
    8. [Adding it as part of your build](#adding-it-as-part-of-your-build)
 3. [Technologies](#technologies)
@@ -25,9 +26,9 @@ We at [Astea Solutions](https://asteasolutions.com/) made this library because o
 ### Installation
 
 ```shell
-yarn add @asteasolutions/zod-to-openapi
-# or
 npm install @asteasolutions/zod-to-openapi
+# or
+yarn add @asteasolutions/zod-to-openapi
 ```
 
 ### Expanding the zod functionalities
@@ -38,7 +39,7 @@ function with your own instance of `zod`.
 Note: This should be done only once in a common-entrypoint file of your project (for example an `index.ts`/`app.ts`)
 
 ```ts
-import { extendZodWithOpenApi } from '@asteasolutions/@asteasolution/zod-to-openapi';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
 extendZodWithOpenApi(z);
@@ -56,7 +57,7 @@ generate the OpenAPI document using the `OpenAPIGenerator` class. In order to ge
 import {
   OpenAPIRegistry,
   OpenAPIGenerator,
-} from '@asteasolutions/@asteasolution/zod-to-openapi';
+} from '@asteasolutions/zod-to-openapi';
 
 const registry = new OpenAPIRegistry();
 
@@ -148,7 +149,7 @@ UserId:
 
 The result would be an object like `{ components: { parameters: { UserId: {...} } } }`. The key for the object is the value of the first argument passed to `.registerParameter` (in this case - `UserId`).
 
-The resulting schema can then be referenced by using `$ref: #/components/parameters/User` in an existing OpenAPI JSON.
+The resulting schema can then be referenced by using `$ref: #/components/parameters/UserId` in an existing OpenAPI JSON.
 
 ### Generating a full OpenAPI document
 
