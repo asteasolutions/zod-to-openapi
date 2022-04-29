@@ -42,7 +42,7 @@ import {
 } from './openapi-registry';
 import { ZodVoid } from 'zod';
 import {
-  BaseError,
+  ZodToOpenAPIError,
   ConflictError,
   MissingParameterDataError,
   MissingResponseDescriptionError,
@@ -134,7 +134,7 @@ export class OpenAPIGenerator {
       return this.generateSingleRoute(definition.route);
     }
 
-    throw new BaseError('Invalid definition type');
+    throw new ZodToOpenAPIError('Invalid definition type');
   }
 
   private generateParameterDefinition(
@@ -246,7 +246,9 @@ export class OpenAPIGenerator {
           innerParameterMetadata.in !== location
         ) {
           throw new ConflictError(
-            `Conflicting location for parameter ${innerParameterMetadata.name}`,
+            `Conflicting location for parameter ${
+              innerParameterMetadata.name ?? key
+            }`,
             {
               key: 'in',
               values: [location, innerParameterMetadata.in],
