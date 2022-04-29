@@ -2,7 +2,7 @@
 
 A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate an Open API Swagger documentation.
 
-1. [Purpose and quick example](#purpose)
+1. [Purpose and quick example](#purpose-and-quick-example)
 2. [Usage](#usage)
    1. [Installation](#installation)
    2. [The `openapi` method](#the-openapi-method)
@@ -15,9 +15,9 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
 
 We keep a changelog as part of the [GitHub releases](https://github.com/asteasolutions/zod-to-openapi/releases).
 
-## Purpose
+## Purpose and quick example
 
-We at [Astea Solutions](https://asteasolutions.com/) made this library because we use [zod](https://github.com/colinhacks/zod) for validation in our APIs and are tired of the duplication to also support a separate OpenAPI definition that must be kept in sync. Using zod-to-openapi, we generate OpenAPI definitions directly from our zod schemas, this having single source of truth.
+We at [Astea Solutions](https://asteasolutions.com/) made this library because we use [zod](https://github.com/colinhacks/zod) for validation in our APIs and are tired of the duplication to also support a separate OpenAPI definition that must be kept in sync. Using `zod-to-openapi`, we generate OpenAPI definitions directly from our zod schemas, this having single source of truth.
 
 Simply put, it turns this:
 
@@ -292,11 +292,7 @@ components:
   get:
     ...
     parameters:
-      - in: path
-        name: id
-        schema:
-          $ref: '#/components/parameters/UserId'
-        required: true
+      - $ref: '#/components/parameters/UserId'
     responses: ...
 ```
 
