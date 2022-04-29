@@ -33,7 +33,7 @@ import {
   ZodType,
   ZodUnion,
 } from 'zod';
-import { isNil, mapValues, omit, omitBy } from './lib/lodash';
+import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 import {
   OpenAPIDefinitions,
@@ -62,6 +62,11 @@ interface OpenAPIObjectConfig {
   security?: SecurityRequirementObject[];
   tags?: TagObject[];
   externalDocs?: ExternalDocumentationObject;
+}
+
+interface ParameterData {
+  in?: ParameterLocation;
+  name?: string;
 }
 
 export class OpenAPIGenerator {
@@ -146,6 +151,49 @@ export class OpenAPIGenerator {
     return result;
   }
 
+  private getParameterRef(
+    schemaMetadata: ZodOpenAPIMetadata | undefined,
+    external?: ParameterData
+  ): ReferenceObject | undefined {
+    const parameterMetadata = schemaMetadata?.param;
+
+    const existingRef = schemaMetadata?.refId
+      ? this.paramRefs[schemaMetadata.refId]
+      : undefined;
+
+    if (!schemaMetadata?.refId || !existingRef) {
+      return undefined;
+    }
+
+    if (
+      (parameterMetadata && existingRef.in !== parameterMetadata.in) ||
+      (external?.in && existingRef.in !== external.in)
+    ) {
+      throw new ConflictError(`Conflict for parameter ${existingRef.name}`, {
+        key: 'in',
+        values: compact([existingRef.in, external?.in, parameterMetadata?.in]),
+      });
+    }
+
+    if (
+      (parameterMetadata && existingRef.name !== parameterMetadata.name) ||
+      (external?.name && existingRef.name !== external?.name)
+    ) {
+      throw new ConflictError(`Conflicting names for parameter`, {
+        key: 'name',
+        values: compact([
+          existingRef.name,
+          external?.name,
+          parameterMetadata?.name,
+        ]),
+      });
+    }
+
+    return {
+      $ref: `#/components/parameters/${schemaMetadata.refId}`,
+    };
+  }
+
   private generateInlineParameters(
     zodSchema: ZodSchema<any>,
     location: ParameterLocation
@@ -153,33 +201,10 @@ export class OpenAPIGenerator {
     const metadata = this.getMetadata(zodSchema);
     const parameterMetadata = metadata?.param;
 
-    const existingRef = metadata?.refId
-      ? this.paramRefs[metadata.refId]
-      : undefined;
+    const referencedSchema = this.getParameterRef(metadata, { in: location });
 
-    if (metadata?.refId && existingRef) {
-      if (
-        existingRef.in !== location ||
-        existingRef.in !== parameterMetadata?.in
-      ) {
-        throw new ConflictError(`Conflict for parameter ${existingRef.name}`, {
-          key: 'in',
-          values: [existingRef.in, location, parameterMetadata?.in],
-        });
-      }
-
-      if (existingRef.name !== parameterMetadata?.name) {
-        throw new ConflictError(`Conflicting names for parameter`, {
-          key: 'name',
-          values: [existingRef.name, parameterMetadata?.name],
-        });
-      }
-
-      return [
-        {
-          $ref: `#/components/parameters/${metadata.refId}`,
-        },
-      ];
+    if (referencedSchema) {
+      return [referencedSchema];
     }
 
     if (zodSchema instanceof ZodObject) {
@@ -188,40 +213,16 @@ export class OpenAPIGenerator {
       const parameters = Object.entries(propTypes).map(([key, schema]) => {
         const innerMetadata = this.getMetadata(schema);
 
-        const innerParameterMetadata = innerMetadata?.param;
+        const referencedSchema = this.getParameterRef(innerMetadata, {
+          in: location,
+          name: key,
+        });
 
-        const existingRef = innerMetadata?.refId
-          ? this.paramRefs[innerMetadata.refId]
-          : undefined;
-
-        if (innerMetadata?.refId && existingRef) {
-          if (
-            existingRef.in !== location ||
-            existingRef.in !== innerParameterMetadata?.in
-          ) {
-            throw new ConflictError(
-              `Conflicting location for parameter ${existingRef.name}`,
-              {
-                key: 'in',
-                values: [existingRef.in, location, innerParameterMetadata?.in],
-              }
-            );
-          }
-
-          if (
-            existingRef.name !== key ||
-            existingRef.name !== innerParameterMetadata?.name
-          ) {
-            throw new ConflictError(`Conflicting names for parameter`, {
-              key: 'name',
-              values: [existingRef.name, key, innerParameterMetadata?.name],
-            });
-          }
-
-          return {
-            $ref: `#/components/parameters/${innerMetadata.refId}`,
-          };
+        if (referencedSchema) {
+          return referencedSchema;
         }
+
+        const innerParameterMetadata = innerMetadata?.param;
 
         if (
           innerParameterMetadata?.name &&
@@ -229,7 +230,7 @@ export class OpenAPIGenerator {
         ) {
           throw new ConflictError(`Conflicting names for parameter`, {
             key: 'name',
-            values: [key, innerParameterMetadata?.name],
+            values: [key, innerParameterMetadata.name],
           });
         }
 
@@ -241,7 +242,7 @@ export class OpenAPIGenerator {
             `Conflicting location for parameter ${innerParameterMetadata.name}`,
             {
               key: 'in',
-              values: [location, innerParameterMetadata?.in],
+              values: [location, innerParameterMetadata.in],
             }
           );
         }
@@ -259,7 +260,7 @@ export class OpenAPIGenerator {
         `Conflicting location for parameter ${parameterMetadata.name}`,
         {
           key: 'in',
-          values: [location, parameterMetadata?.in],
+          values: [location, parameterMetadata.in],
         }
       );
     }
