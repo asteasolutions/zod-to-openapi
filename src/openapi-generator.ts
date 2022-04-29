@@ -169,10 +169,17 @@ export class OpenAPIGenerator {
       (parameterMetadata && existingRef.in !== parameterMetadata.in) ||
       (external?.in && existingRef.in !== external.in)
     ) {
-      throw new ConflictError(`Conflict for parameter ${existingRef.name}`, {
-        key: 'in',
-        values: compact([existingRef.in, external?.in, parameterMetadata?.in]),
-      });
+      throw new ConflictError(
+        `Conflicting location for parameter ${existingRef.name}`,
+        {
+          key: 'in',
+          values: compact([
+            existingRef.in,
+            external?.in,
+            parameterMetadata?.in,
+          ]),
+        }
+      );
     }
 
     if (
