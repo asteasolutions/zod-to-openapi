@@ -33,7 +33,7 @@ import {
   ZodType,
   ZodUnion,
 } from 'zod';
-import { isNil, mapValues, omit, omitBy } from './lib/lodash';
+import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 import {
   OpenAPIDefinitions,
@@ -41,6 +41,13 @@ import {
   RouteConfig,
 } from './openapi-registry';
 import { ZodVoid } from 'zod';
+import {
+  ZodToOpenAPIError,
+  ConflictError,
+  MissingParameterDataError,
+  MissingResponseDescriptionError,
+  UnknownZodTypeError,
+} from './errors';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -55,6 +62,11 @@ interface OpenAPIObjectConfig {
   security?: SecurityRequirementObject[];
   tags?: TagObject[];
   externalDocs?: ExternalDocumentationObject;
+}
+
+interface ParameterData {
+  in?: ParameterLocation;
+  name?: string;
 }
 
 export class OpenAPIGenerator {
@@ -122,7 +134,7 @@ export class OpenAPIGenerator {
       return this.generateSingleRoute(definition.route);
     }
 
-    throw new Error('Invalid definition type');
+    throw new ZodToOpenAPIError('Invalid definition type');
   }
 
   private generateParameterDefinition(
@@ -139,6 +151,56 @@ export class OpenAPIGenerator {
     return result;
   }
 
+  private getParameterRef(
+    schemaMetadata: ZodOpenAPIMetadata | undefined,
+    external?: ParameterData
+  ): ReferenceObject | undefined {
+    const parameterMetadata = schemaMetadata?.param;
+
+    const existingRef = schemaMetadata?.refId
+      ? this.paramRefs[schemaMetadata.refId]
+      : undefined;
+
+    if (!schemaMetadata?.refId || !existingRef) {
+      return undefined;
+    }
+
+    if (
+      (parameterMetadata && existingRef.in !== parameterMetadata.in) ||
+      (external?.in && existingRef.in !== external.in)
+    ) {
+      throw new ConflictError(
+        `Conflicting location for parameter ${existingRef.name}`,
+        {
+          key: 'in',
+          values: compact([
+            existingRef.in,
+            external?.in,
+            parameterMetadata?.in,
+          ]),
+        }
+      );
+    }
+
+    if (
+      (parameterMetadata && existingRef.name !== parameterMetadata.name) ||
+      (external?.name && existingRef.name !== external?.name)
+    ) {
+      throw new ConflictError(`Conflicting names for parameter`, {
+        key: 'name',
+        values: compact([
+          existingRef.name,
+          external?.name,
+          parameterMetadata?.name,
+        ]),
+      });
+    }
+
+    return {
+      $ref: `#/components/parameters/${schemaMetadata.refId}`,
+    };
+  }
+
   private generateInlineParameters(
     zodSchema: ZodSchema<any>,
     location: ParameterLocation
@@ -146,22 +208,10 @@ export class OpenAPIGenerator {
     const metadata = this.getMetadata(zodSchema);
     const parameterMetadata = metadata?.param;
 
-    const existingRef = metadata?.refId
-      ? this.paramRefs[metadata.refId]
-      : undefined;
+    const referencedSchema = this.getParameterRef(metadata, { in: location });
 
-    if (metadata?.refId && existingRef) {
-      if (existingRef.in !== location) {
-        throw new Error(
-          `The parameter ${existingRef.name} was created with \`in: ${existingRef.in}\` but was used as ${location} parameter`
-        );
-      }
-
-      return [
-        {
-          $ref: `#/components/parameters/${metadata.refId}`,
-        },
-      ];
+    if (referencedSchema) {
+      return [referencedSchema];
     }
 
     if (zodSchema instanceof ZodObject) {
@@ -170,23 +220,39 @@ export class OpenAPIGenerator {
       const parameters = Object.entries(propTypes).map(([key, schema]) => {
         const innerMetadata = this.getMetadata(schema);
 
+        const referencedSchema = this.getParameterRef(innerMetadata, {
+          in: location,
+          name: key,
+        });
+
+        if (referencedSchema) {
+          return referencedSchema;
+        }
+
         const innerParameterMetadata = innerMetadata?.param;
 
         if (
           innerParameterMetadata?.name &&
           innerParameterMetadata.name !== key
         ) {
-          throw new Error(
-            `Conflicting name - a parameter was created with the key "${key}" in ${location} but has a name "${innerParameterMetadata.name}" defined with \`.openapi()\`. Please use only one.`
-          );
+          throw new ConflictError(`Conflicting names for parameter`, {
+            key: 'name',
+            values: [key, innerParameterMetadata.name],
+          });
         }
 
         if (
           innerParameterMetadata?.in &&
           innerParameterMetadata.in !== location
         ) {
-          throw new Error(
-            `Conflicting location - the parameter "${innerParameterMetadata.name}" was created within "${location}" but has a in: "${innerParameterMetadata.in}" property defined with \`.openapi()\`. Please use only one.`
+          throw new ConflictError(
+            `Conflicting location for parameter ${
+              innerParameterMetadata.name ?? key
+            }`,
+            {
+              key: 'in',
+              values: [location, innerParameterMetadata.in],
+            }
           );
         }
 
@@ -199,8 +265,12 @@ export class OpenAPIGenerator {
     }
 
     if (parameterMetadata?.in && parameterMetadata.in !== location) {
-      throw new Error(
-        `Conflicting location - the parameter "${parameterMetadata.name}" was created within "${location}" but has a in: "${parameterMetadata.in}" property defined with \`.openapi()\`. Please use only one.`
+      throw new ConflictError(
+        `Conflicting location for parameter ${parameterMetadata.name}`,
+        {
+          key: 'in',
+          values: [location, parameterMetadata.in],
+        }
       );
     }
 
@@ -218,16 +288,14 @@ export class OpenAPIGenerator {
     const paramLocation = paramMetadata?.in;
 
     if (!paramName) {
-      throw new Error(
-        'Missing parameter name, please specify `name` and other OpenAPI props using `ZodSchema.openapi`'
-      );
+      throw new MissingParameterDataError({ missingField: 'name' });
     }
 
-    // TODO: Might add custom errors.
     if (!paramLocation) {
-      throw new Error(
-        `Missing parameter location for parameter ${paramName}, please specify \`in\` and other OpenAPI props using \`ZodSchema.openapi\``
-      );
+      throw new MissingParameterDataError({
+        missingField: 'in',
+        paramName,
+      });
     }
 
     const required = !zodSchema.isOptional() && !zodSchema.isNullable();
@@ -384,9 +452,7 @@ export class OpenAPIGenerator {
       const metadata = this.getMetadata(response);
 
       if (!metadata?.description) {
-        throw new Error(
-          'Missing response description. Please specify `description` and using `ZodSchema.openapi`.'
-        );
+        throw new MissingResponseDescriptionError();
       }
 
       return {
@@ -398,9 +464,7 @@ export class OpenAPIGenerator {
     const responseSchema = this.generateInnerSchema(response.schema);
 
     if (!metadata?.description) {
-      throw new Error(
-        'Missing response description. Please specify `description` and using `ZodSchema.openapi`.'
-      );
+      throw new MissingResponseDescriptionError();
     }
 
     return {
@@ -511,12 +575,11 @@ export class OpenAPIGenerator {
     }
 
     const refId = this.getMetadata(zodSchema)?.refId;
-    const errorFor = refId ? ` for ${refId}` : '';
 
-    throw new Error(
-      `Unknown zod object type${errorFor}, please specify \`type\` and other OpenAPI props using \`ZodSchema.openapi\`. The current schema is: ` +
-        JSON.stringify(zodSchema._def)
-    );
+    throw new UnknownZodTypeError({
+      currentSchema: zodSchema._def,
+      schemaName: refId,
+    });
   }
 
   private toOpenAPIObjectSchema(
