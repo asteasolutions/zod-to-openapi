@@ -37,12 +37,7 @@ paths:
       description: Get user data by its id
       summary: Get a single user
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            example: "1212121"
-          required: true
+        - $ref: "#/components/parameters/UserId"
       responses:
         "200":
           description: Object with user data.

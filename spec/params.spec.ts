@@ -90,7 +90,7 @@ describe('Routes', () => {
       ]);
     });
 
-    it('generates a reference parameter for route', () => {
+    it('generates a reference header parameter for route', () => {
       const TestHeader = z.string().openapi({
         refId: 'TestHeader',
         param: { name: 'test', in: 'header' },
@@ -106,6 +106,26 @@ describe('Routes', () => {
       expect(routeParameters).toEqual([
         {
           $ref: '#/components/parameters/TestHeader',
+        },
+      ]);
+    });
+
+    it('generates a reference query parameter for route', () => {
+      const TestQuery = z.string().openapi({
+        refId: 'TestQuery',
+        param: { name: 'test', in: 'query' },
+      });
+
+      const routeParameters = generateParamsForRoute(
+        {
+          request: { query: z.object({ test: TestQuery }) },
+        },
+        [TestQuery]
+      );
+
+      expect(routeParameters).toEqual([
+        {
+          $ref: '#/components/parameters/TestQuery',
         },
       ]);
     });

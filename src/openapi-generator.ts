@@ -190,6 +190,39 @@ export class OpenAPIGenerator {
 
         const innerParameterMetadata = innerMetadata?.param;
 
+        const existingRef = innerMetadata?.refId
+          ? this.paramRefs[innerMetadata.refId]
+          : undefined;
+
+        if (innerMetadata?.refId && existingRef) {
+          if (
+            existingRef.in !== location ||
+            existingRef.in !== innerParameterMetadata?.in
+          ) {
+            throw new ConflictError(
+              `Conflicting location for parameter ${existingRef.name}`,
+              {
+                key: 'in',
+                values: [existingRef.in, location, innerParameterMetadata?.in],
+              }
+            );
+          }
+
+          if (
+            existingRef.name !== key ||
+            existingRef.name !== innerParameterMetadata?.name
+          ) {
+            throw new ConflictError(`Conflicting names for parameter`, {
+              key: 'name',
+              values: [existingRef.name, key, innerParameterMetadata?.name],
+            });
+          }
+
+          return {
+            $ref: `#/components/parameters/${innerMetadata.refId}`,
+          };
+        }
+
         if (
           innerParameterMetadata?.name &&
           innerParameterMetadata.name !== key
