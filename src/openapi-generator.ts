@@ -427,13 +427,16 @@ export class OpenAPIGenerator {
       return this.getResponse(response);
     });
 
+    const parameters = this.getParameters(request);
+    const requestBody = this.getRequestBody(request?.body);
+
     const routeDoc: PathItemObject = {
       [method]: {
         ...pathItemConfig,
 
-        parameters: this.getParameters(request),
+        ...(parameters.length > 0 ? { parameters } : {}),
 
-        requestBody: this.getRequestBody(request?.body),
+        ...(requestBody ? { requestBody } : {}),
 
         responses: generatedResponses,
       },
