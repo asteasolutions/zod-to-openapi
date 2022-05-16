@@ -33,6 +33,7 @@ import {
   ZodString,
   ZodType,
   ZodUnion,
+  ZodUnknown,
 } from 'zod';
 import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
@@ -580,7 +581,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    if (hasOpenAPIType) {
+    if (zodSchema instanceof ZodUnknown || hasOpenAPIType) {
       return {};
     }
 

@@ -251,6 +251,20 @@ describe('Simple', () => {
       },
     });
   });
+
+  it('supports unknown', () => {
+    expectSchema(
+      [
+        z
+          .unknown()
+          .openapi({ refId: 'Unknown', description: 'Something unknown' }),
+      ],
+      {
+        Unknown: { description: 'Something unknown' },
+      }
+    );
+  });
+
   it('supports intersection types', () => {
     const Person = z.object({
       name: z.string(),
