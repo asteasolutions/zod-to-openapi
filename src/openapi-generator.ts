@@ -28,6 +28,7 @@ import {
   ZodObject,
   ZodOptional,
   ZodRawShape,
+  ZodRecord,
   ZodSchema,
   ZodString,
   ZodType,
@@ -567,6 +568,15 @@ export class OpenAPIGenerator {
 
       return {
         allOf: subtypes.map((schema) => this.generateInnerSchema(schema)),
+      };
+    }
+
+    if (zodSchema instanceof ZodRecord) {
+      const propertiesType = zodSchema._def.valueType;
+
+      return {
+        type: 'object',
+        additionalProperties: this.generateInnerSchema(propertiesType),
       };
     }
 
