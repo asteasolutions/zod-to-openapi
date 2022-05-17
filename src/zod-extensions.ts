@@ -1,9 +1,10 @@
 import { ParameterObject, SchemaObject } from 'openapi3-ts';
 import { z } from 'zod';
 
-export interface ZodOpenAPIMetadata extends SchemaObject {
+export interface ZodOpenAPIMetadata<T = any> extends SchemaObject {
   refId?: string;
-  param?: Partial<ParameterObject>;
+  param?: Partial<ParameterObject> & { example?: T };
+  example?: T;
 }
 
 declare module 'zod' {
@@ -14,7 +15,7 @@ declare module 'zod' {
   abstract class ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
     openapi<T extends ZodSchema<any>>(
       this: T,
-      metadata: Partial<ZodOpenAPIMetadata>
+      metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
     ): T;
   }
 }

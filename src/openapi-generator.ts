@@ -28,10 +28,12 @@ import {
   ZodObject,
   ZodOptional,
   ZodRawShape,
+  ZodRecord,
   ZodSchema,
   ZodString,
   ZodType,
   ZodUnion,
+  ZodUnknown,
 } from 'zod';
 import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
@@ -425,13 +427,16 @@ export class OpenAPIGenerator {
       return this.getResponse(response);
     });
 
+    const parameters = this.getParameters(request);
+    const requestBody = this.getRequestBody(request?.body);
+
     const routeDoc: PathItemObject = {
       [method]: {
         ...pathItemConfig,
 
-        parameters: this.getParameters(request),
+        ...(parameters.length > 0 ? { parameters } : {}),
 
-        requestBody: this.getRequestBody(request?.body),
+        ...(requestBody ? { requestBody } : {}),
 
         responses: generatedResponses,
       },
@@ -570,7 +575,16 @@ export class OpenAPIGenerator {
       };
     }
 
-    if (hasOpenAPIType) {
+    if (zodSchema instanceof ZodRecord) {
+      const propertiesType = zodSchema._def.valueType;
+
+      return {
+        type: 'object',
+        additionalProperties: this.generateInnerSchema(propertiesType),
+      };
+    }
+
+    if (zodSchema instanceof ZodUnknown || hasOpenAPIType) {
       return {};
     }
 
