@@ -265,6 +265,16 @@ describe('Simple', () => {
     );
   });
 
+  it('supports defaults', () => {
+    expectSchema(
+      [z.string().default('test').openapi({ refId: 'StringWithDefault' })],
+      {
+        StringWithDefault: {
+          type: 'string',
+        },
+      }
+    );
+  });
 
   it('supports refined schemas', () => {
     expectSchema(
