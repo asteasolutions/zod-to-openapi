@@ -265,6 +265,44 @@ describe('Simple', () => {
     );
   });
 
+  it('supports defaults', () => {
+    expectSchema(
+      [z.string().default('test').openapi({ refId: 'StringWithDefault' })],
+      {
+        StringWithDefault: {
+          type: 'string',
+        },
+      }
+    );
+  });
+
+  it('supports refined schemas', () => {
+    expectSchema(
+      [
+        z
+          .number()
+          .refine((num) => num % 2 === 0)
+          .openapi({ refId: 'RefinedString' }),
+      ],
+      {
+        RefinedString: {
+          type: 'number',
+        },
+      }
+    );
+  });
+
+  it('does not support transformed schemas', () => {
+    expect(() =>
+      createSchemas([
+        z
+          .number()
+          .transform((num) => num.toString())
+          .openapi({ refId: 'Transformed' }),
+      ])
+    ).toThrow(/^Unknown zod object type/);
+  });
+
   it('supports intersection types', () => {
     const Person = z.object({
       name: z.string(),
@@ -295,10 +333,7 @@ describe('Simple', () => {
     );
   });
 
-  function expectSchema(
-    zodSchemas: ZodSchema<any>[],
-    openAPISchemas: SchemasObject
-  ) {
+  function createSchemas(zodSchemas: ZodSchema<any>[]) {
     const definitions = zodSchemas.map((schema) => ({
       type: 'schema' as const,
       schema,
@@ -307,6 +342,15 @@ describe('Simple', () => {
     const { components } = new OpenAPIGenerator(
       definitions
     ).generateComponents();
+
+    return components;
+  }
+
+  function expectSchema(
+    zodSchemas: ZodSchema<any>[],
+    openAPISchemas: SchemasObject
+  ) {
+    const components = createSchemas(zodSchemas);
 
     expect(components?.['schemas']).toEqual(openAPISchemas);
   }

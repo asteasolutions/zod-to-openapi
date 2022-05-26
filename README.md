@@ -8,10 +8,13 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
    2. [The `openapi` method](#the-openapi-method)
    3. [The Registry](#the-registry)
    4. [Defining schemas](#defining-schemas)
-   6. [Defining routes](#defining-routes)
-   7. [A full example](#a-full-example)
-   8. [Adding it as part of your build](#adding-it-as-part-of-your-build)
-3. [Technologies](#technologies)
+   5. [Defining routes](#defining-routes)
+   6. [A full example](#a-full-example)
+   7. [Adding it as part of your build](#adding-it-as-part-of-your-build)
+3. [Zod schema types](#zod-schema-types)
+   1. [Supported types](#supported-types)
+   2. [Unsupported types](#unsupported-types)
+4. [Technologies](#technologies)
 
 We keep a changelog as part of the [GitHub releases](https://github.com/asteasolutions/zod-to-openapi/releases).
 
@@ -44,7 +47,7 @@ registry.registerPath({
       schema: UserSchema.openapi({
         description: 'Object with user data',
       }),
-    }
+    },
   },
 });
 ```
@@ -196,7 +199,7 @@ registry.registerPath({
   summary: 'Get a single user',
   request: {
     params: z.object({
-      id: z.string().openapi({ example: '1212121' })
+      id: z.string().openapi({ example: '1212121' }),
     }),
   },
   responses: {
@@ -248,7 +251,6 @@ The library specific properties for `registerPath` are `method`, `path`, `reques
   - an instance of `ZodVoid` - meaning a no content response
   - an object with `mediaType` (a string like `application/json`) and a `schema` of any zod type
 
-
 #### Defining route parameters
 
 If you don't want to inline all parameter definitions, you can define them separately with `registerParameter` and then reference them:
@@ -275,6 +277,7 @@ registry.registerPath({
   responses: ...
 });
 ```
+
 The YAML equivalent would be:
 
 ```yaml
@@ -335,6 +338,35 @@ export function generateOpenAPI() {
 You then use the exported `registry` object to register all schemas, parameters and routes where appropriate.
 
 Then you can create a script that executes the exported `generateOpenAPI` function. This script can be executed as a part of your build step so that it can write the result to some file like `openapi-docs.json`.
+
+## Zod schema types
+
+### Supported types
+
+The list of all supported types as of now is:
+
+- `ZodString`
+- `ZodNumber`
+- `ZodBoolean`
+- `ZodDefault`
+- `ZodEffects` - only for `.refine()`
+- `ZodLiteral`
+- `ZodEnum`
+- `ZodNativeEnum`
+- `ZodObject`
+- `ZodArray`
+- `ZodUnion`
+- `ZodIntersection`
+- `ZodRecord`
+- `ZodUnknown`
+
+### Unsupported types
+
+In case you try to create an OpenAPI schema from a zod schema that is not one of the aforementioned types then you'd receive an `UnknownZodTypeError`.
+
+You can still register such schemas on your own by providing a `type` via the `.openapi` method. In case you think that the desired behavior can be achieved automatically do not hesitate to reach out to us by describing your case via Github Issues.
+
+**Note:** The `ZodEffects` schema from the `.transform` method is an example for a zod schema that cannot be automatically generated since the result of the transformation resides only as a type definition and is not an actual zod specific object.
 
 ## Technologies
 

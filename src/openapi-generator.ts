@@ -18,6 +18,8 @@ import {
 import {
   ZodArray,
   ZodBoolean,
+  ZodDefault,
+  ZodEffects,
   ZodEnum,
   ZodIntersection,
   ZodLiteral,
@@ -387,7 +389,7 @@ export class OpenAPIGenerator {
 
     return {
       description: metadata?.description,
-      required: true,
+      required: !bodySchema.isOptional(),
       content: {
         // TODO: Maybe should be coming from metadata
         'application/json': {
@@ -512,6 +514,19 @@ export class OpenAPIGenerator {
         type: 'boolean',
         nullable: isNullable ? true : undefined,
       };
+    }
+
+    if (zodSchema instanceof ZodDefault) {
+      const innerSchema = zodSchema._def.innerType as ZodSchema<any>;
+      return this.toOpenAPISchema(innerSchema, isNullable, hasOpenAPIType);
+    }
+
+    if (
+      zodSchema instanceof ZodEffects &&
+      zodSchema._def.effect.type === 'refinement'
+    ) {
+      const innerSchema = zodSchema._def.schema as ZodSchema<any>;
+      return this.toOpenAPISchema(innerSchema, isNullable, hasOpenAPIType);
     }
 
     if (zodSchema instanceof ZodLiteral) {
