@@ -389,7 +389,7 @@ export class OpenAPIGenerator {
 
     return {
       description: metadata?.description,
-      required: true,
+      required: !bodySchema.isOptional(),
       content: {
         // TODO: Maybe should be coming from metadata
         'application/json': {
