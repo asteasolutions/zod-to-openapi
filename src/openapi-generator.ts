@@ -18,6 +18,7 @@ import {
 import {
   ZodArray,
   ZodBoolean,
+  ZodEffects,
   ZodEnum,
   ZodIntersection,
   ZodLiteral,
@@ -512,6 +513,15 @@ export class OpenAPIGenerator {
         type: 'boolean',
         nullable: isNullable ? true : undefined,
       };
+    }
+
+
+    if (
+      zodSchema instanceof ZodEffects &&
+      zodSchema._def.effect.type === 'refinement'
+    ) {
+      const innerSchema = zodSchema._def.schema as ZodSchema<any>;
+      return this.toOpenAPISchema(innerSchema, isNullable, hasOpenAPIType);
     }
 
     if (zodSchema instanceof ZodLiteral) {
