@@ -34,6 +34,7 @@ import {
   ZodSchema,
   ZodString,
   ZodType,
+  ZodTypeAny,
   ZodUnion,
   ZodUnknown,
 } from 'zod';
@@ -518,7 +519,7 @@ export class OpenAPIGenerator {
 
     if (zodSchema instanceof ZodDefault) {
       const innerSchema = zodSchema._def.innerType as ZodSchema<any>;
-      return this.toOpenAPISchema(innerSchema, isNullable, hasOpenAPIType);
+      return this.generateInnerSchema(innerSchema);
     }
 
     if (
@@ -526,7 +527,7 @@ export class OpenAPIGenerator {
       zodSchema._def.effect.type === 'refinement'
     ) {
       const innerSchema = zodSchema._def.schema as ZodSchema<any>;
-      return this.toOpenAPISchema(innerSchema, isNullable, hasOpenAPIType);
+      return this.generateInnerSchema(innerSchema);
     }
 
     if (zodSchema instanceof ZodLiteral) {
@@ -611,6 +612,18 @@ export class OpenAPIGenerator {
     });
   }
 
+  private isOptionalSchema(zodSchema: ZodTypeAny): boolean {
+    if (zodSchema instanceof ZodEffects) {
+      return this.isOptionalSchema(zodSchema._def.schema);
+    }
+
+    if (zodSchema instanceof ZodDefault) {
+      return this.isOptionalSchema(zodSchema._def.innerType);
+    }
+
+    return zodSchema.isOptional();
+  }
+
   private toOpenAPIObjectSchema(
     zodSchema: ZodObject<ZodRawShape>,
     isNullable: boolean
@@ -619,7 +632,7 @@ export class OpenAPIGenerator {
     const unknownKeysOption = zodSchema._unknownKeys as UnknownKeysParam;
 
     const requiredProperties = Object.entries(propTypes)
-      .filter(([_key, type]) => !type.isOptional())
+      .filter(([_key, type]) => !this.isOptionalSchema(type))
       .map(([key, _type]) => key);
 
     return {
