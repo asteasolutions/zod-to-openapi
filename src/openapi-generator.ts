@@ -335,11 +335,11 @@ export class OpenAPIGenerator {
       };
     }
 
-    const result = this.toOpenAPISchema(
-      innerSchema,
-      zodSchema.isNullable(),
-      !!metadata?.type
-    );
+    const result = metadata?.type
+      ? {
+          type: metadata?.type,
+        }
+      : this.toOpenAPISchema(innerSchema, zodSchema.isNullable());
 
     return metadata
       ? this.applySchemaMetadata(result, metadata)
@@ -487,8 +487,7 @@ export class OpenAPIGenerator {
 
   private toOpenAPISchema(
     zodSchema: ZodSchema<any>,
-    isNullable: boolean,
-    hasOpenAPIType: boolean
+    isNullable: boolean
   ): SchemaObject {
     if (zodSchema instanceof ZodNull) {
       return { type: 'null' };
@@ -600,7 +599,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    if (zodSchema instanceof ZodUnknown || hasOpenAPIType) {
+    if (zodSchema instanceof ZodUnknown) {
       return {};
     }
 

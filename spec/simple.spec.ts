@@ -26,6 +26,15 @@ describe('Simple', () => {
     });
   });
 
+  it('does not infer the type if one is provide using .openapi', () => {
+    expectSchema(
+      [z.string().openapi({ type: 'number', refId: 'StringAsNumber' })],
+      {
+        StringAsNumber: { type: 'number' },
+      }
+    );
+  });
+
   it('generates schemas with metadata', () => {
     expectSchema(
       [z.string().openapi({ refId: 'SimpleString', description: 'test' })],
