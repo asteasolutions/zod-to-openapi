@@ -26,7 +26,7 @@ describe('Simple', () => {
     });
   });
 
-  it('does not infer the type if one is provide using .openapi', () => {
+  it('does not infer the type if one is provided using .openapi', () => {
     expectSchema(
       [z.string().openapi({ type: 'number', refId: 'StringAsNumber' })],
       {
