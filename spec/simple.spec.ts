@@ -486,6 +486,35 @@ describe('Simple', () => {
         }
       );
     });
+
+    it('supports refined transforms when type is provided', () => {
+      expectSchema(
+        [
+          z
+            .object({
+              test: z
+                .string()
+                .transform((value) => value.trim())
+                .refine((val) => val.length >= 1, 'Value not set.')
+                .openapi({
+                  type: 'string',
+                }),
+            })
+            .openapi({ refId: 'Object' }),
+        ],
+        {
+          Object: {
+            type: 'object',
+            properties: {
+              test: {
+                type: 'string',
+              },
+            },
+            required: ['test'],
+          },
+        }
+      );
+    });
   });
 
   it('does not support transformed schemas', () => {

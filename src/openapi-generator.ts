@@ -322,7 +322,7 @@ export class OpenAPIGenerator {
   private generateSimpleSchema(
     zodSchema: ZodSchema<any>
   ): SchemaObject | ReferenceObject {
-    const innerSchema = this.unwrapOptional(zodSchema);
+    const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
       : innerSchema._def.openapi;
@@ -671,9 +671,20 @@ export class OpenAPIGenerator {
     return [...leftSubTypes, ...rightSubTypes];
   }
 
-  private unwrapOptional(schema: ZodSchema<any>): ZodSchema<any> {
-    while (schema instanceof ZodOptional || schema instanceof ZodNullable) {
-      schema = schema.unwrap();
+  private unwrapChained(schema: ZodSchema<any>): ZodSchema<any> {
+    if (schema instanceof ZodOptional || schema instanceof ZodNullable) {
+      return this.unwrapChained(schema.unwrap());
+    }
+
+    if (schema instanceof ZodDefault) {
+      return this.unwrapChained(schema._def.innerType);
+    }
+
+    if (
+      schema instanceof ZodEffects &&
+      schema._def.effect.type === 'refinement'
+    ) {
+      return this.unwrapChained(schema._def.schema);
     }
 
     return schema;
@@ -691,7 +702,7 @@ export class OpenAPIGenerator {
   }
 
   private getMetadata(zodSchema: ZodSchema<any>) {
-    const innerSchema = this.unwrapOptional(zodSchema);
+    const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
       : innerSchema._def.openapi;
