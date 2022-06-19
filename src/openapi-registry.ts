@@ -1,7 +1,5 @@
 import { OperationObject } from 'openapi3-ts';
-import { ZodVoid } from 'zod';
-import { ZodObject } from 'zod';
-import { ZodSchema, ZodType } from 'zod';
+import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 

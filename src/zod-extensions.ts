@@ -1,5 +1,5 @@
 import { ParameterObject, SchemaObject } from 'openapi3-ts';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export interface ZodOpenAPIMetadata<T = any> extends SchemaObject {
   refId?: string;

@@ -33,8 +33,6 @@
     "zod": "~3.14.4"
   },
   "devDependencies": {
-    "lodash": "^4.17.21",
-    "@types/lodash": "^4.14.181",
     "@types/jest": "^27.4.1",
     "jest": "^27.5.1",
     "ts-jest": "^27.1.4",
