@@ -34,6 +34,21 @@ describe('Simple', () => {
     );
   });
 
+
+  it('can remove .openapi properties', () => {
+    expectSchema(
+      [
+        z.string()
+          .openapi({ refId: 'Test', description: 'test', deprecated: true })
+          .openapi({ description: undefined, deprecated: undefined}),
+      ],
+      {
+        Test: { type: 'string' },
+      }
+    );
+  });
+
+
   it('generates schemas with metadata', () => {
     expectSchema(
       [z.string().openapi({ refId: 'SimpleString', description: 'test' })],
@@ -272,6 +287,20 @@ describe('Simple', () => {
       }
     );
   });
+
+
+  it('supports nullable', () => {
+    expectSchema(
+      [
+        z.string().nullable()
+          .openapi({ refId: 'NullableString' }),
+      ],
+      {
+        NullableString: { type: 'string', nullable: true },
+      }
+    );
+  });
+
 
   describe('defaults', () => {
     it('supports defaults', () => {
