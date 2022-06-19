@@ -1,8 +1,7 @@
-import { OpenAPIGenerator } from '../src/openapi-generator';
-import { SchemasObject } from 'openapi3-ts';
-import { z, ZodSchema } from 'zod';
+import { z } from 'zod';
 
 import { extendZodWithOpenApi } from '../src/zod-extensions';
+import { createSchemas, expectSchema } from './lib/helpers';
 
 // TODO: setupTests.ts
 extendZodWithOpenApi(z);
@@ -566,26 +565,4 @@ describe('Simple', () => {
       }
     );
   });
-
-  function createSchemas(zodSchemas: ZodSchema<any>[]) {
-    const definitions = zodSchemas.map((schema) => ({
-      type: 'schema' as const,
-      schema,
-    }));
-
-    const { components } = new OpenAPIGenerator(
-      definitions
-    ).generateComponents();
-
-    return components;
-  }
-
-  function expectSchema(
-    zodSchemas: ZodSchema<any>[],
-    openAPISchemas: SchemasObject
-  ) {
-    const components = createSchemas(zodSchemas);
-
-    expect(components?.['schemas']).toEqual(openAPISchemas);
-  }
 });
