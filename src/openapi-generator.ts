@@ -1,5 +1,6 @@
 import {
   ReferenceObject,
+  SecuritySchemeObject,
   SchemaObject,
   ParameterObject,
   RequestBodyObject,
@@ -62,6 +63,7 @@ export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
+  private securitySchemaRefs: Record<string, SecuritySchemeObject> = {};
 
   constructor(private definitions: OpenAPIDefinitions[]) {
     this.sortDefinitions();
@@ -73,6 +75,7 @@ export class OpenAPIGenerator {
     return {
       ...config,
       components: {
+        securitySchemes: this.securitySchemaRefs,
         schemas: this.schemaRefs,
         parameters: this.paramRefs,
       },
@@ -85,6 +88,7 @@ export class OpenAPIGenerator {
 
     return {
       components: {
+        securitySchemes: this.securitySchemaRefs,
         schemas: this.schemaRefs,
         parameters: this.paramRefs,
       },
@@ -93,6 +97,7 @@ export class OpenAPIGenerator {
 
   private sortDefinitions() {
     const generationOrder: OpenAPIDefinitions['type'][] = [
+      'securitySchema',
       'schema',
       'parameter',
       'route',
@@ -110,7 +115,7 @@ export class OpenAPIGenerator {
 
   private generateSingle(
     definition: OpenAPIDefinitions
-  ): SchemaObject | ParameterObject | ReferenceObject {
+  ): SchemaObject | ParameterObject | ReferenceObject | SecuritySchemeObject {
     if (definition.type === 'parameter') {
       return this.generateParameterDefinition(definition.schema);
     }
@@ -121,6 +126,10 @@ export class OpenAPIGenerator {
 
     if (definition.type === 'route') {
       return this.generateSingleRoute(definition.route);
+    }
+
+    if (definition.type === 'securitySchema') {
+      return this.generateSecuritySchema(definition.name, definition.schema);
     }
 
     throw new ZodToOpenAPIError('Invalid definition type');
@@ -343,6 +352,11 @@ export class OpenAPIGenerator {
     return metadata
       ? this.applySchemaMetadata(simpleSchema, metadata)
       : simpleSchema;
+  }
+
+  private generateSecuritySchema(name: string, schema: SecuritySchemeObject): SecuritySchemeObject {
+    this.securitySchemaRefs[name] = schema;
+    return schema
   }
 
   private generateSchemaDefinition(zodSchema: ZodSchema<any>): SchemaObject {

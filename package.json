@@ -3,6 +3,7 @@
   "version": "1.2.3",
   "description": "Builds OpenAPI schemas from Zod schemas",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist",
     "package.json",
@@ -23,6 +24,7 @@
   "homepage": "https://github.com/asteasolutions/zod-to-openapi",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "dev": "npm run build -- --watch",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },
@@ -33,7 +35,7 @@
     "zod": "^3.14.0"
   },
   "devDependencies": {
-    "@types/jest": "^27.4.1",
+    "@types/jest": "^27.5.2",
     "jest": "^27.5.1",
     "ts-jest": "^27.1.4",
     "typescript": "^4.6.3",
