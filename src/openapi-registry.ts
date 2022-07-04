@@ -1,5 +1,6 @@
-import { OperationObject } from 'openapi3-ts';
+import {OpenAPIObject, OperationObject} from 'openapi3-ts';
 import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
+import {SecuritySchemeObject} from "openapi3-ts/src/model/OpenApi";
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
@@ -23,6 +24,7 @@ export interface RouteConfig extends OperationObject {
 
 export type OpenAPIDefinitions =
   | { type: 'schema'; schema: ZodSchema<any> }
+  | { type: 'securitySchema'; name: string, schema: SecuritySchemeObject }
   | { type: 'parameter'; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig };
 
@@ -51,6 +53,20 @@ export class OpenAPIRegistry {
     this._definitions.push({ type: 'schema', schema: schemaWithMetadata });
 
     return schemaWithMetadata;
+  }
+
+  registerSecurityScheme(name: string, schema: SecuritySchemeObject) {
+    this._definitions.push({
+      type: 'securitySchema',
+      name,
+      schema,
+    })
+
+    return {
+      name,
+      schema: {...schema},
+      security: (val: string[] = []) => ({[name]: val}),
+    }
   }
 
   /**
