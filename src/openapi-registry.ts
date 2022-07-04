@@ -1,6 +1,6 @@
 import {OpenAPIObject, OperationObject} from 'openapi3-ts';
 import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
-import {SecuritySchemeObject} from "openapi3-ts/src/model/OpenApi";
+import { SecuritySchemeObject } from 'openapi3-ts';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
