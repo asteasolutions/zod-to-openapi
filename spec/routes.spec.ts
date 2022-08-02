@@ -39,7 +39,7 @@ extendZodWithOpenApi(z);
 describe('Routes', () => {
   describe('response definitions', () => {
     it('can set description through the response definition or through the schema', () => {
-      const registry = new OpenAPIRegistry()
+      const registry = new OpenAPIRegistry();
 
       registry.registerPath({
         method: 'get',
@@ -48,21 +48,23 @@ describe('Routes', () => {
           200: {
             mediaType: 'application/json',
             description: 'Simple response',
-            schema: z.string()
+            schema: z.string(),
           },
 
           404: {
             mediaType: 'application/json',
-            schema: z.string().openapi({ description: 'Missing object' })
-          }
-        }
-      })
+            schema: z.string().openapi({ description: 'Missing object' }),
+          },
+        },
+      });
 
-      const document = new OpenAPIGenerator(registry.definitions).generateDocument(testDocConfig)
-      const responses = document.paths['/'].get.responses
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
 
-      expect(responses['200'].description).toEqual('Simple response')
-      expect(responses['404'].description).toEqual('Missing object')
+      expect(responses['200'].description).toEqual('Simple response');
+      expect(responses['404'].description).toEqual('Missing object');
     });
   });
 
@@ -241,7 +243,7 @@ describe('Routes', () => {
       const route = createTestRoute(props);
 
       const paramDefinitions =
-        paramsToRegister?.map((schema) => ({
+        paramsToRegister?.map(schema => ({
           type: 'parameter' as const,
           schema,
         })) ?? [];

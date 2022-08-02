@@ -19,14 +19,12 @@ describe('Separate Zod instance', () => {
   extendZodWithOpenApi(zod2);
 
   it('can check object types of different zod instances', () => {
-    expectSchema(
-      [zod1.string().openapi({ refId: 'SimpleString' })],
-      { SimpleString: { type: 'string' } }
-    );
+    expectSchema([zod1.string().openapi({ refId: 'SimpleString' })], {
+      SimpleString: { type: 'string' },
+    });
 
-    expectSchema(
-      [zod2.string().openapi({ refId: 'SimpleString' })],
-      { SimpleString: { type: 'string' } }
-    );
+    expectSchema([zod2.string().openapi({ refId: 'SimpleString' })], {
+      SimpleString: { type: 'string' },
+    });
   });
 });

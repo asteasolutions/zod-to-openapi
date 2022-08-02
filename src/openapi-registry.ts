@@ -1,4 +1,19 @@
-import { CallbackObject, ComponentsObject, ExampleObject, HeaderObject, HeadersObject, ISpecificationExtension, LinkObject, LinksObject, OperationObject, ParameterObject, RequestBodyObject, ResponseObject, SchemaObject, SecuritySchemeObject } from 'openapi3-ts';
+import {
+  CallbackObject,
+  ComponentsObject,
+  ExampleObject,
+  HeaderObject,
+  HeadersObject,
+  ISpecificationExtension,
+  LinkObject,
+  LinksObject,
+  OperationObject,
+  ParameterObject,
+  RequestBodyObject,
+  ResponseObject,
+  SchemaObject,
+  SecuritySchemeObject,
+} from 'openapi3-ts';
 import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
@@ -6,12 +21,12 @@ type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 export type ResponseConfig =
   // Matching ResponseObject in openapi3-ts
   | {
-    mediaType: string;
-    schema: ZodType<unknown>;
-    description?: string,
-    headers?: HeadersObject,
-    links?: LinksObject
-  }
+      mediaType: string;
+      schema: ZodType<unknown>;
+      description?: string;
+      headers?: HeadersObject;
+      links?: LinksObject;
+    }
   | ZodVoid;
 
 export interface RouteConfig extends OperationObject {
@@ -40,11 +55,18 @@ export type OpenAPIComponentObject =
   | CallbackObject
   | ISpecificationExtension;
 
-export type ComponentTypeKey = Exclude<keyof ComponentsObject, number>
-export type ComponentTypeOf<K extends ComponentTypeKey> = NonNullable<ComponentsObject[K]>[string]
+export type ComponentTypeKey = Exclude<keyof ComponentsObject, number>;
+export type ComponentTypeOf<K extends ComponentTypeKey> = NonNullable<
+  ComponentsObject[K]
+>[string];
 
 export type OpenAPIDefinitions =
-  | { type: 'component'; componentType: ComponentTypeKey, name: string, component: OpenAPIComponentObject }
+  | {
+      type: 'component';
+      componentType: ComponentTypeKey;
+      name: string;
+      component: OpenAPIComponentObject;
+    }
   | { type: 'schema'; schema: ZodSchema<any> }
   | { type: 'parameter'; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig };
@@ -56,7 +78,7 @@ export class OpenAPIRegistry {
 
   get definitions(): OpenAPIDefinitions[] {
     const parentDefinitions =
-      this.parents?.flatMap((par) => par.definitions) ?? [];
+      this.parents?.flatMap(par => par.definitions) ?? [];
 
     return [...parentDefinitions, ...this._definitions];
   }
@@ -126,12 +148,12 @@ export class OpenAPIRegistry {
       type: 'component',
       componentType: type,
       name,
-      component
-    })
+      component,
+    });
 
     return {
       name,
-      ref: { $ref: `#/components/${type}/${name}` }
-    }
+      ref: { $ref: `#/components/${type}/${name}` },
+    };
   }
 }
