@@ -9,6 +9,7 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
    3. [The Registry](#the-registry)
    4. [Defining schemas](#defining-schemas)
    5. [Defining routes](#defining-routes)
+   6. [Defining custom components](#defining-custom-components)
    6. [A full example](#a-full-example)
    7. [Adding it as part of your build](#adding-it-as-part-of-your-build)
 3. [Zod schema types](#zod-schema-types)
@@ -316,6 +317,10 @@ return generator.generateDocument({
   servers: [{ url: 'v1' }],
 });
 ```
+
+### Defining custom components
+
+You can define components that are not OpenAPI schemas, including security schemes, response headers and others. See [this test file](spec/custom-components.spec.ts) for examples.
 
 ### A full example
 
