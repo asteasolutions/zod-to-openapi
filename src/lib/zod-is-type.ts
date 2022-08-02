@@ -20,6 +20,7 @@ type ZodTypes = {
   ZodType: z.ZodType;
   ZodTypeAny: z.ZodTypeAny;
   ZodUnion: z.ZodUnion<any>;
+  ZodDiscriminatedUnion: z.ZodDiscriminatedUnion<any, any, any>;
   ZodUnknown: z.ZodUnknown;
   ZodVoid: z.ZodVoid;
 };

@@ -602,6 +602,14 @@ export class OpenAPIGenerator {
       };
     }
 
+    if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
+      const options = [...zodSchema.options.values()];
+
+      return {
+        anyOf: options.map(schema => this.generateInnerSchema(schema)),
+      };
+    }
+
     if (isZodType(zodSchema, 'ZodIntersection')) {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
