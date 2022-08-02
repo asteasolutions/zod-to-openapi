@@ -25,12 +25,12 @@ import type {
 import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 import {
+  OpenAPIComponentObject,
   OpenAPIDefinitions,
   ResponseConfig,
   RouteConfig,
 } from './openapi-registry';
 import {
-  ZodToOpenAPIError,
   ConflictError,
   MissingParameterDataError,
   MissingResponseDescriptionError,
@@ -62,6 +62,7 @@ export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
+  private rawComponents: { componentType: string, name: string, component: OpenAPIComponentObject }[] = [];
 
   constructor(private definitions: OpenAPIDefinitions[]) {
     this.sortDefinitions();
@@ -72,10 +73,7 @@ export class OpenAPIGenerator {
 
     return {
       ...config,
-      components: {
-        schemas: this.schemaRefs,
-        parameters: this.paramRefs,
-      },
+      components: this.buildComponents(),
       paths: this.pathRefs,
     };
   }
@@ -84,11 +82,30 @@ export class OpenAPIGenerator {
     this.definitions.forEach((definition) => this.generateSingle(definition));
 
     return {
-      components: {
-        schemas: this.schemaRefs,
-        parameters: this.paramRefs,
-      },
+      components: this.buildComponents(),
     };
+  }
+
+  private buildComponents() {
+    const rawComponents: ComponentsObject = {}
+    this.rawComponents.forEach(({ componentType, name, component}) => {
+      rawComponents[componentType] ??= {}
+      rawComponents[componentType][name] = component
+    })
+
+    return {
+      ...rawComponents,
+
+      schemas: {
+        ...(rawComponents.schemas ?? {}),
+        ...this.schemaRefs
+      },
+
+      parameters: {
+        ...(rawComponents.parameters ?? {}),
+        ...this.paramRefs
+      }
+    }
   }
 
   private sortDefinitions() {
@@ -110,20 +127,24 @@ export class OpenAPIGenerator {
 
   private generateSingle(
     definition: OpenAPIDefinitions
-  ): SchemaObject | ParameterObject | ReferenceObject {
-    if (definition.type === 'parameter') {
-      return this.generateParameterDefinition(definition.schema);
-    }
+  ): void {
+    switch (definition.type) {
+      case 'parameter':
+        this.generateParameterDefinition(definition.schema);
+        return;
 
-    if (definition.type === 'schema') {
-      return this.generateSchemaDefinition(definition.schema);
-    }
+      case 'schema':
+        this.generateSchemaDefinition(definition.schema);
+        return;
 
-    if (definition.type === 'route') {
-      return this.generateSingleRoute(definition.route);
-    }
+      case 'route':
+        this.generateSingleRoute(definition.route);
+        return;
 
-    throw new ZodToOpenAPIError('Invalid definition type');
+      case 'component':
+        this.rawComponents.push(definition);
+        return
+    }
   }
 
   private generateParameterDefinition(
@@ -440,6 +461,27 @@ export class OpenAPIGenerator {
   private getResponse(
     response: ResponseConfig
   ): ResponseObject | ReferenceObject {
+    const description = this.descriptionFromResponseConfig(response)
+
+    if (isZodType(response, 'ZodVoid')) {
+      return { description };
+    }
+
+    const responseSchema = this.generateInnerSchema(response.schema);
+
+    return {
+      description,
+      headers: response.headers,
+      links: response.links,
+      content: {
+        [response.mediaType]: {
+          schema: responseSchema,
+        },
+      },
+    };
+  }
+
+  private descriptionFromResponseConfig(response: ResponseConfig) {
     if (isZodType(response, 'ZodVoid')) {
       const metadata = this.getMetadata(response);
 
@@ -447,26 +489,20 @@ export class OpenAPIGenerator {
         throw new MissingResponseDescriptionError();
       }
 
-      return {
-        description: metadata.description,
-      };
+      return metadata.description;
+    }
+
+    if (response.description) {
+      return response.description
     }
 
     const metadata = this.getMetadata(response.schema);
-    const responseSchema = this.generateInnerSchema(response.schema);
 
     if (!metadata?.description) {
       throw new MissingResponseDescriptionError();
     }
 
-    return {
-      description: metadata.description,
-      content: {
-        [response.mediaType]: {
-          schema: responseSchema,
-        },
-      },
-    };
+    return metadata.description
   }
 
   private toOpenAPISchema(

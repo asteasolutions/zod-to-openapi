@@ -20,6 +20,7 @@ declare module 'zod' {
   }
 }
 
+// TODO: Support more than one extension without too much wrapping
 export function extendZodWithOpenApi(zod: typeof z) {
   zod.ZodSchema.prototype.openapi = function (openapi) {
     const { param, ...restOfOpenApi } = openapi ?? {};

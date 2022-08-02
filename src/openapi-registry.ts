@@ -1,10 +1,17 @@
-import { OperationObject } from 'openapi3-ts';
+import { CallbackObject, ComponentsObject, ExampleObject, HeaderObject, HeadersObject, ISpecificationExtension, LinkObject, LinksObject, OperationObject, ParameterObject, RequestBodyObject, ResponseObject, SchemaObject, SecuritySchemeObject } from 'openapi3-ts';
 import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
 export type ResponseConfig =
-  | { mediaType: string; schema: ZodType<unknown> }
+  // Matching ResponseObject in openapi3-ts
+  | {
+    mediaType: string;
+    schema: ZodType<unknown>;
+    description?: string,
+    headers?: HeadersObject,
+    links?: LinksObject
+  }
   | ZodVoid;
 
 export interface RouteConfig extends OperationObject {
@@ -21,7 +28,23 @@ export interface RouteConfig extends OperationObject {
   };
 }
 
+export type OpenAPIComponentObject =
+  | SchemaObject
+  | ResponseObject
+  | ParameterObject
+  | ExampleObject
+  | RequestBodyObject
+  | HeaderObject
+  | SecuritySchemeObject
+  | LinkObject
+  | CallbackObject
+  | ISpecificationExtension;
+
+export type ComponentTypeKey = Exclude<keyof ComponentsObject, number>
+export type ComponentTypeOf<K extends ComponentTypeKey> = NonNullable<ComponentsObject[K]>[string]
+
 export type OpenAPIDefinitions =
+  | { type: 'component'; componentType: ComponentTypeKey, name: string, component: OpenAPIComponentObject }
   | { type: 'schema'; schema: ZodSchema<any> }
   | { type: 'parameter'; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig };
@@ -84,5 +107,31 @@ export class OpenAPIRegistry {
       type: 'route',
       route,
     });
+  }
+
+  /**
+   * Registers a raw OpenAPI component. Use this if you have a simple object instead of a Zod schema.
+   *
+   * @param type The component type, e.g. `schemas`, `responses`, `securitySchemes`, etc.
+   * @param name The name of the object, it is the key under the component
+   *             type in the resulting OpenAPI document
+   * @param component The actual object to put there
+   */
+  registerComponent<K extends ComponentTypeKey>(
+    type: K,
+    name: string,
+    component: ComponentTypeOf<K>
+  ) {
+    this._definitions.push({
+      type: 'component',
+      componentType: type,
+      name,
+      component
+    })
+
+    return {
+      name,
+      ref: { $ref: `#/components/${type}/${name}` }
+    }
   }
 }
