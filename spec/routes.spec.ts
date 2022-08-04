@@ -1,9 +1,8 @@
-import { OpenAPIGenerator } from '../src/openapi-generator';
-import { OperationObject, PathItemObject } from 'openapi3-ts';
 import { z, ZodSchema } from 'zod';
-
+import { OperationObject, PathItemObject } from 'openapi3-ts';
+import { OpenAPIGenerator } from '../src/openapi-generator';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
-import { RouteConfig } from '../src/openapi-registry';
+import { OpenAPIRegistry, RouteConfig } from '../src/openapi-registry';
 
 function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
   return {
@@ -38,7 +37,38 @@ const testDocConfig = {
 extendZodWithOpenApi(z);
 
 describe('Routes', () => {
-  describe('Parameters', () => {
+  describe('response definitions', () => {
+    it('can set description through the response definition or through the schema', () => {
+      const registry = new OpenAPIRegistry();
+
+      registry.registerPath({
+        method: 'get',
+        path: '/',
+        responses: {
+          200: {
+            mediaType: 'application/json',
+            description: 'Simple response',
+            schema: z.string(),
+          },
+
+          404: {
+            mediaType: 'application/json',
+            schema: z.string().openapi({ description: 'Missing object' }),
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
+
+      expect(responses['200'].description).toEqual('Simple response');
+      expect(responses['404'].description).toEqual('Missing object');
+    });
+  });
+
+  describe('parameters', () => {
     it('generates a query parameter for route', () => {
       const routeParameters = generateParamsForRoute({
         request: { query: z.object({ test: z.string() }) },
@@ -213,7 +243,7 @@ describe('Routes', () => {
       const route = createTestRoute(props);
 
       const paramDefinitions =
-        paramsToRegister?.map((schema) => ({
+        paramsToRegister?.map(schema => ({
           type: 'parameter' as const,
           schema,
         })) ?? [];

@@ -25,12 +25,12 @@ import type {
 import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 import {
+  OpenAPIComponentObject,
   OpenAPIDefinitions,
   ResponseConfig,
   RouteConfig,
 } from './openapi-registry';
 import {
-  ZodToOpenAPIError,
   ConflictError,
   MissingParameterDataError,
   MissingResponseDescriptionError,
@@ -62,31 +62,52 @@ export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
+  private rawComponents: {
+    componentType: string;
+    name: string;
+    component: OpenAPIComponentObject;
+  }[] = [];
 
   constructor(private definitions: OpenAPIDefinitions[]) {
     this.sortDefinitions();
   }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
-    this.definitions.forEach((definition) => this.generateSingle(definition));
+    this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
       ...config,
-      components: {
-        schemas: this.schemaRefs,
-        parameters: this.paramRefs,
-      },
+      components: this.buildComponents(),
       paths: this.pathRefs,
     };
   }
 
   generateComponents(): ComponentsObject {
-    this.definitions.forEach((definition) => this.generateSingle(definition));
+    this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
-      components: {
-        schemas: this.schemaRefs,
-        parameters: this.paramRefs,
+      components: this.buildComponents(),
+    };
+  }
+
+  private buildComponents() {
+    const rawComponents: ComponentsObject = {};
+    this.rawComponents.forEach(({ componentType, name, component }) => {
+      rawComponents[componentType] ??= {};
+      rawComponents[componentType][name] = component;
+    });
+
+    return {
+      ...rawComponents,
+
+      schemas: {
+        ...(rawComponents.schemas ?? {}),
+        ...this.schemaRefs,
+      },
+
+      parameters: {
+        ...(rawComponents.parameters ?? {}),
+        ...this.paramRefs,
       },
     };
   }
@@ -99,31 +120,31 @@ export class OpenAPIGenerator {
     ];
 
     this.definitions.sort((left, right) => {
-      const leftIndex = generationOrder.findIndex((type) => type === left.type);
-      const rightIndex = generationOrder.findIndex(
-        (type) => type === right.type
-      );
+      const leftIndex = generationOrder.findIndex(type => type === left.type);
+      const rightIndex = generationOrder.findIndex(type => type === right.type);
 
       return leftIndex - rightIndex;
     });
   }
 
-  private generateSingle(
-    definition: OpenAPIDefinitions
-  ): SchemaObject | ParameterObject | ReferenceObject {
-    if (definition.type === 'parameter') {
-      return this.generateParameterDefinition(definition.schema);
-    }
+  private generateSingle(definition: OpenAPIDefinitions): void {
+    switch (definition.type) {
+      case 'parameter':
+        this.generateParameterDefinition(definition.schema);
+        return;
 
-    if (definition.type === 'schema') {
-      return this.generateSchemaDefinition(definition.schema);
-    }
+      case 'schema':
+        this.generateSchemaDefinition(definition.schema);
+        return;
 
-    if (definition.type === 'route') {
-      return this.generateSingleRoute(definition.route);
-    }
+      case 'route':
+        this.generateSingleRoute(definition.route);
+        return;
 
-    throw new ZodToOpenAPIError('Invalid definition type');
+      case 'component':
+        this.rawComponents.push(definition);
+        return;
+    }
   }
 
   private generateParameterDefinition(
@@ -400,7 +421,7 @@ export class OpenAPIGenerator {
       : [];
 
     const headerParameters =
-      request.headers?.flatMap((header) =>
+      request.headers?.flatMap(header =>
         this.generateInlineParameters(header, 'header')
       ) ?? [];
 
@@ -410,7 +431,7 @@ export class OpenAPIGenerator {
   private generateSingleRoute(route: RouteConfig) {
     const { method, path, request, responses, ...pathItemConfig } = route;
 
-    const generatedResponses = mapValues(responses, (response) => {
+    const generatedResponses = mapValues(responses, response => {
       return this.getResponse(response);
     });
 
@@ -440,6 +461,27 @@ export class OpenAPIGenerator {
   private getResponse(
     response: ResponseConfig
   ): ResponseObject | ReferenceObject {
+    const description = this.descriptionFromResponseConfig(response);
+
+    if (isZodType(response, 'ZodVoid')) {
+      return { description };
+    }
+
+    const responseSchema = this.generateInnerSchema(response.schema);
+
+    return {
+      description,
+      headers: response.headers,
+      links: response.links,
+      content: {
+        [response.mediaType]: {
+          schema: responseSchema,
+        },
+      },
+    };
+  }
+
+  private descriptionFromResponseConfig(response: ResponseConfig) {
     if (isZodType(response, 'ZodVoid')) {
       const metadata = this.getMetadata(response);
 
@@ -447,26 +489,20 @@ export class OpenAPIGenerator {
         throw new MissingResponseDescriptionError();
       }
 
-      return {
-        description: metadata.description,
-      };
+      return metadata.description;
+    }
+
+    if (response.description) {
+      return response.description;
     }
 
     const metadata = this.getMetadata(response.schema);
-    const responseSchema = this.generateInnerSchema(response.schema);
 
     if (!metadata?.description) {
       throw new MissingResponseDescriptionError();
     }
 
-    return {
-      description: metadata.description,
-      content: {
-        [response.mediaType]: {
-          schema: responseSchema,
-        },
-      },
-    };
+    return metadata.description;
   }
 
   private toOpenAPISchema(
@@ -562,7 +598,15 @@ export class OpenAPIGenerator {
       const options = this.flattenUnionTypes(zodSchema);
 
       return {
-        anyOf: options.map((schema) => this.generateInnerSchema(schema)),
+        anyOf: options.map(schema => this.generateInnerSchema(schema)),
+      };
+    }
+
+    if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
+      const options = [...zodSchema.options.values()];
+
+      return {
+        anyOf: options.map(schema => this.generateInnerSchema(schema)),
       };
     }
 
@@ -570,7 +614,7 @@ export class OpenAPIGenerator {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
       return {
-        allOf: subtypes.map((schema) => this.generateInnerSchema(schema)),
+        allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
       };
     }
 
@@ -621,7 +665,7 @@ export class OpenAPIGenerator {
     return {
       type: 'object',
 
-      properties: mapValues(propTypes, (propSchema) =>
+      properties: mapValues(propTypes, propSchema =>
         this.generateInnerSchema(propSchema)
       ),
 
@@ -640,7 +684,7 @@ export class OpenAPIGenerator {
 
     const options = schema._def.options as ZodSchema<any>[];
 
-    return options.flatMap((option) => this.flattenUnionTypes(option));
+    return options.flatMap(option => this.flattenUnionTypes(option));
   }
 
   private flattenIntersectionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {

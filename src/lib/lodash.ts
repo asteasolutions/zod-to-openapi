@@ -28,7 +28,7 @@ export function omit<
   const result: any = {};
 
   Object.entries(object).forEach(([key, value]) => {
-    if (!keys.some((keyToOmit) => keyToOmit === key)) {
+    if (!keys.some(keyToOmit => keyToOmit === key)) {
       result[key] = value;
     }
   });

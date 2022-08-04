@@ -36,11 +36,18 @@ const UserSchema = registry.register(
   })
 );
 
+const bearerAuth = registry.registerComponent('securitySchemes', 'bearerAuth', {
+  type: 'http',
+  scheme: 'bearer',
+  bearerFormat: 'JWT',
+});
+
 registry.registerPath({
   method: 'get',
   path: '/users/{id}',
   description: 'Get user data by its id',
   summary: 'Get a single user',
+  security: [{ [bearerAuth.name]: [] }],
   request: {
     params: z.object({ id: UserIdSchema }),
   },

@@ -21,6 +21,13 @@ declare module 'zod' {
 }
 
 export function extendZodWithOpenApi(zod: typeof z) {
+  if (typeof zod.ZodSchema.prototype.openapi !== 'undefined') {
+    // This zod instance is already extended with the required methods,
+    // doing it again will just result in multiple wrapper methods for
+    // `optional` and `nullable`
+    return;
+  }
+
   zod.ZodSchema.prototype.openapi = function (openapi) {
     const { param, ...restOfOpenApi } = openapi ?? {};
 

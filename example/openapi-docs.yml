@@ -12,7 +12,7 @@ components:
       properties:
         id:
           type: string
-          example: "1212121"
+          example: '1212121'
         name:
           type: string
           example: John Doe
@@ -29,21 +29,21 @@ components:
       name: id
       schema:
         type: string
-        example: "1212121"
+        example: '1212121'
       required: true
 paths:
-  "/users/{id}":
+  '/users/{id}':
     get:
       description: Get user data by its id
       summary: Get a single user
       parameters:
-        - $ref: "#/components/parameters/UserId"
+        - $ref: '#/components/parameters/UserId'
       responses:
-        "200":
+        '200':
           description: Object with user data.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        "204":
+                $ref: '#/components/schemas/User'
+        '204':
           description: No content - successful operation

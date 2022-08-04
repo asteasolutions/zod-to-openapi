@@ -34,20 +34,19 @@ describe('Simple', () => {
     );
   });
 
-
   it('can remove .openapi properties', () => {
     expectSchema(
       [
-        z.string()
+        z
+          .string()
           .openapi({ refId: 'Test', description: 'test', deprecated: true })
-          .openapi({ description: undefined, deprecated: undefined}),
+          .openapi({ description: undefined, deprecated: undefined }),
       ],
       {
         Test: { type: 'string' },
       }
     );
   });
-
 
   it('generates schemas with metadata', () => {
     expectSchema(
@@ -234,6 +233,37 @@ describe('Simple', () => {
     );
   });
 
+  it('supports discriminated unions', () => {
+    const Text = z.object({ type: z.literal('text'), text: z.string() });
+    const Image = z.object({ type: z.literal('image'), src: z.string() });
+
+    expectSchema(
+      [z.discriminatedUnion('type', [Text, Image]).openapi({ refId: 'Test' })],
+      {
+        Test: {
+          anyOf: [
+            {
+              type: 'object',
+              required: ['type', 'text'],
+              properties: {
+                type: { type: 'string', enum: ['text'] },
+                text: { type: 'string' },
+              },
+            },
+            {
+              type: 'object',
+              required: ['type', 'src'],
+              properties: {
+                type: { type: 'string', enum: ['image'] },
+                src: { type: 'string' },
+              },
+            },
+          ],
+        },
+      }
+    );
+  });
+
   it('supports records', () => {
     const base = z.object({ a: z.string() });
 
@@ -288,19 +318,11 @@ describe('Simple', () => {
     );
   });
 
-
   it('supports nullable', () => {
-    expectSchema(
-      [
-        z.string().nullable()
-          .openapi({ refId: 'NullableString' }),
-      ],
-      {
-        NullableString: { type: 'string', nullable: true },
-      }
-    );
+    expectSchema([z.string().nullable().openapi({ refId: 'NullableString' })], {
+      NullableString: { type: 'string', nullable: true },
+    });
   });
-
 
   describe('defaults', () => {
     it('supports defaults', () => {
@@ -367,7 +389,7 @@ describe('Simple', () => {
               test: z
                 .onumber()
                 .default(42)
-                .refine((num) => num && num % 2 === 0),
+                .refine(num => num && num % 2 === 0),
             })
             .openapi({ refId: 'Object' }),
         ],
@@ -392,7 +414,7 @@ describe('Simple', () => {
               test: z
                 .number()
                 .default(42)
-                .refine((num) => num && num % 2 === 0),
+                .refine(num => num && num % 2 === 0),
             })
             .openapi({ refId: 'Object' }),
         ],
@@ -417,7 +439,7 @@ describe('Simple', () => {
         [
           z
             .number()
-            .refine((num) => num % 2 === 0)
+            .refine(num => num % 2 === 0)
             .openapi({ refId: 'RefinedString' }),
         ],
         {
@@ -433,7 +455,7 @@ describe('Simple', () => {
         [
           z
             .object({
-              test: z.number().refine((num) => num && num % 2 === 0),
+              test: z.number().refine(num => num && num % 2 === 0),
             })
             .openapi({ refId: 'ObjectWithRefinedString' }),
         ],
@@ -456,7 +478,7 @@ describe('Simple', () => {
         [
           z
             .object({
-              test: z.onumber().refine((num) => num && num % 2 === 0),
+              test: z.onumber().refine(num => num && num % 2 === 0),
             })
             .openapi({ refId: 'ObjectWithRefinedString' }),
         ],
@@ -480,7 +502,7 @@ describe('Simple', () => {
             .object({
               test: z
                 .onumber()
-                .refine((num) => num && num % 2 === 0)
+                .refine(num => num && num % 2 === 0)
                 .default(42),
             })
             .openapi({ refId: 'Object' }),
@@ -505,7 +527,7 @@ describe('Simple', () => {
             .object({
               test: z
                 .number()
-                .refine((num) => num && num % 2 === 0)
+                .refine(num => num && num % 2 === 0)
                 .default(42),
             })
             .openapi({ refId: 'Object' }),
@@ -531,8 +553,8 @@ describe('Simple', () => {
             .object({
               test: z
                 .string()
-                .transform((value) => value.trim())
-                .refine((val) => val.length >= 1, 'Value not set.')
+                .transform(value => value.trim())
+                .refine(val => val.length >= 1, 'Value not set.')
                 .openapi({
                   type: 'string',
                 }),
@@ -559,7 +581,7 @@ describe('Simple', () => {
       createSchemas([
         z
           .number()
-          .transform((num) => num.toString())
+          .transform(num => num.toString())
           .openapi({ refId: 'Transformed' }),
       ])
     ).toThrow(/^Unknown zod object type/);
