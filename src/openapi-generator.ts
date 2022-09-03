@@ -668,28 +668,33 @@ export class OpenAPIGenerator {
       this.generateInnerSchema(propSchema)
     );
 
-    if(extendedFrom) {
-      const alreadyRegistered = Object.keys(this.schemaRefs[extendedFrom]?.properties ?? {});
+    if (extendedFrom) {
+      const alreadyRegistered = Object.keys(
+        this.schemaRefs[extendedFrom]?.properties ?? {}
+      );
       const alreadyRequired = this.schemaRefs[extendedFrom]?.required ?? [];
 
       const additionalProperties = omit(properties, alreadyRegistered);
-      const additionallyRequired = requiredProperties.filter(prop => !alreadyRequired.includes(prop));
+      const additionallyRequired = requiredProperties.filter(
+        prop => !alreadyRequired.includes(prop)
+      );
 
       const additionalData = {
         type: 'object' as const,
 
         properties: additionalProperties,
 
-        required: additionallyRequired.length > 0 ? additionallyRequired : undefined,
-      }
+        required:
+          additionallyRequired.length > 0 ? additionallyRequired : undefined,
+      };
 
       return {
         allOf: [
           // TODO: Is it always a schema?
           { $ref: `#/components/schemas/${extendedFrom}` },
-          additionalData
-        ]
-      }
+          additionalData,
+        ],
+      };
     }
 
     return {

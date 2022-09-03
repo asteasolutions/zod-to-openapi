@@ -29,12 +29,12 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return;
   }
 
-  zod.ZodSchema.prototype.openapi = function (openapi) {   
+  zod.ZodSchema.prototype.openapi = function (openapi) {
     const { param, ...restOfOpenApi } = openapi ?? {};
 
     const initialExtend = (this as any).extend;
-    
-    const result =  new (this as any).constructor({
+
+    const result = new (this as any).constructor({
       ...this._def,
       openapi: {
         ...this._def.openapi,
@@ -47,15 +47,17 @@ export function extendZodWithOpenApi(zod: typeof z) {
     });
 
     // TODO: A better check that his is for sure an object!
-    if(initialExtend) {
+    if (initialExtend) {
       // TODO: This does an overload everytime. So .extend().openapi() makes this change twice
-      (result.extend as any) = function(...args: any) {
+      (result.extend as any) = function (...args: any) {
         const extendedResult = initialExtend.apply(result, args) as any;
 
-        extendedResult._def.openapi = { extendedFrom: result._def.openapi?.refId };
+        extendedResult._def.openapi = {
+          extendedFrom: result._def.openapi?.refId,
+        };
 
         return extendedResult;
-      }
+      };
     }
 
     return result;
@@ -84,5 +86,4 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     return result;
   };
-
 }

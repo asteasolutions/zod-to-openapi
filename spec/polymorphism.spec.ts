@@ -7,12 +7,20 @@ extendZodWithOpenApi(z);
 
 describe('Polymorphism', () => {
   it('can use allOf', () => {
-    const BaseSchema = z.ZodObject.create({ id: z.string() }).openapi({ refId: 'Base' });
+    const BaseSchema = z.ZodObject.create({ id: z.string() }).openapi({
+      refId: 'Base',
+    });
 
-    const ExtendedSchema = BaseSchema.extend({ bonus: z.number() }).openapi({ refId: 'Extended'});
+    const ExtendedSchema = BaseSchema.extend({ bonus: z.number() }).openapi({
+      refId: 'Extended',
+    });
 
-    const TestSchema = z.object({ key: ExtendedSchema.nullable().openapi({ deprecated: true, refId: 'Test' }) });
-
+    const TestSchema = z.object({
+      key: ExtendedSchema.nullable().openapi({
+        deprecated: true,
+        refId: 'Test',
+      }),
+    });
 
     expectSchema([BaseSchema, ExtendedSchema, TestSchema], {
       Base: {
@@ -20,24 +28,24 @@ describe('Polymorphism', () => {
         required: ['id'],
         properties: {
           id: {
-            type: 'string'
-          }
-        }
+            type: 'string',
+          },
+        },
       },
-      Extended: { 
+      Extended: {
         allOf: [
           { $ref: '#/components/schemas/Base' },
           {
             type: 'object',
-            required: ['bonus'],              
+            required: ['bonus'],
             properties: {
               bonus: {
-                type: 'number'
-              }
-            }
-          }
-        ]
-      }
+                type: 'number',
+              },
+            },
+          },
+        ],
+      },
     });
   });
 
