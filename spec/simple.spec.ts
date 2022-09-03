@@ -324,6 +324,25 @@ describe('Simple', () => {
     });
   });
 
+  // TODO: This is also not working. Same with applying `.openapi()`
+  it.skip('supports nullable for registered schemas', () => {
+    const Schema = z.string().openapi({ refId: 'String' });
+
+    expectSchema([z.object({ key: Schema.nullable().openapi({ refId: 'Test' })})], {
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            oneOf: [
+              { $ref: '/components/schemas/String'},
+              { type: 'null' },
+            ],
+          },
+        },
+    }
+    });
+  });
+
   describe('defaults', () => {
     it('supports defaults', () => {
       expectSchema(
