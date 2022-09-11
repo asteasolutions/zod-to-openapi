@@ -669,10 +669,16 @@ export class OpenAPIGenerator {
     );
 
     if (extendedFrom) {
-      const alreadyRegistered = Object.keys(
-        this.schemaRefs[extendedFrom]?.properties ?? {}
-      );
-      const alreadyRequired = this.schemaRefs[extendedFrom]?.required ?? [];
+      const registeredSchema = this.schemaRefs[extendedFrom];
+
+      if (!registeredSchema) {
+        throw new Error(
+          `Attempt to extend an unregistered schema with id ${extendedFrom}.`
+        );
+      }
+
+      const alreadyRegistered = Object.keys(registeredSchema.properties ?? {});
+      const alreadyRequired = registeredSchema.required ?? [];
 
       const additionalProperties = omit(properties, alreadyRegistered);
       const additionallyRequired = requiredProperties.filter(
@@ -690,7 +696,6 @@ export class OpenAPIGenerator {
 
       return {
         allOf: [
-          // TODO: Is it always a schema?
           { $ref: `#/components/schemas/${extendedFrom}` },
           additionalData,
         ],
