@@ -64,12 +64,12 @@ export function objectEquals(x: any, y: any): boolean {
     return true;
   }
 
-  if(Array.isArray(x)) {
-    if(!Array.isArray(y)) {
+  if (Array.isArray(x)) {
+    if (!Array.isArray(y)) {
       return false;
     }
 
-    if(x.length !== y.length) {
+    if (x.length !== y.length) {
       return false;
     }
   }

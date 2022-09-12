@@ -55,15 +55,17 @@ describe('Polymorphism', () => {
   it.todo('can apply optional');
 
   it('can override properties', () => {
-    const AnimalSchema = z.object({
-      name: z.ostring(),
-      type: z.enum(['dog', 'cat']).optional(),
-    }).openapi({
-      refId: 'Animal',
-      discriminator: {
-        propertyName: 'type',
-      },
-    });
+    const AnimalSchema = z
+      .object({
+        name: z.ostring(),
+        type: z.enum(['dog', 'cat']).optional(),
+      })
+      .openapi({
+        refId: 'Animal',
+        discriminator: {
+          propertyName: 'type',
+        },
+      });
 
     const DogSchema = AnimalSchema.extend({
       type: z.string().openapi({ const: 'dog' }),
@@ -84,7 +86,7 @@ describe('Polymorphism', () => {
           name: {
             type: 'string',
           },
-          type: { type: 'string', enum: ['dog', 'cat'] }
+          type: { type: 'string', enum: ['dog', 'cat'] },
         },
       },
       Dog: {

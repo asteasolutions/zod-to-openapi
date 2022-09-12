@@ -23,19 +23,16 @@ describe('Lodash', () => {
       expect(
         objectEquals(
           { test: { a: ['asd', 3, true] } },
-          { test: { a: ['asd', 3, true, { b: null}] } }
+          { test: { a: ['asd', 3, true, { b: null }] } }
         )
       ).toEqual(false);
 
-
       expect(
         objectEquals(
-          { test: { a: ['asd', 3, true, { b: null}] } },
-          { test: { a: ['asd', 3, true, { b: null}] } }
+          { test: { a: ['asd', 3, true, { b: null }] } },
+          { test: { a: ['asd', 3, true, { b: null }] } }
         )
       ).toEqual(true);
     });
-
-
   });
 });
