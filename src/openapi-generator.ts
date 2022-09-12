@@ -342,9 +342,24 @@ export class OpenAPIGenerator {
     const refId = metadata?.refId;
 
     if (refId && this.schemaRefs[refId]) {
-      return {
+      const referenceObject = {
         $ref: `#/components/schemas/${refId}`,
       };
+
+      const nullableMetadata = zodSchema.isNullable() ? { nullable: true } : {};
+
+      const appliedMetadata = this.applySchemaMetadata(
+        nullableMetadata,
+        metadata
+      );
+
+      if (Object.keys(appliedMetadata).length > 0) {
+        return {
+          allOf: [referenceObject, appliedMetadata],
+        };
+      }
+
+      return referenceObject;
     }
 
     const result = metadata?.type
@@ -671,9 +686,12 @@ export class OpenAPIGenerator {
       .filter(([_key, type]) => !this.isOptionalSchema(type))
       .map(([key, _type]) => key);
 
-    const properties = mapValues(propTypes, propSchema =>
+    const schemaProperties = mapValues(propTypes, propSchema =>
       this.generateInnerSchema(propSchema)
     );
+
+    let alreadyRegistered: string[] = [];
+    let alreadyRequired: string[] = [];
 
     if (extendedFrom) {
       const registeredSchema = this.schemaRefs[extendedFrom];
@@ -686,56 +704,45 @@ export class OpenAPIGenerator {
 
       const registeredProperties = registeredSchema.properties ?? {};
 
-      const alreadyRegistered = Object.keys(registeredProperties).filter(
-        propKey => {
-          return objectEquals(
-            properties[propKey],
-            registeredProperties[propKey]
-          );
-        }
-      );
+      alreadyRegistered = Object.keys(registeredProperties).filter(propKey => {
+        return objectEquals(
+          schemaProperties[propKey],
+          registeredProperties[propKey]
+        );
+      });
 
-      const alreadyRequired = registeredSchema.required ?? [];
-
-      const additionalProperties = omit(properties, alreadyRegistered);
-
-      const additionallyRequired = requiredProperties.filter(
-        prop => !alreadyRequired.includes(prop)
-      );
-
-      const additionalData = {
-        type: 'object' as const,
-
-        properties: additionalProperties,
-
-        ...(additionallyRequired.length > 0
-          ? { required: additionallyRequired }
-          : {}),
-
-        additionalProperties: unknownKeysOption === 'passthrough' || undefined,
-      };
-
-      return {
-        allOf: [
-          { $ref: `#/components/schemas/${extendedFrom}` },
-          additionalData,
-        ],
-      };
+      alreadyRequired = registeredSchema.required ?? [];
     }
 
-    return {
-      type: 'object',
+    const properties = omit(schemaProperties, alreadyRegistered);
+
+    const additionallyRequired = requiredProperties.filter(
+      prop => !alreadyRequired.includes(prop)
+    );
+
+    const objectData = {
+      type: 'object' as const,
 
       properties,
 
-      ...(requiredProperties.length > 0
-        ? { required: requiredProperties }
+      ...(isNullable ? { nullable: true } : {}),
+
+      ...(additionallyRequired.length > 0
+        ? { required: additionallyRequired }
         : {}),
 
-      additionalProperties: unknownKeysOption === 'passthrough' || undefined,
-
-      nullable: isNullable ? true : undefined,
+      ...(unknownKeysOption === 'passthrough'
+        ? { additionalProperties: true }
+        : {}),
     };
+
+    if (extendedFrom) {
+      return {
+        allOf: [{ $ref: `#/components/schemas/${extendedFrom}` }, objectData],
+      };
+    }
+
+    return objectData;
   }
 
   private flattenUnionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {

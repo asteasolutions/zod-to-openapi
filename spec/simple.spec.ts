@@ -325,22 +325,58 @@ describe('Simple', () => {
   });
 
   // TODO: This is also not working. Same with applying `.openapi()`
-  it.skip('supports nullable for registered schemas', () => {
-    const Schema = z.string().openapi({ refId: 'String' });
+  it('supports nullable for registered schemas', () => {
+    const StringSchema = z.string().openapi({ refId: 'String' });
 
-    expectSchema(
-      [z.object({ key: Schema.nullable().openapi({ refId: 'Test' }) })],
-      {
-        Test: {
-          type: 'object',
-          properties: {
-            key: {
-              oneOf: [{ $ref: '/components/schemas/String' }, { type: 'null' }],
-            },
+    const TestSchema = z
+      .object({ key: StringSchema.nullable() })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { nullable: true },
+            ],
           },
         },
-      }
-    );
+        required: ['key'],
+      },
+    });
+  });
+
+  it('supports .openapi for registered schemas', () => {
+    const StringSchema = z.string().openapi({ refId: 'String' });
+
+    const TestSchema = z
+      .object({
+        key: StringSchema.openapi({ example: 'test', deprecated: true }),
+      })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { example: 'test', deprecated: true },
+            ],
+          },
+        },
+        required: ['key'],
+      },
+    });
   });
 
   describe('defaults', () => {

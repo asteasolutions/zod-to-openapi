@@ -6,7 +6,7 @@ import { expectSchema } from './lib/helpers';
 extendZodWithOpenApi(z);
 
 describe('Polymorphism', () => {
-  it('can use allOf', () => {
+  it('can use allOf for extended schemas', () => {
     const BaseSchema = z.object({ id: z.string() }).openapi({
       refId: 'Base',
     });
@@ -17,13 +17,7 @@ describe('Polymorphism', () => {
       refId: 'Extended',
     });
 
-    const TestSchema = z.object({
-      key: ExtendedSchema.nullable().openapi({
-        refId: 'Test',
-      }),
-    });
-
-    expectSchema([BaseSchema, ExtendedSchema, TestSchema], {
+    expectSchema([BaseSchema, ExtendedSchema], {
       Base: {
         type: 'object',
         required: ['id'],
@@ -50,9 +44,44 @@ describe('Polymorphism', () => {
     });
   });
 
-  it.todo('can apply nullable');
+  it('can apply nullable', () => {
+    const BaseSchema = z.object({ id: z.ostring() }).openapi({
+      refId: 'Base',
+    });
 
-  it.todo('can apply optional');
+    const ExtendedSchema = BaseSchema.extend({
+      bonus: z.onumber(),
+    })
+      .nullable()
+      .openapi({
+        refId: 'Extended',
+      });
+
+    expectSchema([BaseSchema, ExtendedSchema], {
+      Base: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+        },
+      },
+      Extended: {
+        allOf: [
+          { $ref: '#/components/schemas/Base' },
+          {
+            type: 'object',
+            properties: {
+              bonus: {
+                type: 'number',
+              },
+            },
+            nullable: true,
+          },
+        ],
+      },
+    });
+  });
 
   it('can override properties', () => {
     const AnimalSchema = z
