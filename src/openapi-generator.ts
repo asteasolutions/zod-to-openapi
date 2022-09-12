@@ -22,7 +22,14 @@ import type {
   ZodType,
   ZodTypeAny,
 } from 'zod';
-import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
+import {
+  compact,
+  isNil,
+  mapValues,
+  objectEquals,
+  omit,
+  omitBy,
+} from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 import {
   OpenAPIComponentObject,
@@ -677,10 +684,21 @@ export class OpenAPIGenerator {
         );
       }
 
-      const alreadyRegistered = Object.keys(registeredSchema.properties ?? {});
+      const registeredProperties = registeredSchema.properties ?? {};
+
+      const alreadyRegistered = Object.keys(registeredProperties).filter(
+        propKey => {
+          return objectEquals(
+            properties[propKey],
+            registeredProperties[propKey]
+          );
+        }
+      );
+
       const alreadyRequired = registeredSchema.required ?? [];
 
       const additionalProperties = omit(properties, alreadyRegistered);
+
       const additionallyRequired = requiredProperties.filter(
         prop => !alreadyRequired.includes(prop)
       );
@@ -690,8 +708,11 @@ export class OpenAPIGenerator {
 
         properties: additionalProperties,
 
-        required:
-          additionallyRequired.length > 0 ? additionallyRequired : undefined,
+        ...(additionallyRequired.length > 0
+          ? { required: additionallyRequired }
+          : {}),
+
+        additionalProperties: unknownKeysOption === 'passthrough' || undefined,
       };
 
       return {
@@ -707,7 +728,9 @@ export class OpenAPIGenerator {
 
       properties,
 
-      required: requiredProperties.length > 0 ? requiredProperties : undefined,
+      ...(requiredProperties.length > 0
+        ? { required: requiredProperties }
+        : {}),
 
       additionalProperties: unknownKeysOption === 'passthrough' || undefined,
 
