@@ -365,6 +365,8 @@ The list of all supported types as of now is:
 - `ZodRecord`
 - `ZodUnknown`
 
+Extending an instance of `ZodObject` is also supported and results in an OpenApi definition with `allOf`
+
 ### Unsupported types
 
 In case you try to create an OpenAPI schema from a zod schema that is not one of the aforementioned types then you'd receive an `UnknownZodTypeError`.
