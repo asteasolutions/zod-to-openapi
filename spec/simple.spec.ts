@@ -324,7 +324,6 @@ describe('Simple', () => {
     });
   });
 
-  // TODO: This is also not working. Same with applying `.openapi()`
   it('supports nullable for registered schemas', () => {
     const StringSchema = z.string().openapi({ refId: 'String' });
 
