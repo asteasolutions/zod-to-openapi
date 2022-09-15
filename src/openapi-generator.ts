@@ -22,7 +22,14 @@ import type {
   ZodType,
   ZodTypeAny,
 } from 'zod';
-import { compact, isNil, mapValues, omit, omitBy } from './lib/lodash';
+import {
+  compact,
+  isNil,
+  mapValues,
+  objectEquals,
+  omit,
+  omitBy,
+} from './lib/lodash';
 import { ZodOpenAPIMetadata } from './zod-extensions';
 import {
   OpenAPIComponentObject,
@@ -335,9 +342,24 @@ export class OpenAPIGenerator {
     const refId = metadata?.refId;
 
     if (refId && this.schemaRefs[refId]) {
-      return {
+      const referenceObject = {
         $ref: `#/components/schemas/${refId}`,
       };
+
+      const nullableMetadata = zodSchema.isNullable() ? { nullable: true } : {};
+
+      const appliedMetadata = this.applySchemaMetadata(
+        nullableMetadata,
+        metadata
+      );
+
+      if (Object.keys(appliedMetadata).length > 0) {
+        return {
+          allOf: [referenceObject, appliedMetadata],
+        };
+      }
+
+      return referenceObject;
     }
 
     const result = metadata?.type
@@ -655,6 +677,8 @@ export class OpenAPIGenerator {
     zodSchema: ZodObject<ZodRawShape>,
     isNullable: boolean
   ): SchemaObject {
+    const extendedFrom = zodSchema._def.openapi?.extendedFrom;
+
     const propTypes = zodSchema._def.shape();
     const unknownKeysOption = zodSchema._unknownKeys as UnknownKeysParam;
 
@@ -662,19 +686,63 @@ export class OpenAPIGenerator {
       .filter(([_key, type]) => !this.isOptionalSchema(type))
       .map(([key, _type]) => key);
 
-    return {
-      type: 'object',
+    const schemaProperties = mapValues(propTypes, propSchema =>
+      this.generateInnerSchema(propSchema)
+    );
 
-      properties: mapValues(propTypes, propSchema =>
-        this.generateInnerSchema(propSchema)
-      ),
+    let alreadyRegistered: string[] = [];
+    let alreadyRequired: string[] = [];
 
-      required: requiredProperties.length > 0 ? requiredProperties : undefined,
+    if (extendedFrom) {
+      const registeredSchema = this.schemaRefs[extendedFrom];
 
-      additionalProperties: unknownKeysOption === 'passthrough' || undefined,
+      if (!registeredSchema) {
+        throw new Error(
+          `Attempt to extend an unregistered schema with id ${extendedFrom}.`
+        );
+      }
 
-      nullable: isNullable ? true : undefined,
+      const registeredProperties = registeredSchema.properties ?? {};
+
+      alreadyRegistered = Object.keys(registeredProperties).filter(propKey => {
+        return objectEquals(
+          schemaProperties[propKey],
+          registeredProperties[propKey]
+        );
+      });
+
+      alreadyRequired = registeredSchema.required ?? [];
+    }
+
+    const properties = omit(schemaProperties, alreadyRegistered);
+
+    const additionallyRequired = requiredProperties.filter(
+      prop => !alreadyRequired.includes(prop)
+    );
+
+    const objectData = {
+      type: 'object' as const,
+
+      properties,
+
+      ...(isNullable ? { nullable: true } : {}),
+
+      ...(additionallyRequired.length > 0
+        ? { required: additionallyRequired }
+        : {}),
+
+      ...(unknownKeysOption === 'passthrough'
+        ? { additionalProperties: true }
+        : {}),
     };
+
+    if (extendedFrom) {
+      return {
+        allOf: [{ $ref: `#/components/schemas/${extendedFrom}` }, objectData],
+      };
+    }
+
+    return objectData;
   }
 
   private flattenUnionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {
@@ -719,7 +787,7 @@ export class OpenAPIGenerator {
 
   private buildSchemaMetadata(metadata: ZodOpenAPIMetadata) {
     // A place to omit all custom keys added to the openapi
-    return omitBy(omit(metadata, ['param', 'refId']), isNil);
+    return omitBy(omit(metadata, ['param', 'refId', 'extendedFrom']), isNil);
   }
 
   private buildParameterMetadata(

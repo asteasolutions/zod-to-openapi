@@ -324,6 +324,60 @@ describe('Simple', () => {
     });
   });
 
+  it('supports nullable for registered schemas', () => {
+    const StringSchema = z.string().openapi({ refId: 'String' });
+
+    const TestSchema = z
+      .object({ key: StringSchema.nullable() })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { nullable: true },
+            ],
+          },
+        },
+        required: ['key'],
+      },
+    });
+  });
+
+  it('supports .openapi for registered schemas', () => {
+    const StringSchema = z.string().openapi({ refId: 'String' });
+
+    const TestSchema = z
+      .object({
+        key: StringSchema.openapi({ example: 'test', deprecated: true }),
+      })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { example: 'test', deprecated: true },
+            ],
+          },
+        },
+        required: ['key'],
+      },
+    });
+  });
+
   describe('defaults', () => {
     it('supports defaults', () => {
       expectSchema(

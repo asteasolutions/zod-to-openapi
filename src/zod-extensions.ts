@@ -1,8 +1,10 @@
 import { ParameterObject, SchemaObject } from 'openapi3-ts';
 import type { z } from 'zod';
+import { isZodType } from './lib/zod-is-type';
 
 export interface ZodOpenAPIMetadata<T = any> extends SchemaObject {
   refId?: string;
+  extendedFrom?: string;
   param?: Partial<ParameterObject> & { example?: T };
   example?: T;
 }
@@ -31,7 +33,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
   zod.ZodSchema.prototype.openapi = function (openapi) {
     const { param, ...restOfOpenApi } = openapi ?? {};
 
-    return new (this as any).constructor({
+    const result = new (this as any).constructor({
       ...this._def,
       openapi: {
         ...this._def.openapi,
@@ -42,6 +44,23 @@ export function extendZodWithOpenApi(zod: typeof z) {
         },
       },
     });
+
+    if (isZodType(this, 'ZodObject')) {
+      const initialExtend = this.extend;
+
+      // TODO: This does an overload everytime. So .extend().openapi() makes this change twice
+      result.extend = function (...args: any) {
+        const extendedResult = initialExtend.apply(result, args);
+
+        extendedResult._def.openapi = {
+          extendedFrom: result._def.openapi?.refId,
+        };
+
+        return extendedResult;
+      };
+    }
+
+    return result;
   };
 
   const zodOptional = zod.ZodSchema.prototype.optional as any;
