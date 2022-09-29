@@ -1,7 +1,6 @@
 import { z, ZodSchema } from 'zod';
 import { OperationObject, PathItemObject } from 'openapi3-ts';
 import { OpenAPIGenerator } from '../src/openapi-generator';
-import { extendZodWithOpenApi } from '../src/zod-extensions';
 import { OpenAPIRegistry, RouteConfig } from '../src/openapi-registry';
 
 function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
@@ -31,9 +30,6 @@ const testDocConfig = {
   },
   servers: [{ url: 'v1' }],
 };
-
-// TODO: setupTests.ts
-extendZodWithOpenApi(z);
 
 describe('Routes', () => {
   describe('response definitions', () => {
