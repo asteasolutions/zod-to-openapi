@@ -250,7 +250,9 @@ The library specific properties for `registerPath` are `method`, `path`, `reques
 - `path` - a string - being the path of the endpoint;
 - `request` - an optional object with optional `body`, `params`, `query` and `headers` keys,
   - `query`, `params` - being instances of `ZodObject`
-  - `body` - being any `zod` instance
+  - `body` - an object with a `description` and a `content` record where:
+    - the key is a `mediaType` string like `application/json`
+    - and the value is an object with a `schema` of any `zod` type
   - `headers` - an array of `zod` instances
 - `responses` - an object where the key is the status code or `default` and the value is an object with a `description` and a `content` record where:
   - the key is a `mediaType` string like `application/json`
