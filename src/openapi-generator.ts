@@ -37,6 +37,7 @@ import {
   OpenAPIDefinitions,
   ResponseConfig,
   RouteConfig,
+  ZodContentObject,
 } from './openapi-registry';
 import {
   ConflictError,
@@ -480,22 +481,21 @@ export class OpenAPIGenerator {
     return routeDoc;
   }
 
-  private getResponse(
-    response: ResponseConfig
-  ): ResponseObject | ReferenceObject {
-    const content = this.getResponseContent(response);
+  private getResponse({
+    content,
+    ...rest
+  }: ResponseConfig): ResponseObject | ReferenceObject {
+    const responseContent = content
+      ? { content: this.getResponseContent(content) }
+      : {};
 
     return {
-      description: response.description,
-      headers: response.headers,
-      links: response.links,
-      content,
+      ...rest,
+      ...responseContent,
     };
   }
 
-  private getResponseContent(response: ResponseConfig): ContentObject {
-    const content = response?.content ?? {};
-
+  private getResponseContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
       const schema = this.generateInnerSchema(config.schema);
 

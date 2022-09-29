@@ -117,6 +117,27 @@ describe('Routes', () => {
         $ref: '#/components/schemas/User',
       });
     });
+
+    it('can generate responses without content', () => {
+      const registry = new OpenAPIRegistry();
+
+      registry.registerPath({
+        method: 'get',
+        path: '/',
+        responses: {
+          204: {
+            description: 'Success',
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
+
+      expect(responses['204']).toEqual({ description: 'Success' });
+    });
   });
 
   describe('parameters', () => {
