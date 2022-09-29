@@ -10,8 +10,12 @@ function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
     path: '/',
     responses: {
       200: {
-        mediaType: 'application/json',
-        schema: z.object({}).openapi({ description: 'Response' }),
+        description: 'Response',
+        content: {
+          'application/json': {
+            schema: z.object({}),
+          },
+        },
       },
     },
     ...props,
@@ -46,14 +50,21 @@ describe('Routes', () => {
         path: '/',
         responses: {
           200: {
-            mediaType: 'application/json',
             description: 'Simple response',
-            schema: z.string(),
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+            },
           },
 
           404: {
-            mediaType: 'application/json',
-            schema: z.string().openapi({ description: 'Missing object' }),
+            description: 'Missing object',
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+            },
           },
         },
       });
@@ -65,6 +76,46 @@ describe('Routes', () => {
 
       expect(responses['200'].description).toEqual('Simple response');
       expect(responses['404'].description).toEqual('Missing object');
+    });
+
+    it('can set multiple response formats', () => {
+      const registry = new OpenAPIRegistry();
+
+      const UserSchema = registry.register(
+        'User',
+        z.object({ name: z.string() })
+      );
+
+      registry.registerPath({
+        method: 'get',
+        path: '/',
+        responses: {
+          200: {
+            description: 'Simple response',
+            content: {
+              'application/json': {
+                schema: UserSchema,
+              },
+              'application/xml': {
+                schema: UserSchema,
+              },
+            },
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
+
+      expect(responses['200'].description).toEqual('Simple response');
+      expect(responses['200'].content['application/json'].schema).toEqual({
+        $ref: '#/components/schemas/User',
+      });
+      expect(responses['200'].content['application/xml'].schema).toEqual({
+        $ref: '#/components/schemas/User',
+      });
     });
   });
 

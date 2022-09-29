@@ -14,6 +14,7 @@ import {
   ComponentsObject,
   ParameterLocation,
   ResponseObject,
+  ContentObject,
 } from 'openapi3-ts';
 import type {
   ZodObject,
@@ -40,7 +41,6 @@ import {
 import {
   ConflictError,
   MissingParameterDataError,
-  MissingResponseDescriptionError,
   UnknownZodTypeError,
 } from './errors';
 import { isZodType } from './lib/zod-is-type';
@@ -483,48 +483,24 @@ export class OpenAPIGenerator {
   private getResponse(
     response: ResponseConfig
   ): ResponseObject | ReferenceObject {
-    const description = this.descriptionFromResponseConfig(response);
-
-    if (isZodType(response, 'ZodVoid')) {
-      return { description };
-    }
-
-    const responseSchema = this.generateInnerSchema(response.schema);
+    const content = this.getResponseContent(response);
 
     return {
-      description,
+      description: response.description,
       headers: response.headers,
       links: response.links,
-      content: {
-        [response.mediaType]: {
-          schema: responseSchema,
-        },
-      },
+      content,
     };
   }
 
-  private descriptionFromResponseConfig(response: ResponseConfig) {
-    if (isZodType(response, 'ZodVoid')) {
-      const metadata = this.getMetadata(response);
+  private getResponseContent(response: ResponseConfig): ContentObject {
+    const content = response?.content ?? {};
 
-      if (!metadata?.description) {
-        throw new MissingResponseDescriptionError();
-      }
+    return mapValues(content, config => {
+      const schema = this.generateInnerSchema(config.schema);
 
-      return metadata.description;
-    }
-
-    if (response.description) {
-      return response.description;
-    }
-
-    const metadata = this.getMetadata(response.schema);
-
-    if (!metadata?.description) {
-      throw new MissingResponseDescriptionError();
-    }
-
-    return metadata.description;
+      return { schema };
+    });
   }
 
   private toOpenAPISchema(
