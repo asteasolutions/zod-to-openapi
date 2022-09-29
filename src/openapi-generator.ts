@@ -38,6 +38,7 @@ import {
   ResponseConfig,
   RouteConfig,
   ZodContentObject,
+  ZodRequestBody,
 } from './openapi-registry';
 import {
   ConflictError,
@@ -407,24 +408,19 @@ export class OpenAPIGenerator {
   }
 
   private getRequestBody(
-    bodySchema: ZodType<unknown> | undefined
+    requestBody: ZodRequestBody | undefined
   ): RequestBodyObject | undefined {
-    if (!bodySchema) {
+    if (!requestBody) {
       return;
     }
 
-    const schema = this.generateInnerSchema(bodySchema);
-    const metadata = this.getMetadata(bodySchema);
+    const { content, ...rest } = requestBody;
+
+    const requestBodyContent = this.getBodyContent(requestBody.content);
 
     return {
-      description: metadata?.description,
-      required: !bodySchema.isOptional(),
-      content: {
-        // TODO: Maybe should be coming from metadata
-        'application/json': {
-          schema,
-        },
-      },
+      ...rest,
+      content: requestBodyContent,
     };
   }
 
@@ -486,7 +482,7 @@ export class OpenAPIGenerator {
     ...rest
   }: ResponseConfig): ResponseObject | ReferenceObject {
     const responseContent = content
-      ? { content: this.getResponseContent(content) }
+      ? { content: this.getBodyContent(content) }
       : {};
 
     return {
@@ -495,7 +491,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getResponseContent(content: ZodContentObject): ContentObject {
+  private getBodyContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
       const schema = this.generateInnerSchema(config.schema);
 

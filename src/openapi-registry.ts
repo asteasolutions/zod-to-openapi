@@ -20,7 +20,7 @@ import type { ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
-export interface ZodResponseObject {
+export interface ZodMediaTypeObject {
   schema: ZodType<unknown>;
   examples?: ExamplesObject;
   example?: any;
@@ -28,7 +28,13 @@ export interface ZodResponseObject {
 }
 
 export interface ZodContentObject {
-  [mediaType: string]: ZodResponseObject;
+  [mediaType: string]: ZodMediaTypeObject;
+}
+
+export interface ZodRequestBody {
+  description?: string;
+  content: ZodContentObject;
+  required?: boolean;
 }
 
 export interface ResponseConfig {
@@ -42,7 +48,7 @@ export interface RouteConfig extends OperationObject {
   method: Method;
   path: string;
   request?: {
-    body?: ZodType<unknown>;
+    body?: ZodRequestBody;
     params?: ZodObject<any>;
     query?: ZodObject<any>;
     headers?: ZodType<unknown>[];

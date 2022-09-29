@@ -10,12 +10,7 @@ function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
     path: '/',
     responses: {
       200: {
-        description: 'Response',
-        content: {
-          'application/json': {
-            schema: z.object({}),
-          },
-        },
+        description: 'OK Response',
       },
     },
     ...props,
@@ -336,5 +331,79 @@ describe('Routes', () => {
 
       return routeDoc?.parameters;
     }
+  });
+
+  describe('request body', () => {
+    it('can specify request body metadata - description/required', () => {
+      const registry = new OpenAPIRegistry();
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            description: 'Test description',
+            required: true,
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+            },
+          },
+        },
+      });
+
+      registry.registerPath(route);
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+
+      const { requestBody } = document.paths['/'].get;
+
+      expect(requestBody).toEqual({
+        description: 'Test description',
+        required: true,
+        content: { 'application/json': { schema: { type: 'string' } } },
+      });
+    });
+
+    it('can have multiple media format bodies', () => {
+      const registry = new OpenAPIRegistry();
+
+      const UserSchema = registry.register(
+        'User',
+        z.object({ name: z.string() })
+      );
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+              'application/xml': {
+                schema: UserSchema,
+              },
+            },
+          },
+        },
+      });
+
+      registry.registerPath(route);
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+
+      const requestBody = document.paths['/'].get.requestBody.content;
+
+      expect(requestBody['application/json']).toEqual({
+        schema: { type: 'string' },
+      });
+
+      expect(requestBody['application/xml']).toEqual({
+        schema: { $ref: '#/components/schemas/User' },
+      });
+    });
   });
 });
