@@ -40,8 +40,12 @@ describe('Custom components', () => {
       security: [{ [bearerAuth.name]: [] }],
       responses: {
         200: {
-          mediaType: 'application/json',
-          schema: z.string().openapi({ description: 'Sample response' }),
+          description: 'Sample response',
+          content: {
+            'application/json': {
+              schema: z.string(),
+            },
+          },
         },
       },
     });
@@ -74,9 +78,13 @@ describe('Custom components', () => {
       method: 'get',
       responses: {
         200: {
-          mediaType: 'application/json',
+          description: 'Sample response',
           headers: { 'x-api-key': apiKeyHeader.ref },
-          schema: z.string().openapi({ description: 'Sample response' }),
+          content: {
+            'application/json': {
+              schema: z.string(),
+            },
+          },
         },
       },
     });

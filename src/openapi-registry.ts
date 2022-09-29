@@ -1,7 +1,9 @@
 import {
   CallbackObject,
   ComponentsObject,
+  EncodingObject,
   ExampleObject,
+  ExamplesObject,
   HeaderObject,
   HeadersObject,
   ISpecificationExtension,
@@ -18,16 +20,21 @@ import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
-export type ResponseConfig =
-  // Matching ResponseObject in openapi3-ts
-  | {
-      mediaType: string;
-      schema: ZodType<unknown>;
-      description?: string;
-      headers?: HeadersObject;
-      links?: LinksObject;
-    }
-  | ZodVoid;
+export interface ZodResponseObject {
+  schema: ZodType<unknown>;
+  examples?: ExamplesObject;
+  example?: any;
+  encoding?: EncodingObject;
+}
+
+export type ResponseConfig = {
+  description: string;
+  headers?: HeadersObject;
+  links?: LinksObject;
+  content?: {
+    [mediaType: string]: ZodResponseObject;
+  };
+};
 
 export interface RouteConfig extends OperationObject {
   method: Method;
