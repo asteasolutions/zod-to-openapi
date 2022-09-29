@@ -27,14 +27,16 @@ export interface ZodResponseObject {
   encoding?: EncodingObject;
 }
 
-export type ResponseConfig = {
+export interface ZodContentObject {
+  [mediaType: string]: ZodResponseObject;
+}
+
+export interface ResponseConfig {
   description: string;
   headers?: HeadersObject;
   links?: LinksObject;
-  content?: {
-    [mediaType: string]: ZodResponseObject;
-  };
-};
+  content?: ZodContentObject;
+}
 
 export interface RouteConfig extends OperationObject {
   method: Method;
