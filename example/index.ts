@@ -53,12 +53,16 @@ registry.registerPath({
   },
   responses: {
     200: {
-      mediaType: 'application/json',
-      schema: UserSchema.openapi({
-        description: 'Object with user data.',
-      }),
+      description: 'Object with user data.',
+      content: {
+        'application/json': {
+          schema: UserSchema,
+        },
+      },
     },
-    204: z.void().openapi({ description: 'No content - successful operation' }),
+    204: {
+      description: 'No content - successful operation',
+    },
   },
 });
 

@@ -16,7 +16,7 @@ import {
   SchemaObject,
   SecuritySchemeObject,
 } from 'openapi3-ts';
-import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
+import type { ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 

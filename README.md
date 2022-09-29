@@ -205,12 +205,16 @@ registry.registerPath({
   },
   responses: {
     200: {
-      mediaType: 'application/json',
-      schema: UserSchema.openapi({
-        description: 'Object with user data.',
-      }),
+      description: 'Object with user data.',
+      content: {
+        'application/json': {
+          schema: UserSchema,
+        },
+      },
     },
-    204: z.void(),
+    204: {
+      description: 'No content - successful operation',
+    },
   },
 });
 ```
@@ -248,9 +252,9 @@ The library specific properties for `registerPath` are `method`, `path`, `reques
   - `query`, `params` - being instances of `ZodObject`
   - `body` - being any `zod` instance
   - `headers` - an array of `zod` instances
-- `responses` - an object where the key is the status code or `default` and the value is either:
-  - an instance of `ZodVoid` - meaning a no content response
-  - an object with `mediaType` (a string like `application/json`) and a `schema` of any zod type
+- `responses` - an object where the key is the status code or `default` and the value is an object with a `description` and a `content` record where:
+  - the key is a `mediaType` string like `application/json`
+  - and the value is an object with a `schema` of any `zod` type
 
 #### Defining route parameters
 
