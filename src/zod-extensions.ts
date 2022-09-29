@@ -48,7 +48,6 @@ export function extendZodWithOpenApi(zod: typeof z) {
     if (isZodType(this, 'ZodObject')) {
       const initialExtend = this.extend;
 
-      // TODO: This does an overload everytime. So .extend().openapi() makes this change twice
       result.extend = function (...args: any) {
         const extendedResult = initialExtend.apply(result, args);
 
