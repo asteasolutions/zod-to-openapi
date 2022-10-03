@@ -11,6 +11,7 @@ import {
   LinksObject,
   OperationObject,
   ParameterObject,
+  ReferenceObject,
   RequestBodyObject,
   ResponseObject,
   SchemaObject,
@@ -21,7 +22,7 @@ import type { ZodObject, ZodSchema, ZodType } from 'zod';
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
 export interface ZodMediaTypeObject {
-  schema: ZodType<unknown>;
+  schema: ZodType<unknown> | SchemaObject | ReferenceObject;
   examples?: ExamplesObject;
   example?: any;
   encoding?: EncodingObject;

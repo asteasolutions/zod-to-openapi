@@ -45,7 +45,7 @@ import {
   MissingParameterDataError,
   UnknownZodTypeError,
 } from './errors';
-import { isZodType } from './lib/zod-is-type';
+import { isAnyZodType, isZodType } from './lib/zod-is-type';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -493,6 +493,10 @@ export class OpenAPIGenerator {
 
   private getBodyContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
+      if (!isAnyZodType(config.schema)) {
+        return { schema: config.schema };
+      }
+
       const schema = this.generateInnerSchema(config.schema);
 
       return { schema };

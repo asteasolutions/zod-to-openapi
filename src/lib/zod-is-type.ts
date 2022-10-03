@@ -1,5 +1,30 @@
 import type { z } from 'zod';
 
+const zodTypeNames = [
+  'ZodArray',
+  'ZodBoolean',
+  'ZodDefault',
+  'ZodEffects',
+  'ZodEnum',
+  'ZodIntersection',
+  'ZodLiteral',
+  'ZodNativeEnum',
+  'ZodNull',
+  'ZodNullable',
+  'ZodNumber',
+  'ZodObject',
+  'ZodOptional',
+  'ZodRecord',
+  'ZodSchema',
+  'ZodString',
+  'ZodType',
+  'ZodTypeAny',
+  'ZodUnion',
+  'ZodDiscriminatedUnion',
+  'ZodUnknown',
+  'ZodVoid',
+];
+
 type ZodTypes = {
   ZodArray: z.ZodArray<any>;
   ZodBoolean: z.ZodBoolean;
@@ -30,4 +55,8 @@ export function isZodType<TypeName extends keyof ZodTypes>(
   typeName: TypeName
 ): schema is ZodTypes[TypeName] {
   return schema.constructor.name === typeName;
+}
+
+export function isAnyZodType(schema: object): schema is z.ZodType {
+  return zodTypeNames.some(typeName => schema.constructor.name === typeName);
 }

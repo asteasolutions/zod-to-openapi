@@ -33,7 +33,7 @@ const testDocConfig = {
 
 describe('Routes', () => {
   describe('response definitions', () => {
-    it('can set description through the response definition or through the schema', () => {
+    it('can set description', () => {
       const registry = new OpenAPIRegistry();
 
       registry.registerPath({
@@ -67,6 +67,52 @@ describe('Routes', () => {
 
       expect(responses['200'].description).toEqual('Simple response');
       expect(responses['404'].description).toEqual('Missing object');
+    });
+
+    it('can specify response with plain OpenApi format', () => {
+      const registry = new OpenAPIRegistry();
+
+      registry.registerPath({
+        method: 'get',
+        path: '/',
+        responses: {
+          200: {
+            description: 'Simple response',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'string',
+                  example: 'test',
+                },
+              },
+            },
+          },
+
+          404: {
+            description: 'Missing object',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/SomeRef',
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
+
+      expect(responses['200'].content['application/json'].schema).toEqual({
+        type: 'string',
+        example: 'test',
+      });
+      expect(responses['404'].content['application/json'].schema).toEqual({
+        $ref: '#/components/schemas/SomeRef',
+      });
     });
 
     it('can set multiple response formats', () => {
@@ -359,6 +405,44 @@ describe('Routes', () => {
         description: 'Test description',
         required: true,
         content: { 'application/json': { schema: { type: 'string' } } },
+      });
+    });
+
+    it('can specify request body using plain OpenApi format', () => {
+      const registry = new OpenAPIRegistry();
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+              },
+              'application/xml': {
+                schema: { $ref: '#/components/schemas/SomeRef' },
+              },
+            },
+          },
+        },
+      });
+
+      registry.registerPath(route);
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+
+      const requestBody = document.paths['/'].get.requestBody.content;
+
+      expect(requestBody['application/json']).toEqual({
+        schema: { type: 'string', enum: ['test'] },
+      });
+
+      expect(requestBody['application/xml']).toEqual({
+        schema: { $ref: '#/components/schemas/SomeRef' },
       });
     });
 
