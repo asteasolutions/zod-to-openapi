@@ -1,7 +1,6 @@
 import { z, ZodSchema } from 'zod';
 import { OperationObject, PathItemObject } from 'openapi3-ts';
 import { OpenAPIGenerator } from '../src/openapi-generator';
-import { extendZodWithOpenApi } from '../src/zod-extensions';
 import { OpenAPIRegistry, RouteConfig } from '../src/openapi-registry';
 
 function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
@@ -10,8 +9,7 @@ function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
     path: '/',
     responses: {
       200: {
-        mediaType: 'application/json',
-        schema: z.object({}).openapi({ description: 'Response' }),
+        description: 'OK Response',
       },
     },
     ...props,
@@ -33,12 +31,9 @@ const testDocConfig = {
   servers: [{ url: 'v1' }],
 };
 
-// TODO: setupTests.ts
-extendZodWithOpenApi(z);
-
 describe('Routes', () => {
   describe('response definitions', () => {
-    it('can set description through the response definition or through the schema', () => {
+    it('can set description', () => {
       const registry = new OpenAPIRegistry();
 
       registry.registerPath({
@@ -46,14 +41,21 @@ describe('Routes', () => {
         path: '/',
         responses: {
           200: {
-            mediaType: 'application/json',
             description: 'Simple response',
-            schema: z.string(),
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+            },
           },
 
           404: {
-            mediaType: 'application/json',
-            schema: z.string().openapi({ description: 'Missing object' }),
+            description: 'Missing object',
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+            },
           },
         },
       });
@@ -65,6 +67,113 @@ describe('Routes', () => {
 
       expect(responses['200'].description).toEqual('Simple response');
       expect(responses['404'].description).toEqual('Missing object');
+    });
+
+    it('can specify response with plain OpenApi format', () => {
+      const registry = new OpenAPIRegistry();
+
+      registry.registerPath({
+        method: 'get',
+        path: '/',
+        responses: {
+          200: {
+            description: 'Simple response',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'string',
+                  example: 'test',
+                },
+              },
+            },
+          },
+
+          404: {
+            description: 'Missing object',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/SomeRef',
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
+
+      expect(responses['200'].content['application/json'].schema).toEqual({
+        type: 'string',
+        example: 'test',
+      });
+      expect(responses['404'].content['application/json'].schema).toEqual({
+        $ref: '#/components/schemas/SomeRef',
+      });
+    });
+
+    it('can set multiple response formats', () => {
+      const registry = new OpenAPIRegistry();
+
+      const UserSchema = registry.register(
+        'User',
+        z.object({ name: z.string() })
+      );
+
+      registry.registerPath({
+        method: 'get',
+        path: '/',
+        responses: {
+          200: {
+            description: 'Simple response',
+            content: {
+              'application/json': {
+                schema: UserSchema,
+              },
+              'application/xml': {
+                schema: UserSchema,
+              },
+            },
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
+
+      expect(responses['200'].description).toEqual('Simple response');
+      expect(responses['200'].content['application/json'].schema).toEqual({
+        $ref: '#/components/schemas/User',
+      });
+      expect(responses['200'].content['application/xml'].schema).toEqual({
+        $ref: '#/components/schemas/User',
+      });
+    });
+
+    it('can generate responses without content', () => {
+      const registry = new OpenAPIRegistry();
+
+      registry.registerPath({
+        method: 'get',
+        path: '/',
+        responses: {
+          204: {
+            description: 'Success',
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+      const responses = document.paths['/'].get.responses;
+
+      expect(responses['204']).toEqual({ description: 'Success' });
     });
   });
 
@@ -264,5 +373,117 @@ describe('Routes', () => {
 
       return routeDoc?.parameters;
     }
+  });
+
+  describe('request body', () => {
+    it('can specify request body metadata - description/required', () => {
+      const registry = new OpenAPIRegistry();
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            description: 'Test description',
+            required: true,
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+            },
+          },
+        },
+      });
+
+      registry.registerPath(route);
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+
+      const { requestBody } = document.paths['/'].get;
+
+      expect(requestBody).toEqual({
+        description: 'Test description',
+        required: true,
+        content: { 'application/json': { schema: { type: 'string' } } },
+      });
+    });
+
+    it('can specify request body using plain OpenApi format', () => {
+      const registry = new OpenAPIRegistry();
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+              },
+              'application/xml': {
+                schema: { $ref: '#/components/schemas/SomeRef' },
+              },
+            },
+          },
+        },
+      });
+
+      registry.registerPath(route);
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+
+      const requestBody = document.paths['/'].get.requestBody.content;
+
+      expect(requestBody['application/json']).toEqual({
+        schema: { type: 'string', enum: ['test'] },
+      });
+
+      expect(requestBody['application/xml']).toEqual({
+        schema: { $ref: '#/components/schemas/SomeRef' },
+      });
+    });
+
+    it('can have multiple media format bodies', () => {
+      const registry = new OpenAPIRegistry();
+
+      const UserSchema = registry.register(
+        'User',
+        z.object({ name: z.string() })
+      );
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            content: {
+              'application/json': {
+                schema: z.string(),
+              },
+              'application/xml': {
+                schema: UserSchema,
+              },
+            },
+          },
+        },
+      });
+
+      registry.registerPath(route);
+
+      const document = new OpenAPIGenerator(
+        registry.definitions
+      ).generateDocument(testDocConfig);
+
+      const requestBody = document.paths['/'].get.requestBody.content;
+
+      expect(requestBody['application/json']).toEqual({
+        schema: { type: 'string' },
+      });
+
+      expect(requestBody['application/xml']).toEqual({
+        schema: { $ref: '#/components/schemas/User' },
+      });
+    });
   });
 });

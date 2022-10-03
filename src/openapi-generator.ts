@@ -14,6 +14,7 @@ import {
   ComponentsObject,
   ParameterLocation,
   ResponseObject,
+  ContentObject,
 } from 'openapi3-ts';
 import type {
   ZodObject,
@@ -36,14 +37,15 @@ import {
   OpenAPIDefinitions,
   ResponseConfig,
   RouteConfig,
+  ZodContentObject,
+  ZodRequestBody,
 } from './openapi-registry';
 import {
   ConflictError,
   MissingParameterDataError,
-  MissingResponseDescriptionError,
   UnknownZodTypeError,
 } from './errors';
-import { isZodType } from './lib/zod-is-type';
+import { isAnyZodType, isZodType } from './lib/zod-is-type';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -406,24 +408,19 @@ export class OpenAPIGenerator {
   }
 
   private getRequestBody(
-    bodySchema: ZodType<unknown> | undefined
+    requestBody: ZodRequestBody | undefined
   ): RequestBodyObject | undefined {
-    if (!bodySchema) {
+    if (!requestBody) {
       return;
     }
 
-    const schema = this.generateInnerSchema(bodySchema);
-    const metadata = this.getMetadata(bodySchema);
+    const { content, ...rest } = requestBody;
+
+    const requestBodyContent = this.getBodyContent(requestBody.content);
 
     return {
-      description: metadata?.description,
-      required: !bodySchema.isOptional(),
-      content: {
-        // TODO: Maybe should be coming from metadata
-        'application/json': {
-          schema,
-        },
-      },
+      ...rest,
+      content: requestBodyContent,
     };
   }
 
@@ -480,51 +477,30 @@ export class OpenAPIGenerator {
     return routeDoc;
   }
 
-  private getResponse(
-    response: ResponseConfig
-  ): ResponseObject | ReferenceObject {
-    const description = this.descriptionFromResponseConfig(response);
-
-    if (isZodType(response, 'ZodVoid')) {
-      return { description };
-    }
-
-    const responseSchema = this.generateInnerSchema(response.schema);
+  private getResponse({
+    content,
+    ...rest
+  }: ResponseConfig): ResponseObject | ReferenceObject {
+    const responseContent = content
+      ? { content: this.getBodyContent(content) }
+      : {};
 
     return {
-      description,
-      headers: response.headers,
-      links: response.links,
-      content: {
-        [response.mediaType]: {
-          schema: responseSchema,
-        },
-      },
+      ...rest,
+      ...responseContent,
     };
   }
 
-  private descriptionFromResponseConfig(response: ResponseConfig) {
-    if (isZodType(response, 'ZodVoid')) {
-      const metadata = this.getMetadata(response);
-
-      if (!metadata?.description) {
-        throw new MissingResponseDescriptionError();
+  private getBodyContent(content: ZodContentObject): ContentObject {
+    return mapValues(content, config => {
+      if (!isAnyZodType(config.schema)) {
+        return { schema: config.schema };
       }
 
-      return metadata.description;
-    }
+      const schema = this.generateInnerSchema(config.schema);
 
-    if (response.description) {
-      return response.description;
-    }
-
-    const metadata = this.getMetadata(response.schema);
-
-    if (!metadata?.description) {
-      throw new MissingResponseDescriptionError();
-    }
-
-    return metadata.description;
+      return { schema };
+    });
   }
 
   private toOpenAPISchema(

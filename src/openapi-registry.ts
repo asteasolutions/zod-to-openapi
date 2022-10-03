@@ -1,7 +1,9 @@
 import {
   CallbackObject,
   ComponentsObject,
+  EncodingObject,
   ExampleObject,
+  ExamplesObject,
   HeaderObject,
   HeadersObject,
   ISpecificationExtension,
@@ -9,31 +11,45 @@ import {
   LinksObject,
   OperationObject,
   ParameterObject,
+  ReferenceObject,
   RequestBodyObject,
   ResponseObject,
   SchemaObject,
   SecuritySchemeObject,
 } from 'openapi3-ts';
-import type { ZodVoid, ZodObject, ZodSchema, ZodType } from 'zod';
+import type { ZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
-export type ResponseConfig =
-  // Matching ResponseObject in openapi3-ts
-  | {
-      mediaType: string;
-      schema: ZodType<unknown>;
-      description?: string;
-      headers?: HeadersObject;
-      links?: LinksObject;
-    }
-  | ZodVoid;
+export interface ZodMediaTypeObject {
+  schema: ZodType<unknown> | SchemaObject | ReferenceObject;
+  examples?: ExamplesObject;
+  example?: any;
+  encoding?: EncodingObject;
+}
+
+export interface ZodContentObject {
+  [mediaType: string]: ZodMediaTypeObject;
+}
+
+export interface ZodRequestBody {
+  description?: string;
+  content: ZodContentObject;
+  required?: boolean;
+}
+
+export interface ResponseConfig {
+  description: string;
+  headers?: HeadersObject;
+  links?: LinksObject;
+  content?: ZodContentObject;
+}
 
 export interface RouteConfig extends OperationObject {
   method: Method;
   path: string;
   request?: {
-    body?: ZodType<unknown>;
+    body?: ZodRequestBody;
     params?: ZodObject<any>;
     query?: ZodObject<any>;
     headers?: ZodType<unknown>[];

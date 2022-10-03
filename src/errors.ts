@@ -25,14 +25,6 @@ export class MissingParameterDataError extends ZodToOpenAPIError {
   }
 }
 
-export class MissingResponseDescriptionError extends ZodToOpenAPIError {
-  constructor() {
-    super(
-      'Missing response description. Please specify `description` and using `ZodSchema.openapi`.'
-    );
-  }
-}
-
 interface UnknownZodTypeErrorProps {
   schemaName?: string;
   currentSchema: any;

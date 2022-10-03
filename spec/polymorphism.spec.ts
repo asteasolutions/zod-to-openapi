@@ -1,9 +1,5 @@
 import * as z from 'zod';
-import { extendZodWithOpenApi } from '../src/zod-extensions';
 import { expectSchema } from './lib/helpers';
-
-// TODO: setupTests.ts
-extendZodWithOpenApi(z);
 
 describe('Polymorphism', () => {
   it('can use allOf for extended schemas', () => {
