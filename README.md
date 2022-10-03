@@ -42,12 +42,15 @@ registry.registerPath({
   request: {
     params: z.object({ id: z.string() }),
   },
+
   responses: {
     200: {
-      mediaType: 'application/json',
-      schema: UserSchema.openapi({
-        description: 'Object with user data',
-      }),
+      description: 'Object with user data.',
+      content: {
+        'application/json': {
+          schema: UserSchema,
+        },
+      },
     },
   },
 });
