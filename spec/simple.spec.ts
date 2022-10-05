@@ -2,9 +2,21 @@ import { z } from 'zod';
 import { createSchemas, expectSchema } from './lib/helpers';
 
 describe('Simple', () => {
-  it('generates OpenAPI schema for simple types', () => {
+  it('generates OpenAPI schema for a simple string type', () => {
     expectSchema([z.string().openapi({ refId: 'SimpleString' })], {
       SimpleString: { type: 'string' },
+    });
+  });
+
+  it('generates OpenAPI schema for a simple number type', () => {
+    expectSchema([z.number().openapi({ refId: 'SimpleNumber' })], {
+      SimpleNumber: { type: 'number' },
+    });
+  });
+
+  it('generates OpenAPI schema for a simple integer type', () => {
+    expectSchema([z.number().int().openapi({ refId: 'SimpleInteger' })], {
+      SimpleInteger: { type: 'integer' },
     });
   });
 
