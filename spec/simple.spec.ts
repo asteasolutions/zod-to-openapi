@@ -38,6 +38,20 @@ describe('Simple', () => {
     });
   });
 
+  describe('ZodNumber', () => {
+    it('generates OpenAPI schema for a simple number type', () => {
+      expectSchema([z.number().openapi({ refId: 'SimpleNumber' })], {
+        SimpleNumber: { type: 'number' },
+      });
+    });
+
+    it('generates OpenAPI schema for a simple integer type', () => {
+      expectSchema([z.number().int().openapi({ refId: 'SimpleInteger' })], {
+        SimpleInteger: { type: 'integer' },
+      });
+    });
+  });
+
   it('generates OpenAPI schema for optional after the metadata', () => {
     expectSchema([z.string().openapi({ refId: 'SimpleString' }).optional()], {
       SimpleString: { type: 'string' },

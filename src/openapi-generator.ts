@@ -560,7 +560,7 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodNumber')) {
       return {
-        type: 'number',
+        type: zodSchema.isInt ? 'integer' : 'number',
         minimum: zodSchema.minValue ?? undefined,
         maximum: zodSchema.maxValue ?? undefined,
         nullable: isNullable ? true : undefined,
