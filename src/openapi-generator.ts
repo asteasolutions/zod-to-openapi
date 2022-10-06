@@ -20,7 +20,8 @@ import type {
   ZodObject,
   ZodRawShape,
   ZodSchema,
-  ZodType,
+  ZodString,
+  ZodStringDef,
   ZodTypeAny,
 } from 'zod';
 import {
@@ -503,6 +504,42 @@ export class OpenAPIGenerator {
     });
   }
 
+  private getZodStringCheck<T extends ZodStringDef['checks'][number]['kind']>(
+    zodString: ZodString,
+    kind: T
+  ) {
+    return zodString._def.checks.find(
+      (
+        check
+      ): check is Extract<
+        ZodStringDef['checks'][number],
+        { kind: typeof kind }
+      > => {
+        return check.kind === kind;
+      }
+    );
+  }
+
+  /**
+   * Attempts to map Zod strings to known formats
+   * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
+   */
+  private mapStringFormat(zodString: ZodString): string | undefined {
+    if (zodString.isUUID) {
+      return 'uuid';
+    }
+
+    if (zodString.isEmail) {
+      return 'email';
+    }
+
+    if (zodString.isURL) {
+      return 'uri';
+    }
+
+    return undefined;
+  }
+
   private toOpenAPISchema(
     zodSchema: ZodSchema<any>,
     isNullable: boolean
@@ -512,9 +549,12 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodString')) {
+      const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
       return {
         type: 'string',
         nullable: isNullable ? true : undefined,
+        format: this.mapStringFormat(zodSchema),
+        pattern: regexCheck?.regex.source,
       };
     }
 
