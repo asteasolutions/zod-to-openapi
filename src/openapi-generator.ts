@@ -61,6 +61,9 @@ interface OpenAPIObjectConfig {
   security?: SecurityRequirementObject[];
   tags?: TagObject[];
   externalDocs?: ExternalDocumentationObject;
+
+  // Allow for specification extension keys
+  [key: string]: unknown;
 }
 
 interface ParameterData {
