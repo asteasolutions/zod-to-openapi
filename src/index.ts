@@ -5,3 +5,5 @@ export {
   RouteConfig,
   ResponseConfig,
 } from './openapi-registry';
+
+export * as OpenAPI from 'openapi3-ts';
