@@ -504,6 +504,22 @@ export class OpenAPIGenerator {
     });
   }
 
+  private getZodStringCheck<T extends ZodStringDef['checks'][number]['kind']>(
+    zodSchema: ZodString,
+    kind: T
+  ) {
+    return zodSchema._def.checks.find(
+      (
+        check
+      ): check is Extract<
+        ZodStringDef['checks'][number],
+        { kind: typeof kind }
+      > => {
+        return check.kind === kind;
+      }
+    );
+  }
+
   /**
    * Attempts to map Zod strings to known formats
    * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
@@ -533,22 +549,12 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodString')) {
-      const regexCheck = zodSchema._def.checks.find(
-        (
-          check
-        ): check is Extract<
-          ZodStringDef['checks'][number],
-          { kind: 'regex' }
-        > => {
-          return check.kind === 'regex';
-        }
-      );
-
+      const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
       return {
         type: 'string',
         nullable: isNullable ? true : undefined,
         format: this.mapStringFormat(zodSchema),
-        pattern: regexCheck ? regexCheck.regex.source : undefined,
+        pattern: regexCheck?.regex.source,
       };
     }
 
