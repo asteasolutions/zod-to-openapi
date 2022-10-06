@@ -505,10 +505,10 @@ export class OpenAPIGenerator {
   }
 
   private getZodStringCheck<T extends ZodStringDef['checks'][number]['kind']>(
-    zodSchema: ZodString,
+    zodString: ZodString,
     kind: T
   ) {
-    return zodSchema._def.checks.find(
+    return zodString._def.checks.find(
       (
         check
       ): check is Extract<
