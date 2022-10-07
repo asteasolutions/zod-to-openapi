@@ -134,4 +134,106 @@ describe('Polymorphism', () => {
       },
     });
   });
+
+  it('correctly creates references to existing schema objects using refId', () => {
+    const BaseSchema = z
+      .object({
+        name: z.string(),
+        type: z.enum(['dog', 'cat']).optional(),
+      })
+      .openapi({
+        refId: 'Base',
+      });
+
+    const OtherSchema = z
+      .object({
+        base: BaseSchema,
+      })
+      .openapi({
+        refId: 'Other',
+      });
+
+    expectSchema([BaseSchema, OtherSchema], {
+      Base: {
+        properties: {
+          name: {
+            type: 'string',
+          },
+          type: {
+            enum: ['dog', 'cat'],
+            type: 'string',
+          },
+        },
+        required: ['name'],
+        type: 'object',
+      },
+      Other: {
+        properties: {
+          base: {
+            $ref: '#/components/schemas/Base',
+          },
+        },
+        required: ['base'],
+        type: 'object',
+      },
+    });
+  });
+
+  it('treats objects created by .omit and .pick as new objects', () => {
+    const BaseSchema = z
+      .object({
+        name: z.string(),
+        type: z.enum(['dog', 'cat']).optional(),
+      })
+      .openapi({
+        refId: 'Base',
+      });
+
+    const PickedSchema = BaseSchema.pick({ name: true });
+    const OmittedSchema = BaseSchema.omit({ type: true });
+
+    const OtherSchema = z
+      .object({ omit: OmittedSchema, pick: PickedSchema })
+      .openapi({ refId: 'Other' });
+
+    expectSchema([BaseSchema, OtherSchema], {
+      Base: {
+        properties: {
+          name: {
+            type: 'string',
+          },
+          type: {
+            enum: ['dog', 'cat'],
+            type: 'string',
+          },
+        },
+        required: ['name'],
+        type: 'object',
+      },
+      Other: {
+        properties: {
+          omit: {
+            properties: {
+              name: {
+                type: 'string',
+              },
+            },
+            required: ['name'],
+            type: 'object',
+          },
+          pick: {
+            properties: {
+              name: {
+                type: 'string',
+              },
+            },
+            required: ['name'],
+            type: 'object',
+          },
+        },
+        required: ['omit', 'pick'],
+        type: 'object',
+      },
+    });
+  });
 });
