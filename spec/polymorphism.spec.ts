@@ -135,7 +135,7 @@ describe('Polymorphism', () => {
     });
   });
 
-  it('correctly creates references to existing schema objects using refId', () => {
+  it('treats objects created by .omit as a new object', () => {
     const BaseSchema = z
       .object({
         name: z.string(),
@@ -145,55 +145,10 @@ describe('Polymorphism', () => {
         refId: 'Base',
       });
 
-    const OtherSchema = z
-      .object({
-        base: BaseSchema,
-      })
-      .openapi({
-        refId: 'Other',
-      });
-
-    expectSchema([BaseSchema, OtherSchema], {
-      Base: {
-        properties: {
-          name: {
-            type: 'string',
-          },
-          type: {
-            enum: ['dog', 'cat'],
-            type: 'string',
-          },
-        },
-        required: ['name'],
-        type: 'object',
-      },
-      Other: {
-        properties: {
-          base: {
-            $ref: '#/components/schemas/Base',
-          },
-        },
-        required: ['base'],
-        type: 'object',
-      },
-    });
-  });
-
-  it('treats objects created by .omit and .pick as new objects', () => {
-    const BaseSchema = z
-      .object({
-        name: z.string(),
-        type: z.enum(['dog', 'cat']).optional(),
-      })
-      .openapi({
-        refId: 'Base',
-      });
-
-    const PickedSchema = BaseSchema.pick({ name: true });
     const OmittedSchema = BaseSchema.omit({ type: true });
 
     const OtherSchema = z
-      .object({ omit: OmittedSchema, pick: PickedSchema })
+      .object({ omit: OmittedSchema })
       .openapi({ refId: 'Other' });
 
     expectSchema([BaseSchema, OtherSchema], {
@@ -221,6 +176,45 @@ describe('Polymorphism', () => {
             required: ['name'],
             type: 'object',
           },
+        },
+        required: ['omit'],
+        type: 'object',
+      },
+    });
+  });
+
+  it('treats objects created by .pick as a new object', () => {
+    const BaseSchema = z
+      .object({
+        name: z.string(),
+        type: z.enum(['dog', 'cat']).optional(),
+      })
+      .openapi({
+        refId: 'Base',
+      });
+
+    const PickedSchema = BaseSchema.pick({ name: true });
+
+    const OtherSchema = z
+      .object({ pick: PickedSchema })
+      .openapi({ refId: 'Other' });
+
+    expectSchema([BaseSchema, OtherSchema], {
+      Base: {
+        properties: {
+          name: {
+            type: 'string',
+          },
+          type: {
+            enum: ['dog', 'cat'],
+            type: 'string',
+          },
+        },
+        required: ['name'],
+        type: 'object',
+      },
+      Other: {
+        properties: {
           pick: {
             properties: {
               name: {
@@ -231,7 +225,7 @@ describe('Polymorphism', () => {
             type: 'object',
           },
         },
-        required: ['omit', 'pick'],
+        required: ['pick'],
         type: 'object',
       },
     });
