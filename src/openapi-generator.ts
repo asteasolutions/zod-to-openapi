@@ -584,7 +584,7 @@ export class OpenAPIGenerator {
 
     if (
       isZodType(zodSchema, 'ZodEffects') &&
-      zodSchema._def.effect.type === 'refinement'
+      (zodSchema._def.effect.type === 'refinement' || zodSchema._def.effect.type === 'preprocess')
     ) {
       const innerSchema = zodSchema._def.schema as ZodSchema<any>;
       return this.generateInnerSchema(innerSchema);
