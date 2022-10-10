@@ -715,7 +715,7 @@ describe('Simple', () => {
         ],
         {
           PreprocessedNumber: {
-            type: 'number'
+            type: 'number',
           },
         }
       );
