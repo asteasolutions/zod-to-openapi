@@ -75,6 +75,7 @@ export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
+  private webhookRefs: Record<string, Record<string, PathObject>> = {};
   private rawComponents: {
     componentType: string;
     name: string;
@@ -92,6 +93,10 @@ export class OpenAPIGenerator {
       ...config,
       components: this.buildComponents(),
       paths: this.pathRefs,
+      // As this is invalid in Open API 3.0 we optionally set it
+      ...(Object.keys(this.webhookRefs).length && {
+        webhooks: this.webhookRefs,
+      }),
     };
   }
 
@@ -130,6 +135,7 @@ export class OpenAPIGenerator {
       'schema',
       'parameter',
       'route',
+      'webhook',
     ];
 
     this.definitions.sort((left, right) => {
@@ -151,7 +157,11 @@ export class OpenAPIGenerator {
         return;
 
       case 'route':
-        this.generateSingleRoute(definition.route);
+        this.generateSingleRoute(definition.type, definition.route);
+        return;
+
+      case 'webhook':
+        this.generateSingleRoute(definition.type, definition.webhook);
         return;
 
       case 'component':
@@ -420,7 +430,7 @@ export class OpenAPIGenerator {
 
     const { content, ...rest } = requestBody;
 
-    const requestBodyContent = this.getBodyContent(requestBody.content);
+    const requestBodyContent = this.getBodyContent(content);
 
     return {
       ...rest,
@@ -451,7 +461,7 @@ export class OpenAPIGenerator {
     return [...pathParameters, ...queryParameters, ...headerParameters];
   }
 
-  private generateSingleRoute(route: RouteConfig) {
+  private generateSingleRoute(type: 'webhook' | 'route', route: RouteConfig) {
     const { method, path, request, responses, ...pathItemConfig } = route;
 
     const generatedResponses = mapValues(responses, response => {
@@ -473,10 +483,19 @@ export class OpenAPIGenerator {
       },
     };
 
-    this.pathRefs[path] = {
-      ...this.pathRefs[path],
-      ...routeDoc,
-    };
+    if (type === 'route') {
+      this.pathRefs[path] = {
+        ...this.pathRefs[path],
+        ...routeDoc,
+      };
+    }
+
+    if (type === 'webhook') {
+      this.webhookRefs[path] = {
+        ...this.webhookRefs[path],
+        ...routeDoc,
+      };
+    }
 
     return routeDoc;
   }
