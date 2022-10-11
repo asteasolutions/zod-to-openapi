@@ -178,7 +178,7 @@ describe('Simple', () => {
     });
   });
 
-  it.skip('supports native numbers enums', () => {
+  it('supports native numeric enums', () => {
     enum NativeEnum {
       OPTION = 1,
       ANOTHER = 42,
@@ -194,7 +194,7 @@ describe('Simple', () => {
       NativeEnum: {
         type: 'number',
         description: 'A native numbers enum in zod',
-        enum: [1, 2, 3],
+        enum: [1, 42, 3],
       },
     });
   });

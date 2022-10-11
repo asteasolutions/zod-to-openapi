@@ -47,6 +47,7 @@ import {
   UnknownZodTypeError,
 } from './errors';
 import { isAnyZodType, isZodType } from './lib/zod-is-type';
+import { extractEnumValues } from './lib/enums';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -609,12 +610,12 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      const enumValues = Object.values(zodSchema._def.values);
+      const { values: enumValues, isNumeric } = extractEnumValues(
+        zodSchema._def.values
+      );
 
-      // ZodNativeEnum can accepts number values for enum but in odd format
-      // Not worth it for now so using plain string
       return {
-        type: 'string',
+        type: isNumeric ? 'number' : 'string',
         nullable: isNullable ? true : undefined,
         enum: enumValues,
       };
