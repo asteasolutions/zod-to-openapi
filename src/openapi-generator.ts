@@ -93,7 +93,7 @@ export class OpenAPIGenerator {
       ...config,
       components: this.buildComponents(),
       paths: this.pathRefs,
-      // As this is invalid in Open API 3.0 we optionally set it
+      // As the `webhooks` key is invalid in Open API 3.0.x we need to optionally set it
       ...(Object.keys(this.webhookRefs).length && {
         webhooks: this.webhookRefs,
       }),
@@ -157,11 +157,8 @@ export class OpenAPIGenerator {
         return;
 
       case 'route':
-        this.generateSingleRoute(definition.type, definition.route);
-        return;
-
       case 'webhook':
-        this.generateSingleRoute(definition.type, definition.webhook);
+        this.generateSingleRoute(definition.type, definition.route);
         return;
 
       case 'component':
@@ -483,18 +480,24 @@ export class OpenAPIGenerator {
       },
     };
 
-    if (type === 'route') {
-      this.pathRefs[path] = {
-        ...this.pathRefs[path],
-        ...routeDoc,
-      };
-    }
-
-    if (type === 'webhook') {
-      this.webhookRefs[path] = {
-        ...this.webhookRefs[path],
-        ...routeDoc,
-      };
+    switch (type) {
+      case 'route': {
+        this.pathRefs[path] = {
+          ...this.pathRefs[path],
+          ...routeDoc,
+        };
+        break;
+      }
+      case 'webhook': {
+        this.webhookRefs[path] = {
+          ...this.webhookRefs[path],
+          ...routeDoc,
+        };
+        break;
+      }
+      default: {
+        throw new Error(`Unknown type: ${type} was received`);
+      }
     }
 
     return routeDoc;

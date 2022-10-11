@@ -86,7 +86,7 @@ export type OpenAPIDefinitions =
   | { type: 'schema'; schema: ZodSchema<any> }
   | { type: 'parameter'; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig }
-  | { type: 'webhook'; webhook: RouteConfig };
+  | { type: 'webhook'; route: RouteConfig };
 
 export class OpenAPIRegistry {
   private _definitions: OpenAPIDefinitions[] = [];
@@ -151,10 +151,10 @@ export class OpenAPIRegistry {
   /**
    * Registers a new webhook that would be generated under webhooks:
    */
-  registerWebhook(webhook: RouteConfig) {
+  registerWebhook(route: RouteConfig) {
     this._definitions.push({
       type: 'webhook',
-      webhook,
+      route,
     });
   }
 
