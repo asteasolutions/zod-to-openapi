@@ -199,6 +199,63 @@ describe('Simple', () => {
     });
   });
 
+  it('supports native string enums', () => {
+    enum NativeEnum {
+      OPTION = 'a',
+      ANOTHER = 'b',
+      DEFAULT = 'c',
+    }
+
+    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
+      refId: 'NativeEnum',
+      description: 'A native string enum in zod',
+    });
+
+    expectSchema([nativeEnumSchema], {
+      NativeEnum: {
+        type: 'string',
+        description: 'A native string enum in zod',
+        enum: ['a', 'b', 'c'],
+      },
+    });
+  });
+
+  it('does not support mixed native enums', () => {
+    enum NativeEnum {
+      OPTION = 1,
+      ANOTHER = '42',
+    }
+
+    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
+      refId: 'NativeEnum',
+      description: 'A native mixed enum in zod',
+    });
+
+    expect(() => {
+      createSchemas([nativeEnumSchema]);
+    }).toThrowError(/Enum has mixed string and number values/);
+  });
+
+  it('can manually set type of mixed native enums', () => {
+    enum NativeEnum {
+      OPTION = 1,
+      ANOTHER = '42',
+    }
+
+    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
+      refId: 'NativeEnum',
+      description: 'A native mixed enum in zod',
+      type: 'string',
+    });
+
+    expectSchema([nativeEnumSchema], {
+      NativeEnum: {
+        type: 'string',
+        description: 'A native mixed enum in zod',
+      },
+    });
+  });
+
   it('creates separate schemas and links them', () => {
     const SimpleStringSchema = z.string().openapi({ refId: 'SimpleString' });
 

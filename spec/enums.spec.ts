@@ -1,17 +1,17 @@
-import { extractEnumValues } from '../src/lib/enums';
+import { enumInfo } from '../src/lib/enum-info';
 
 describe('Enums', () => {
-  describe('extractEnumValues', () => {
+  describe('enumInfo', () => {
     it('can extract enum values from string enum', () => {
       enum Test {
         A = 'test-1',
         B = 'test-2',
       }
 
-      const { values, isNumeric } = extractEnumValues(Test);
+      const { values, type } = enumInfo(Test);
 
       expect(values).toEqual(['test-1', 'test-2']);
-      expect(isNumeric).toEqual(false);
+      expect(type).toEqual('string');
     });
 
     it('can extract enum values from numeric enum', () => {
@@ -20,10 +20,10 @@ describe('Enums', () => {
         B = 42,
       }
 
-      const { values, isNumeric } = extractEnumValues(Test);
+      const { values, type } = enumInfo(Test);
 
       expect(values).toEqual([31, 42]);
-      expect(isNumeric).toEqual(true);
+      expect(type).toEqual('numeric');
     });
 
     it('can extract enum values from auto-incremented enum', () => {
@@ -32,10 +32,10 @@ describe('Enums', () => {
         B,
       }
 
-      const { values, isNumeric } = extractEnumValues(Test);
+      const { values, type } = enumInfo(Test);
 
       expect(values).toEqual([0, 1]);
-      expect(isNumeric).toEqual(true);
+      expect(type).toEqual('numeric');
     });
 
     it('can extract enum values from mixed enums', () => {
@@ -44,10 +44,10 @@ describe('Enums', () => {
         B = 'test',
       }
 
-      const { values, isNumeric } = extractEnumValues(Test);
+      const { values, type } = enumInfo(Test);
 
-      expect(values).toEqual(['42', 'test']);
-      expect(isNumeric).toEqual(false);
+      expect(values).toEqual([42, 'test']);
+      expect(type).toEqual('mixed');
     });
   });
 });
