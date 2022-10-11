@@ -157,8 +157,11 @@ export class OpenAPIGenerator {
         return;
 
       case 'route':
+        this.generateSingleRoute(definition.route);
+        return;
+
       case 'webhook':
-        this.generateSingleRoute(definition.type, definition.route);
+        this.generateSingleWebhook(definition.webhook);
         return;
 
       case 'component':
@@ -458,7 +461,7 @@ export class OpenAPIGenerator {
     return [...pathParameters, ...queryParameters, ...headerParameters];
   }
 
-  private generateSingleRoute(type: 'webhook' | 'route', route: RouteConfig) {
+  private generatePath(route: RouteConfig): PathItemObject {
     const { method, path, request, responses, ...pathItemConfig } = route;
 
     const generatedResponses = mapValues(responses, response => {
@@ -480,26 +483,24 @@ export class OpenAPIGenerator {
       },
     };
 
-    switch (type) {
-      case 'route': {
-        this.pathRefs[path] = {
-          ...this.pathRefs[path],
-          ...routeDoc,
-        };
-        break;
-      }
-      case 'webhook': {
-        this.webhookRefs[path] = {
-          ...this.webhookRefs[path],
-          ...routeDoc,
-        };
-        break;
-      }
-      default: {
-        throw new Error(`Unknown type: ${type} was received`);
-      }
-    }
+    return routeDoc;
+  }
 
+  private generateSingleRoute(route: RouteConfig): PathItemObject {
+    const routeDoc = this.generatePath(route);
+    this.pathRefs[route.path] = {
+      ...this.pathRefs[route.path],
+      ...routeDoc,
+    };
+    return routeDoc;
+  }
+
+  private generateSingleWebhook(route: RouteConfig): PathItemObject {
+    const routeDoc = this.generatePath(route);
+    this.webhookRefs[route.path] = {
+      ...this.webhookRefs[route.path],
+      ...routeDoc,
+    };
     return routeDoc;
   }
 
