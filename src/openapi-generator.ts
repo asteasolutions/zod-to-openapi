@@ -18,6 +18,7 @@ import {
   DiscriminatorObject,
 } from 'openapi3-ts';
 import type {
+  map,
   ZodObject,
   ZodRawShape,
   ZodSchema,
@@ -579,8 +580,14 @@ export class OpenAPIGenerator {
     }
 
     const mapping = zodObjects.reduce((map, obj) => {
-      // Zod type checks each object in the discriminated union so we can trust this is available.
-      const value = obj.shape?.[discriminator]?._def.value as string;
+      const value = obj.shape?.[discriminator]?._def.value;
+
+      // This should never happen because Zod checks the disciminator type but to keep the types happy
+      if (typeof value !== 'string') {
+        throw new Error(
+          `Discriminator ${discriminator} could not be found in one of the values of a discriminated union`
+        );
+      }
 
       map[value] = `#/components/schemas/${obj._def.openapi?.refId as string}`;
       return map;
