@@ -15,6 +15,7 @@ import {
   ParameterLocation,
   ResponseObject,
   ContentObject,
+  DiscriminatorObject,
 } from 'openapi3-ts';
 import type {
   ZodObject,
@@ -568,6 +569,29 @@ export class OpenAPIGenerator {
     return undefined;
   }
 
+  private mapDiscriminator(
+    zodObjects: ZodObject<any>[],
+    discriminator: string
+  ): DiscriminatorObject | undefined {
+    // All schemas must be registered to use a discriminator
+    if (zodObjects.some(obj => obj._def.openapi?.refId === undefined)) {
+      return undefined;
+    }
+
+    const mapping = zodObjects.reduce((map, obj) => {
+      // Zod type checks each object in the discriminated union so we can trust this is available.
+      const value = obj.shape?.[discriminator]?._def.value as string;
+
+      map[value] = `#/components/schemas/${obj._def.openapi?.refId as string}`;
+      return map;
+    }, {} as Record<string, string>);
+
+    return {
+      propertyName: discriminator,
+      mapping,
+    };
+  }
+
   private toOpenAPISchema(
     zodSchema: ZodSchema<any>,
     isNullable: boolean
@@ -686,7 +710,7 @@ export class OpenAPIGenerator {
 
       return {
         oneOf: options.map(schema => this.generateInnerSchema(schema)),
-        discriminator: { propertyName: zodSchema.discriminator },
+        discriminator: this.mapDiscriminator(options, zodSchema.discriminator),
       };
     }
 
