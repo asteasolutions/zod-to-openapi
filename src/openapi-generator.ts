@@ -77,6 +77,7 @@ export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, Record<string, PathObject>> = {};
+  private webhookRefs: Record<string, Record<string, PathObject>> = {};
   private rawComponents: {
     componentType: string;
     name: string;
@@ -94,6 +95,10 @@ export class OpenAPIGenerator {
       ...config,
       components: this.buildComponents(),
       paths: this.pathRefs,
+      // As the `webhooks` key is invalid in Open API 3.0.x we need to optionally set it
+      ...(Object.keys(this.webhookRefs).length && {
+        webhooks: this.webhookRefs,
+      }),
     };
   }
 
@@ -132,6 +137,7 @@ export class OpenAPIGenerator {
       'schema',
       'parameter',
       'route',
+      'webhook',
     ];
 
     this.definitions.sort((left, right) => {
@@ -154,6 +160,10 @@ export class OpenAPIGenerator {
 
       case 'route':
         this.generateSingleRoute(definition.route);
+        return;
+
+      case 'webhook':
+        this.generateSingleWebhook(definition.webhook);
         return;
 
       case 'component':
@@ -422,7 +432,7 @@ export class OpenAPIGenerator {
 
     const { content, ...rest } = requestBody;
 
-    const requestBodyContent = this.getBodyContent(requestBody.content);
+    const requestBodyContent = this.getBodyContent(content);
 
     return {
       ...rest,
@@ -453,7 +463,7 @@ export class OpenAPIGenerator {
     return [...pathParameters, ...queryParameters, ...headerParameters];
   }
 
-  private generateSingleRoute(route: RouteConfig) {
+  private generatePath(route: RouteConfig): PathItemObject {
     const { method, path, request, responses, ...pathItemConfig } = route;
 
     const generatedResponses = mapValues(responses, response => {
@@ -475,11 +485,24 @@ export class OpenAPIGenerator {
       },
     };
 
-    this.pathRefs[path] = {
-      ...this.pathRefs[path],
+    return routeDoc;
+  }
+
+  private generateSingleRoute(route: RouteConfig): PathItemObject {
+    const routeDoc = this.generatePath(route);
+    this.pathRefs[route.path] = {
+      ...this.pathRefs[route.path],
       ...routeDoc,
     };
+    return routeDoc;
+  }
 
+  private generateSingleWebhook(route: RouteConfig): PathItemObject {
+    const routeDoc = this.generatePath(route);
+    this.webhookRefs[route.path] = {
+      ...this.webhookRefs[route.path],
+      ...routeDoc,
+    };
     return routeDoc;
   }
 

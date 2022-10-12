@@ -31,12 +31,18 @@ const testDocConfig = {
   servers: [{ url: 'v1' }],
 };
 
-describe('Routes', () => {
+const routeTests = ({
+  registerFunction,
+  rootDocPath,
+}: {
+  registerFunction: 'registerPath' | 'registerWebhook';
+  rootDocPath: 'paths' | 'webhooks';
+}) => {
   describe('response definitions', () => {
     it('can set description', () => {
       const registry = new OpenAPIRegistry();
 
-      registry.registerPath({
+      registry[registerFunction]({
         method: 'get',
         path: '/',
         responses: {
@@ -63,7 +69,7 @@ describe('Routes', () => {
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document.paths['/'].get.responses;
+      const responses = document[rootDocPath]['/'].get.responses;
 
       expect(responses['200'].description).toEqual('Simple response');
       expect(responses['404'].description).toEqual('Missing object');
@@ -72,7 +78,7 @@ describe('Routes', () => {
     it('can specify response with plain OpenApi format', () => {
       const registry = new OpenAPIRegistry();
 
-      registry.registerPath({
+      registry[registerFunction]({
         method: 'get',
         path: '/',
         responses: {
@@ -104,7 +110,7 @@ describe('Routes', () => {
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document.paths['/'].get.responses;
+      const responses = document[rootDocPath]['/'].get.responses;
 
       expect(responses['200'].content['application/json'].schema).toEqual({
         type: 'string',
@@ -123,7 +129,7 @@ describe('Routes', () => {
         z.object({ name: z.string() })
       );
 
-      registry.registerPath({
+      registry[registerFunction]({
         method: 'get',
         path: '/',
         responses: {
@@ -144,7 +150,7 @@ describe('Routes', () => {
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document.paths['/'].get.responses;
+      const responses = document[rootDocPath]['/'].get.responses;
 
       expect(responses['200'].description).toEqual('Simple response');
       expect(responses['200'].content['application/json'].schema).toEqual({
@@ -158,7 +164,7 @@ describe('Routes', () => {
     it('can generate responses without content', () => {
       const registry = new OpenAPIRegistry();
 
-      registry.registerPath({
+      registry[registerFunction]({
         method: 'get',
         path: '/',
         responses: {
@@ -171,7 +177,7 @@ describe('Routes', () => {
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document.paths['/'].get.responses;
+      const responses = document[rootDocPath]['/'].get.responses;
 
       expect(responses['204']).toEqual({ description: 'Success' });
     });
@@ -214,7 +220,9 @@ describe('Routes', () => {
 
     it('generates a header parameter for route', () => {
       const routeParameters = generateParamsForRoute({
-        request: { headers: [z.string().openapi({ param: { name: 'test' } })] },
+        request: {
+          headers: [z.string().openapi({ param: { name: 'test' } })],
+        },
       });
 
       expect(routeParameters).toEqual([
@@ -393,13 +401,13 @@ describe('Routes', () => {
         },
       });
 
-      registry.registerPath(route);
+      registry[registerFunction](route);
 
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
 
-      const { requestBody } = document.paths['/'].get;
+      const { requestBody } = document[rootDocPath]['/'].get;
 
       expect(requestBody).toEqual({
         description: 'Test description',
@@ -429,13 +437,13 @@ describe('Routes', () => {
         },
       });
 
-      registry.registerPath(route);
+      registry[registerFunction](route);
 
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
 
-      const requestBody = document.paths['/'].get.requestBody.content;
+      const requestBody = document[rootDocPath]['/'].get.requestBody.content;
 
       expect(requestBody['application/json']).toEqual({
         schema: { type: 'string', enum: ['test'] },
@@ -469,13 +477,13 @@ describe('Routes', () => {
         },
       });
 
-      registry.registerPath(route);
+      registry[registerFunction](route);
 
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
 
-      const requestBody = document.paths['/'].get.requestBody.content;
+      const requestBody = document[rootDocPath]['/'].get.requestBody.content;
 
       expect(requestBody['application/json']).toEqual({
         schema: { type: 'string' },
@@ -486,4 +494,10 @@ describe('Routes', () => {
       });
     });
   });
-});
+};
+
+describe.each`
+  type          | registerFunction     | rootDocPath
+  ${'Routes'}   | ${'registerPath'}    | ${'paths'}
+  ${'Webhooks'} | ${'registerWebhook'} | ${'webhooks'}
+`('$type', routeTests);
