@@ -10,7 +10,7 @@ describe('discriminated union', () => {
       [z.discriminatedUnion('type', [Text, Image]).openapi({ refId: 'Test' })],
       {
         Test: {
-          anyOf: [
+          oneOf: [
             {
               type: 'object',
               required: ['type', 'text'],
@@ -28,6 +28,9 @@ describe('discriminated union', () => {
               },
             },
           ],
+          discriminator: {
+            propertyName: 'type',
+          },
         },
       }
     );

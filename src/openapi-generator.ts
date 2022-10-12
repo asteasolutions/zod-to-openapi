@@ -685,7 +685,8 @@ export class OpenAPIGenerator {
       const options = [...zodSchema.options.values()];
 
       return {
-        anyOf: options.map(schema => this.generateInnerSchema(schema)),
+        oneOf: options.map(schema => this.generateInnerSchema(schema)),
+        discriminator: { propertyName: zodSchema.discriminator },
       };
     }
 
