@@ -199,6 +199,42 @@ describe('Simple', () => {
     });
   });
 
+  it('does not support mixed native enums', () => {
+    enum NativeEnum {
+      OPTION = 1,
+      ANOTHER = '42',
+    }
+
+    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
+      refId: 'NativeEnum',
+      description: 'A native mixed enum in zod',
+    });
+
+    expect(() => {
+      createSchemas([nativeEnumSchema]);
+    }).toThrowError(/Enum has mixed string and number values/);
+  });
+
+  it('can manually set type of mixed native enums', () => {
+    enum NativeEnum {
+      OPTION = 1,
+      ANOTHER = '42',
+    }
+
+    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
+      refId: 'NativeEnum',
+      description: 'A native mixed enum in zod',
+      type: 'string',
+    });
+
+    expectSchema([nativeEnumSchema], {
+      NativeEnum: {
+        type: 'string',
+        description: 'A native mixed enum in zod',
+      },
+    });
+  });
+
   it('creates separate schemas and links them', () => {
     const SimpleStringSchema = z.string().openapi({ refId: 'SimpleString' });
 
