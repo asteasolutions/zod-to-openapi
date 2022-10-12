@@ -199,27 +199,6 @@ describe('Simple', () => {
     });
   });
 
-  it('supports native string enums', () => {
-    enum NativeEnum {
-      OPTION = 'a',
-      ANOTHER = 'b',
-      DEFAULT = 'c',
-    }
-
-    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
-      refId: 'NativeEnum',
-      description: 'A native string enum in zod',
-    });
-
-    expectSchema([nativeEnumSchema], {
-      NativeEnum: {
-        type: 'string',
-        description: 'A native string enum in zod',
-        enum: ['a', 'b', 'c'],
-      },
-    });
-  });
-
   it('does not support mixed native enums', () => {
     enum NativeEnum {
       OPTION = 1,
