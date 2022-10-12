@@ -45,8 +45,10 @@ import {
   ConflictError,
   MissingParameterDataError,
   UnknownZodTypeError,
+  ZodToOpenAPIError,
 } from './errors';
 import { isAnyZodType, isZodType } from './lib/zod-is-type';
+import { enumInfo } from './lib/enum-info';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -609,14 +611,26 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      const enumValues = Object.values(zodSchema._def.values);
+      const { type, values } = enumInfo(zodSchema._def.values);
 
-      // ZodNativeEnum can accepts number values for enum but in odd format
-      // Not worth it for now so using plain string
+      if (type === 'mixed') {
+        // enum Test {
+        //   A = 42,
+        //   B = 'test',
+        // }
+        //
+        // const result = z.nativeEnum(Test).parse('42');
+        //
+        // This is an error, so we can't just say it's a 'string'
+        throw new ZodToOpenAPIError(
+          'Enum has mixed string and number values, please specify the OpenAPI type manually'
+        );
+      }
+
       return {
-        type: 'string',
+        type: type === 'numeric' ? 'number' : 'string',
         nullable: isNullable ? true : undefined,
-        enum: enumValues,
+        enum: values,
       };
     }
 
