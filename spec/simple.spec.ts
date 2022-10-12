@@ -178,7 +178,7 @@ describe('Simple', () => {
     });
   });
 
-  it.skip('supports native numbers enums', () => {
+  it('supports native numeric enums', () => {
     enum NativeEnum {
       OPTION = 1,
       ANOTHER = 42,
@@ -194,7 +194,43 @@ describe('Simple', () => {
       NativeEnum: {
         type: 'number',
         description: 'A native numbers enum in zod',
-        enum: [1, 2, 3],
+        enum: [1, 42, 3],
+      },
+    });
+  });
+
+  it('does not support mixed native enums', () => {
+    enum NativeEnum {
+      OPTION = 1,
+      ANOTHER = '42',
+    }
+
+    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
+      refId: 'NativeEnum',
+      description: 'A native mixed enum in zod',
+    });
+
+    expect(() => {
+      createSchemas([nativeEnumSchema]);
+    }).toThrowError(/Enum has mixed string and number values/);
+  });
+
+  it('can manually set type of mixed native enums', () => {
+    enum NativeEnum {
+      OPTION = 1,
+      ANOTHER = '42',
+    }
+
+    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
+      refId: 'NativeEnum',
+      description: 'A native mixed enum in zod',
+      type: 'string',
+    });
+
+    expectSchema([nativeEnumSchema], {
+      NativeEnum: {
+        type: 'string',
+        description: 'A native mixed enum in zod',
       },
     });
   });
