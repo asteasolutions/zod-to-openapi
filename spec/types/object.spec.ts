@@ -146,7 +146,7 @@ describe('object', () => {
         });
 
       const DogSchema = AnimalSchema.extend({
-        type: z.string().openapi({ const: 'dog' }),
+        type: z.string().openapi({ example: 'dog' }),
       }).openapi({
         refId: 'Dog',
         discriminator: {
@@ -178,7 +178,7 @@ describe('object', () => {
               properties: {
                 type: {
                   type: 'string',
-                  const: 'dog',
+                  example: 'dog',
                 },
               },
               required: ['type'],
