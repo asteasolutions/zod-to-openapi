@@ -18,7 +18,6 @@ import {
   DiscriminatorObject,
 } from 'openapi3-ts';
 import type {
-  map,
   ZodObject,
   ZodRawShape,
   ZodSchema,
