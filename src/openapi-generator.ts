@@ -710,6 +710,13 @@ export class OpenAPIGenerator {
       return {};
     }
 
+    if (isZodType(zodSchema, 'ZodDate')) {
+      return {
+        type: 'string', // dates have to be serialized in JSON
+        nullable: isNullable ? true : undefined,
+      };
+    }
+
     const refId = this.getMetadata(zodSchema)?.refId;
 
     throw new UnknownZodTypeError({
