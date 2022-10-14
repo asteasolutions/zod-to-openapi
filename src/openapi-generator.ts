@@ -16,7 +16,7 @@ import {
   ResponseObject,
   ContentObject,
 } from 'openapi3-ts';
-import {
+import type {
   ZodObject,
   ZodRawShape,
   ZodSchema,
