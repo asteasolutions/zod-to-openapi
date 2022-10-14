@@ -16,7 +16,7 @@ import {
   ResponseObject,
   ContentObject,
 } from 'openapi3-ts';
-import type {
+import {
   ZodObject,
   ZodRawShape,
   ZodSchema,
@@ -711,9 +711,11 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
+      const metadata = this.getMetadata(zodSchema);
       return {
-        type: 'string', // dates have to be serialized in JSON
+        type: 'string',
         nullable: isNullable ? true : undefined,
+        example: metadata?.example?.toISOString(),
       };
     }
 
@@ -860,7 +862,9 @@ export class OpenAPIGenerator {
     return omitBy(metadata, isNil);
   }
 
-  private getMetadata(zodSchema: ZodSchema<any>) {
+  private getMetadata<T extends any>(
+    zodSchema: ZodSchema<T>
+  ): ZodOpenAPIMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
@@ -875,8 +879,8 @@ export class OpenAPIGenerator {
   ): SchemaObject | ReferenceObject {
     return omitBy(
       {
-        ...initialData,
         ...this.buildSchemaMetadata(metadata),
+        ...initialData,
       },
       isNil
     );
