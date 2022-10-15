@@ -41,7 +41,9 @@ describe('metadata overrides', () => {
   });
 
   it('supports .openapi for registered schemas', () => {
-    const StringSchema = z.string().openapi({ refId: 'String' });
+    const StringSchema = z
+      .string()
+      .openapi({ refId: 'String', description: 'test' });
 
     const TestSchema = z
       .object({
@@ -51,6 +53,7 @@ describe('metadata overrides', () => {
 
     expectSchema([StringSchema, TestSchema], {
       String: {
+        description: 'test',
         type: 'string',
       },
       Test: {

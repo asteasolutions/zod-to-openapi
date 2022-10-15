@@ -353,22 +353,29 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<any>
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
+    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
 
     const refId = metadata?.refId;
 
     if (refId && this.schemaRefs[refId]) {
-      const referenceObject = {
+      const schemaRef = this.schemaRefs[refId] as SchemaObject;
+      const referenceObject: ReferenceObject = {
         $ref: `#/components/schemas/${refId}`,
       };
 
-      const nullableMetadata = zodSchema.isNullable() ? { nullable: true } : {};
+      const nullableMetadata =
+        !schemaRef['nullable'] && zodSchema.isNullable()
+          ? { nullable: true }
+          : {};
+
+      const matchingValueKeys = Object.keys(metadata).filter(
+        key => metadata[key] === schemaRef[key]
+      );
+      const newMetadata = omit(metadata, matchingValueKeys);
 
       const appliedMetadata = this.applySchemaMetadata(
         nullableMetadata,
-        metadata
+        newMetadata
       );
 
       if (Object.keys(appliedMetadata).length > 0) {
