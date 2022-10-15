@@ -579,7 +579,7 @@ export class OpenAPIGenerator {
     }
 
     const mapping: Record<string, string> = {};
-    zodObjects.forEach((obj) => {
+    zodObjects.forEach(obj => {
       const value = obj.shape?.[discriminator]?._def.value;
 
       // This should never happen because Zod checks the disciminator type but to keep the types happy
@@ -589,7 +589,9 @@ export class OpenAPIGenerator {
         );
       }
 
-      mapping[value] = `#/components/schemas/${obj._def.openapi?.refId as string}`;
+      mapping[value] = `#/components/schemas/${
+        obj._def.openapi?.refId as string
+      }`;
     });
 
     return {
