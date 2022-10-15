@@ -397,7 +397,7 @@ export class OpenAPIGenerator {
   ): SchemaObject | ReferenceObject {
     const simpleSchema = this.generateSimpleSchema(zodSchema);
 
-    if ('$ref' in simpleSchema) {
+    if ('$ref' in simpleSchema && simpleSchema.$ref) {
       return simpleSchema;
     }
 
