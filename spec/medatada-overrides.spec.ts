@@ -43,7 +43,7 @@ describe('metadata overrides', () => {
   it('supports .openapi for registered schemas', () => {
     const StringSchema = z
       .string()
-      .openapi({ refId: 'String', description: 'test', example: "a" });
+      .openapi({ refId: 'String', description: 'test', example: 'a' });
 
     const TestSchema = z
       .object({
