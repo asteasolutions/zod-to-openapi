@@ -368,8 +368,8 @@ export class OpenAPIGenerator {
           ? { nullable: true }
           : {};
 
-      const matchingValueKeys = Object.keys(metadata).filter(
-        key => metadata[key] === schemaRef[key]
+      const matchingValueKeys = Object.keys(metadata).filter(key =>
+        objectEquals(metadata[key], schemaRef[key])
       );
       const newMetadata = omit(metadata, matchingValueKeys);
 

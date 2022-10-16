@@ -41,9 +41,7 @@ describe('metadata overrides', () => {
   });
 
   it('supports .openapi for registered schemas', () => {
-    const StringSchema = z
-      .string()
-      .openapi({ refId: 'String', description: 'test', example: 'a' });
+    const StringSchema = z.string().openapi({ refId: 'String' });
 
     const TestSchema = z
       .object({
@@ -53,8 +51,6 @@ describe('metadata overrides', () => {
 
     expectSchema([StringSchema, TestSchema], {
       String: {
-        description: 'test',
-        example: 'a',
         type: 'string',
       },
       Test: {
@@ -64,6 +60,49 @@ describe('metadata overrides', () => {
             allOf: [
               { $ref: '#/components/schemas/String' },
               { example: 'test', deprecated: true },
+            ],
+          },
+        },
+        required: ['key'],
+      },
+    });
+  });
+
+  it('only adds overrides for new metadata properties', () => {
+    const StringSchema = z.string().openapi({
+      refId: 'String',
+      description: 'old field',
+      title: 'same title',
+      examples: ['same array'],
+      discriminator: { propertyName: 'sameProperty' },
+    });
+
+    const TestSchema = z
+      .object({
+        key: StringSchema.openapi({
+          title: 'same title',
+          examples: ['same array'],
+          example: 'new field',
+          discriminator: { propertyName: 'sameProperty' },
+        }),
+      })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        description: 'old field',
+        title: 'same title',
+        examples: ['same array'],
+        discriminator: { propertyName: 'sameProperty' },
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { example: 'new field' },
             ],
           },
         },
