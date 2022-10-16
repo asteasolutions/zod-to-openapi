@@ -363,7 +363,7 @@ export class OpenAPIGenerator {
         $ref: `#/components/schemas/${refId}`,
       };
 
-      // New metadata from ZodObject properties.
+      // New metadata from ZodSchema properties.
       const newSchemaMetadata = omitBy(
         this.toOpenAPISchema(innerSchema, zodSchema.isNullable()),
         (value, key) =>
