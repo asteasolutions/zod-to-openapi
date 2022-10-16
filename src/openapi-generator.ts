@@ -363,18 +363,22 @@ export class OpenAPIGenerator {
         $ref: `#/components/schemas/${refId}`,
       };
 
-      const nullableMetadata =
-        !schemaRef['nullable'] && zodSchema.isNullable()
-          ? { nullable: true }
-          : {};
-
-      const matchingValueKeys = Object.keys(metadata).filter(key =>
-        objectEquals(metadata[key], schemaRef[key])
+      // New metadata from ZodObject properties.
+      const newSchemaMetadata = omitBy(
+        this.toOpenAPISchema(innerSchema, zodSchema.isNullable()),
+        (value, key) =>
+          value === undefined || objectEquals(value, schemaRef[key])
       );
-      const newMetadata = omit(metadata, matchingValueKeys);
+
+      // New metadata from .openapi()
+      const newMetadata = omitBy(
+        metadata,
+        (value, key) =>
+          value === undefined || objectEquals(value, schemaRef[key])
+      );
 
       const appliedMetadata = this.applySchemaMetadata(
-        nullableMetadata,
+        newSchemaMetadata,
         newMetadata
       );
 
