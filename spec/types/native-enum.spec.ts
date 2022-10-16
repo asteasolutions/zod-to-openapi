@@ -12,6 +12,7 @@ describe('native enum', () => {
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
       refId: 'NativeEnum',
       description: 'A native enum in zod',
+      default: NativeEnum.DEFAULT,
     });
 
     expectSchema([nativeEnumSchema], {
@@ -19,6 +20,7 @@ describe('native enum', () => {
         type: 'string',
         description: 'A native enum in zod',
         enum: ['Option', 'Another', 'Default'],
+        default: 'Default',
       },
     });
   });
@@ -33,6 +35,7 @@ describe('native enum', () => {
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
       refId: 'NativeEnum',
       description: 'A native numbers enum in zod',
+      default: NativeEnum.DEFAULT,
     });
 
     expectSchema([nativeEnumSchema], {
@@ -40,6 +43,7 @@ describe('native enum', () => {
         type: 'number',
         description: 'A native numbers enum in zod',
         enum: [1, 42, 3],
+        default: 3,
       },
     });
   });
