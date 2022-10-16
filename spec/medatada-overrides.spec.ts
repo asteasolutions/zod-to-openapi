@@ -111,7 +111,7 @@ describe('metadata overrides', () => {
     });
   });
 
-  it('does not add object calculated overrides if type is provided in .openapi', () => {
+  it('does not add schema calculated overrides if type is provided in .openapi', () => {
     const StringSchema = z.string().openapi({
       refId: 'String',
       example: 'existing field',
