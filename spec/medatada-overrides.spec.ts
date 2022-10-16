@@ -110,4 +110,36 @@ describe('metadata overrides', () => {
       },
     });
   });
+
+  it('does not add object calculated overrides if type is provided in .openapi', () => {
+    const StringSchema = z.string().openapi({
+      refId: 'String',
+      example: 'existing field',
+    });
+
+    const TestSchema = z
+      .object({
+        key: StringSchema.nullable().openapi({ type: 'boolean' }),
+      })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        example: 'existing field',
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { type: 'boolean' },
+            ],
+          },
+        },
+        required: ['key'],
+      },
+    });
+  });
 });

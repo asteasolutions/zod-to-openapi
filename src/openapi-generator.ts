@@ -363,19 +363,23 @@ export class OpenAPIGenerator {
         $ref: `#/components/schemas/${refId}`,
       };
 
-      // New metadata from ZodSchema properties.
-      const newSchemaMetadata = omitBy(
-        this.toOpenAPISchema(innerSchema, zodSchema.isNullable()),
-        (value, key) =>
-          value === undefined || objectEquals(value, schemaRef[key])
-      );
-
       // New metadata from .openapi()
       const newMetadata = omitBy(
         metadata,
         (value, key) =>
           value === undefined || objectEquals(value, schemaRef[key])
       );
+
+      // New metadata from ZodSchema properties.
+      // Do not calculate schema metadata overrides if type is provvided in .openapi
+      // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
+      const newSchemaMetadata = !newMetadata.type
+        ? omitBy(
+            this.toOpenAPISchema(innerSchema, zodSchema.isNullable()),
+            (value, key) =>
+              value === undefined || objectEquals(value, schemaRef[key])
+          )
+        : {};
 
       const appliedMetadata = this.applySchemaMetadata(
         newSchemaMetadata,
