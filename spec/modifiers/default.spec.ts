@@ -115,13 +115,14 @@ describe('default', () => {
         z
           .enum(['a', 'b'])
           .default('a')
-          .openapi({ refId: 'EnumWithDefault', default: 'b' }),
+          .openapi({ refId: 'EnumWithDefault', default: 'b', examples: ['b'] }),
       ],
       {
         EnumWithDefault: {
           default: 'b',
           enum: ['a', 'b'],
           type: 'string',
+          examples: ['b'],
         },
       }
     );
