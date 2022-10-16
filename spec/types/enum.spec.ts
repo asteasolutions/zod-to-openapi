@@ -15,7 +15,7 @@ describe('enum', () => {
         type: 'string',
         description: 'All possible options',
         enum: ['option1', 'option2'],
-        default: 'options2',
+        default: 'option2',
         examples: ['option2'],
       },
     });
