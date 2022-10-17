@@ -333,7 +333,8 @@ export class OpenAPIGenerator {
       });
     }
 
-    const required = !zodSchema.isOptional() && !zodSchema.isNullable();
+    const required =
+      !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
 
     const schema = this.generateSimpleSchema(zodSchema);
 

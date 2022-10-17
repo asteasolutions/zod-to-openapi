@@ -277,6 +277,25 @@ const routeTests = ({
       ]);
     });
 
+    it('generates required based on inner schema', () => {
+      const routeParameters = generateParamsForRoute({
+        request: {
+          query: z.object({ test: z.string().optional().default('test') }),
+        },
+      });
+
+      expect(routeParameters).toEqual([
+        {
+          in: 'query',
+          name: 'test',
+          required: false,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
     describe('errors', () => {
       it('throws an error in case of names mismatch', () => {
         expect(() =>
