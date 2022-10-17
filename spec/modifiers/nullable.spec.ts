@@ -33,4 +33,26 @@ describe('nullable', () => {
       },
     });
   });
+
+  it('should not apply nullable if the schema is already nullable', () => {
+    const StringSchema = z.string().nullable().openapi({ refId: 'String' });
+
+    const TestSchema = z
+      .object({ key: StringSchema.nullable() })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        type: 'string',
+        nullable: true,
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: { $ref: '#/components/schemas/String' },
+        },
+        required: ['key'],
+      },
+    });
+  });
 });
