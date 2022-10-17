@@ -7,6 +7,8 @@ export interface ZodOpenAPIMetadata<T = any> extends SchemaObject {
   extendedFrom?: string;
   param?: Partial<ParameterObject> & { example?: T };
   example?: T;
+  examples?: T[];
+  default?: T;
 }
 
 declare module 'zod' {
