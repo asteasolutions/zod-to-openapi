@@ -711,11 +711,9 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
-      const metadata = this.getMetadata(zodSchema);
       return {
         type: 'string',
         nullable: isNullable ? true : undefined,
-        example: metadata?.example?.toISOString(),
       };
     }
 
@@ -879,8 +877,8 @@ export class OpenAPIGenerator {
   ): SchemaObject | ReferenceObject {
     return omitBy(
       {
-        ...this.buildSchemaMetadata(metadata),
         ...initialData,
+        ...this.buildSchemaMetadata(metadata),
       },
       isNil
     );
