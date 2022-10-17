@@ -69,7 +69,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]['/'].get.responses;
+      const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['200'].description).toEqual('Simple response');
       expect(responses['404'].description).toEqual('Missing object');
@@ -110,7 +110,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]['/'].get.responses;
+      const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['200'].content['application/json'].schema).toEqual({
         type: 'string',
@@ -150,7 +150,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]['/'].get.responses;
+      const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['200'].description).toEqual('Simple response');
       expect(responses['200'].content['application/json'].schema).toEqual({
@@ -177,7 +177,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions
       ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]['/'].get.responses;
+      const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['204']).toEqual({ description: 'Success' });
     });
@@ -426,7 +426,7 @@ const routeTests = ({
         registry.definitions
       ).generateDocument(testDocConfig);
 
-      const { requestBody } = document[rootDocPath]['/'].get;
+      const { requestBody } = document[rootDocPath]?.['/'].get;
 
       expect(requestBody).toEqual({
         description: 'Test description',
@@ -462,7 +462,7 @@ const routeTests = ({
         registry.definitions
       ).generateDocument(testDocConfig);
 
-      const requestBody = document[rootDocPath]['/'].get.requestBody.content;
+      const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;
 
       expect(requestBody['application/json']).toEqual({
         schema: { type: 'string', enum: ['test'] },
@@ -502,7 +502,7 @@ const routeTests = ({
         registry.definitions
       ).generateDocument(testDocConfig);
 
-      const requestBody = document[rootDocPath]['/'].get.requestBody.content;
+      const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;
 
       expect(requestBody['application/json']).toEqual({
         schema: { type: 'string' },

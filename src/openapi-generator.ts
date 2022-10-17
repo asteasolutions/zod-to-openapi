@@ -74,12 +74,12 @@ interface ParameterData {
 }
 
 export class OpenAPIGenerator {
-  private schemaRefs: Record<string, SchemaObject> = {};
+  private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
-  private pathRefs: Record<string, Record<string, PathObject>> = {};
-  private webhookRefs: Record<string, Record<string, PathObject>> = {};
+  private pathRefs: Record<string, PathItemObject> = {};
+  private webhookRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
-    componentType: string;
+    componentType: keyof ComponentsObject;
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
@@ -102,7 +102,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  generateComponents(): ComponentsObject {
+  generateComponents(): Pick<OpenAPIObject, 'components'> {
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
@@ -110,7 +110,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private buildComponents() {
+  private buildComponents(): ComponentsObject {
     const rawComponents: ComponentsObject = {};
     this.rawComponents.forEach(({ componentType, name, component }) => {
       rawComponents[componentType] ??= {};
@@ -413,7 +413,7 @@ export class OpenAPIGenerator {
   ): SchemaObject | ReferenceObject {
     const simpleSchema = this.generateSimpleSchema(zodSchema);
 
-    if (simpleSchema.$ref) {
+    if ('$ref' in simpleSchema && simpleSchema.$ref) {
       return simpleSchema;
     }
 
@@ -422,7 +422,9 @@ export class OpenAPIGenerator {
       : simpleSchema;
   }
 
-  private generateSchemaDefinition(zodSchema: ZodSchema<any>): SchemaObject {
+  private generateSchemaDefinition(
+    zodSchema: ZodSchema<any>
+  ): SchemaObject | ReferenceObject {
     const metadata = this.getMetadata(zodSchema);
     const refId = metadata?.refId;
 
@@ -587,7 +589,7 @@ export class OpenAPIGenerator {
   private toOpenAPISchema(
     zodSchema: ZodSchema<any>,
     isNullable: boolean
-  ): SchemaObject {
+  ): SchemaObject | ReferenceObject {
     if (isZodType(zodSchema, 'ZodNull')) {
       return { type: 'null' };
     }
@@ -775,7 +777,10 @@ export class OpenAPIGenerator {
         );
       }
 
-      const registeredProperties = registeredSchema.properties ?? {};
+      const registeredProperties =
+        'properties' in registeredSchema && registeredSchema.properties
+          ? registeredSchema.properties
+          : {};
 
       alreadyRegistered = Object.keys(registeredProperties).filter(propKey => {
         return objectEquals(
@@ -784,7 +789,10 @@ export class OpenAPIGenerator {
         );
       });
 
-      alreadyRequired = registeredSchema.required ?? [];
+      alreadyRequired =
+        'properties' in registeredSchema && registeredSchema.required
+          ? registeredSchema.required
+          : [];
     }
 
     const properties = omit(schemaProperties, alreadyRegistered);
@@ -879,7 +887,7 @@ export class OpenAPIGenerator {
   }
 
   private applySchemaMetadata(
-    initialData: SchemaObject | ParameterObject,
+    initialData: SchemaObject | ParameterObject | ReferenceObject,
     metadata: Partial<ZodOpenAPIMetadata>
   ): SchemaObject | ReferenceObject {
     return omitBy(
