@@ -353,22 +353,37 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<any>
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
+    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
 
     const refId = metadata?.refId;
 
     if (refId && this.schemaRefs[refId]) {
-      const referenceObject = {
+      const schemaRef = this.schemaRefs[refId] as SchemaObject;
+      const referenceObject: ReferenceObject = {
         $ref: `#/components/schemas/${refId}`,
       };
 
-      const nullableMetadata = zodSchema.isNullable() ? { nullable: true } : {};
+      // New metadata from .openapi()
+      const newMetadata = omitBy(
+        metadata,
+        (value, key) =>
+          value === undefined || objectEquals(value, schemaRef[key])
+      );
+
+      // New metadata from ZodSchema properties.
+      // Do not calculate schema metadata overrides if type is provvided in .openapi
+      // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
+      const newSchemaMetadata = !newMetadata.type
+        ? omitBy(
+            this.toOpenAPISchema(innerSchema, zodSchema.isNullable()),
+            (value, key) =>
+              value === undefined || objectEquals(value, schemaRef[key])
+          )
+        : {};
 
       const appliedMetadata = this.applySchemaMetadata(
-        nullableMetadata,
-        metadata
+        newSchemaMetadata,
+        newMetadata
       );
 
       if (Object.keys(appliedMetadata).length > 0) {

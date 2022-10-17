@@ -108,4 +108,23 @@ describe('default', () => {
       }
     );
   });
+
+  it('supports overriding default with .openapi', () => {
+    expectSchema(
+      [
+        z
+          .enum(['a', 'b'])
+          .default('a')
+          .openapi({ refId: 'EnumWithDefault', default: 'b', examples: ['b'] }),
+      ],
+      {
+        EnumWithDefault: {
+          default: 'b',
+          enum: ['a', 'b'],
+          type: 'string',
+          examples: ['b'],
+        },
+      }
+    );
+  });
 });

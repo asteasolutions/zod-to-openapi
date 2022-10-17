@@ -67,4 +67,79 @@ describe('metadata overrides', () => {
       },
     });
   });
+
+  it('only adds overrides for new metadata properties', () => {
+    const StringSchema = z.string().openapi({
+      refId: 'String',
+      description: 'old field',
+      title: 'same title',
+      examples: ['same array'],
+      discriminator: { propertyName: 'sameProperty' },
+    });
+
+    const TestSchema = z
+      .object({
+        key: StringSchema.openapi({
+          title: 'same title',
+          examples: ['same array'],
+          example: 'new field',
+          discriminator: { propertyName: 'sameProperty' },
+        }),
+      })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        description: 'old field',
+        title: 'same title',
+        examples: ['same array'],
+        discriminator: { propertyName: 'sameProperty' },
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { example: 'new field' },
+            ],
+          },
+        },
+        required: ['key'],
+      },
+    });
+  });
+
+  it('does not add schema calculated overrides if type is provided in .openapi', () => {
+    const StringSchema = z.string().openapi({
+      refId: 'String',
+      example: 'existing field',
+    });
+
+    const TestSchema = z
+      .object({
+        key: StringSchema.nullable().openapi({ type: 'boolean' }),
+      })
+      .openapi({ refId: 'Test' });
+
+    expectSchema([StringSchema, TestSchema], {
+      String: {
+        example: 'existing field',
+        type: 'string',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { type: 'boolean' },
+            ],
+          },
+        },
+        required: ['key'],
+      },
+    });
+  });
 });

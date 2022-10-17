@@ -39,11 +39,11 @@ export function omit<
 export function omitBy<
   T extends object,
   Result = Partial<{ [K in keyof T]: T[keyof T] }>
->(object: T, predicate: (val: T[keyof T]) => boolean): Result {
+>(object: T, predicate: (val: T[keyof T], key: keyof T) => boolean): Result {
   const result: any = {};
 
   Object.entries(object).forEach(([key, value]) => {
-    if (!predicate(value)) {
+    if (!predicate(value, key as keyof T)) {
       result[key] = value;
     }
   });
