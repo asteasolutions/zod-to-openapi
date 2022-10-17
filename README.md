@@ -371,6 +371,8 @@ The list of all supported types as of now is:
 - `ZodNativeEnum`
 - `ZodObject`
 - `ZodArray`
+- `ZodDiscriminatedUnion`
+  - including `discriminator` mapping when all Zod objects in the union are registered with `.register()` or contain a `refId`.
 - `ZodUnion`
 - `ZodIntersection`
 - `ZodRecord`
