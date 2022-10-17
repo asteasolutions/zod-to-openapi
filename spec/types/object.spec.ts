@@ -93,6 +93,110 @@ describe('object', () => {
       });
     });
 
+    it('can chain-extend objects correctly', () => {
+      const BaseSchema = z.object({ id: z.string() }).openapi({
+        refId: 'Base',
+      });
+
+      const A = BaseSchema.extend({
+        bonus: z.number(),
+      }).openapi({
+        refId: 'A',
+      });
+
+      const B = A.extend({
+        points: z.number(),
+      }).openapi({
+        refId: 'B',
+      });
+
+      expectSchema([BaseSchema, A, B], {
+        Base: {
+          type: 'object',
+          required: ['id'],
+          properties: {
+            id: {
+              type: 'string',
+            },
+          },
+        },
+        A: {
+          allOf: [
+            { $ref: '#/components/schemas/Base' },
+            {
+              type: 'object',
+              required: ['bonus'],
+              properties: {
+                bonus: {
+                  type: 'number',
+                },
+              },
+            },
+          ],
+        },
+        B: {
+          allOf: [
+            { $ref: '#/components/schemas/A' },
+            {
+              type: 'object',
+              required: ['points'],
+              properties: {
+                points: {
+                  type: 'number',
+                },
+              },
+            },
+          ],
+        },
+      });
+    });
+
+    it('can chain-extend objects correctly without intermediate link', () => {
+      const BaseSchema = z.object({ id: z.string() }).openapi({
+        refId: 'Base',
+      });
+
+      const A = BaseSchema.extend({
+        bonus: z.number(),
+      });
+
+      const B = A.extend({
+        points: z.number(),
+      }).openapi({
+        refId: 'B',
+      });
+
+      expectSchema([BaseSchema, B], {
+        Base: {
+          type: 'object',
+          required: ['id'],
+          properties: {
+            id: {
+              type: 'string',
+            },
+          },
+        },
+        B: {
+          allOf: [
+            { $ref: '#/components/schemas/Base' },
+            {
+              type: 'object',
+              required: ['bonus', 'points'],
+              properties: {
+                bonus: {
+                  type: 'number',
+                },
+
+                points: {
+                  type: 'number',
+                },
+              },
+            },
+          ],
+        },
+      });
+    });
+
     it('can apply nullable', () => {
       const BaseSchema = z.object({ id: z.ostring() }).openapi({
         refId: 'Base',

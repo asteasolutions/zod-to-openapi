@@ -1,10 +1,10 @@
 import { ParameterObject, SchemaObject } from 'openapi3-ts';
-import type { z } from 'zod';
+import type { z, ZodObject, ZodRawShape } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
 export interface ZodOpenAPIMetadata<T = any> extends SchemaObject {
   refId?: string;
-  extendedFrom?: string;
+  extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
   param?: Partial<ParameterObject> & { example?: T };
   example?: T;
   examples?: T[];
@@ -48,13 +48,15 @@ export function extendZodWithOpenApi(zod: typeof z) {
     });
 
     if (isZodType(this, 'ZodObject')) {
-      const initialExtend = this.extend;
+      const originalExtend = this.extend;
 
       result.extend = function (...args: any) {
-        const extendedResult = initialExtend.apply(result, args);
+        const extendedResult = originalExtend.apply(this, args);
 
         extendedResult._def.openapi = {
-          extendedFrom: result._def.openapi?.refId,
+          extendedFrom: this._def.openapi?.refId
+            ? { refId: this._def.openapi?.refId, schema: this }
+            : this._def.openapi?.extendedFrom,
         };
 
         return extendedResult;
