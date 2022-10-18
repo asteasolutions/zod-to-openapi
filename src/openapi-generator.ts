@@ -367,13 +367,15 @@ export class OpenAPIGenerator {
 
       // New metadata from .openapi()
       const newMetadata = omitBy(
-        metadata,
+        // We do not want to check our "custom" metadata fields. We only want
+        // the plain metadata for a SchemaObject.
+        this.buildSchemaMetadata(metadata),
         (value, key) =>
           value === undefined || objectEquals(value, schemaRef[key])
       );
 
       // New metadata from ZodSchema properties.
-      // Do not calculate schema metadata overrides if type is provvided in .openapi
+      // Do not calculate schema metadata overrides if type is provided in .openapi
       // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
       const newSchemaMetadata = !newMetadata.type
         ? omitBy(
