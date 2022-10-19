@@ -4,7 +4,6 @@ import {
   ParameterObject,
   RequestBodyObject,
   PathItemObject,
-  PathObject,
   OpenAPIObject,
   InfoObject,
   ServerObject,
@@ -84,12 +83,14 @@ export class OpenAPIGenerator {
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
+  private openAPIVersion: string | undefined;
 
   constructor(private definitions: OpenAPIDefinitions[]) {
     this.sortDefinitions();
   }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
+    this.openAPIVersion = config.openapi; // Preference the constructor version over this one
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
@@ -103,7 +104,11 @@ export class OpenAPIGenerator {
     };
   }
 
-  generateComponents(): Pick<OpenAPIObject, 'components'> {
+  generateComponents(
+    openAPIVersion?: string
+  ): Pick<OpenAPIObject, 'components'> {
+    this.openAPIVersion = openAPIVersion;
+
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
@@ -620,6 +625,23 @@ export class OpenAPIGenerator {
     };
   }
 
+  private mapNullableType(
+    type: NonNullable<SchemaObject['type']>,
+    isNullable: boolean
+  ): Pick<SchemaObject, 'type' | 'nullable'> {
+    // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
+    if (isNullable && this.openAPIVersion && this.openAPIVersion >= '3.1.0') {
+      return {
+        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
+      };
+    }
+
+    return {
+      type,
+      nullable: isNullable ? true : undefined,
+    };
+  }
+
   private toOpenAPISchema(
     zodSchema: ZodSchema<any>,
     isNullable: boolean
@@ -631,8 +653,7 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodString')) {
       const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
       return {
-        type: 'string',
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType('string', isNullable),
         format: this.mapStringFormat(zodSchema),
         pattern: regexCheck?.regex.source,
       };
@@ -640,18 +661,17 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodNumber')) {
       return {
-        type: zodSchema.isInt ? 'integer' : 'number',
+        ...this.mapNullableType(
+          zodSchema.isInt ? 'integer' : 'number',
+          isNullable
+        ),
         minimum: zodSchema.minValue ?? undefined,
         maximum: zodSchema.maxValue ?? undefined,
-        nullable: isNullable ? true : undefined,
       };
     }
 
     if (isZodType(zodSchema, 'ZodBoolean')) {
-      return {
-        type: 'boolean',
-        nullable: isNullable ? true : undefined,
-      };
+      return this.mapNullableType('boolean', isNullable);
     }
 
     if (isZodType(zodSchema, 'ZodDefault')) {
@@ -670,8 +690,10 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
       return {
-        type: typeof zodSchema._def.value as SchemaObject['type'],
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType(
+          typeof zodSchema._def.value as NonNullable<SchemaObject['type']>,
+          isNullable
+        ),
         enum: [zodSchema._def.value],
       };
     }
@@ -679,8 +701,7 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodEnum')) {
       // ZodEnum only accepts strings
       return {
-        type: 'string',
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType('string', isNullable),
         enum: zodSchema._def.values,
       };
     }
@@ -703,8 +724,10 @@ export class OpenAPIGenerator {
       }
 
       return {
-        type: type === 'numeric' ? 'number' : 'string',
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType(
+          type === 'numeric' ? 'number' : 'string',
+          isNullable
+        ),
         enum: values,
       };
     }
@@ -764,10 +787,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
-      return {
-        type: 'string',
-        nullable: isNullable ? true : undefined,
-      };
+      return this.mapNullableType('string', isNullable);
     }
 
     const refId = this.getMetadata(zodSchema)?.refId;
@@ -844,11 +864,8 @@ export class OpenAPIGenerator {
     );
 
     const objectData = {
-      type: 'object' as const,
-
+      ...this.mapNullableType('object', isNullable),
       properties,
-
-      ...(isNullable ? { nullable: true } : {}),
 
       ...(additionallyRequired.length > 0
         ? { required: additionallyRequired }
