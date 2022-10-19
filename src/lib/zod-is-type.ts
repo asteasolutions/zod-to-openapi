@@ -23,6 +23,7 @@ type ZodTypes = {
   ZodDiscriminatedUnion: z.ZodDiscriminatedUnion<any, any, any>;
   ZodUnknown: z.ZodUnknown;
   ZodVoid: z.ZodVoid;
+  ZodDate: z.ZodDate;
 };
 
 export function isZodType<TypeName extends keyof ZodTypes>(

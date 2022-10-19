@@ -377,6 +377,7 @@ The list of all supported types as of now is:
 - `ZodIntersection`
 - `ZodRecord`
 - `ZodUnknown`
+- `ZodDate`
 
 Extending an instance of `ZodObject` is also supported and results in an OpenApi definition with `allOf`
 

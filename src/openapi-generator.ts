@@ -763,6 +763,13 @@ export class OpenAPIGenerator {
       return {};
     }
 
+    if (isZodType(zodSchema, 'ZodDate')) {
+      return {
+        type: 'string',
+        nullable: isNullable ? true : undefined,
+      };
+    }
+
     const refId = this.getMetadata(zodSchema)?.refId;
 
     throw new UnknownZodTypeError({
@@ -912,7 +919,9 @@ export class OpenAPIGenerator {
     return omitBy(metadata, isNil);
   }
 
-  private getMetadata(zodSchema: ZodSchema<any>) {
+  private getMetadata<T extends any>(
+    zodSchema: ZodSchema<T>
+  ): ZodOpenAPIMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
