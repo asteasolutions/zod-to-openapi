@@ -90,7 +90,7 @@ export class OpenAPIGenerator {
   }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
-    this.openAPIVersion = config.openapi; // Preference the constructor version over this one
+    this.openAPIVersion = config.openapi;
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
