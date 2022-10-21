@@ -811,7 +811,7 @@ export class OpenAPIGenerator {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
       const allOfSchema: SchemaObject = {
-        allOf: [...subtypes.map(schema => this.generateInnerSchema(schema))],
+        allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
       };
 
       if (isNullable) {
