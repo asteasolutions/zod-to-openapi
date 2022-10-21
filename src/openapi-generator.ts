@@ -816,12 +816,7 @@ export class OpenAPIGenerator {
 
       if (isNullable) {
         return {
-          anyOf: [
-            allOfSchema,
-            ...(isNullable
-              ? [this.mapNullableType(undefined, isNullable)]
-              : []),
-          ],
+          anyOf: [allOfSchema, this.mapNullableType(undefined, isNullable)],
         };
       }
 
