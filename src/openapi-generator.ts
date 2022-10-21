@@ -87,7 +87,7 @@ export class OpenAPIGenerator {
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
-  private openAPIVersion: OpenApiVersion | undefined;
+  private openAPIVersion: OpenApiVersion = '3.0.0';
 
   constructor(private definitions: OpenAPIDefinitions[]) {
     this.sortDefinitions();
@@ -111,7 +111,7 @@ export class OpenAPIGenerator {
   generateComponents(
     config?: Pick<OpenAPIObjectConfig, 'openapi'>
   ): Pick<OpenAPIObject, 'components'> {
-    this.openAPIVersion = config?.openapi;
+    this.openAPIVersion = config?.openapi ?? this.openAPIVersion;
 
     this.definitions.forEach(definition => this.generateSingle(definition));
 
@@ -600,10 +600,14 @@ export class OpenAPIGenerator {
 
   private mapDiscriminator(
     zodObjects: ZodObject<any>[],
-    discriminator: string
+    discriminator: string,
+    isNullable: boolean
   ): DiscriminatorObject | undefined {
-    // All schemas must be registered to use a discriminator
-    if (zodObjects.some(obj => obj._def.openapi?.refId === undefined)) {
+    // If schema is nullable we should treat it like a union. All schemas must be registered to use a discriminator
+    if (
+      isNullable ||
+      zodObjects.some(obj => obj._def.openapi?.refId === undefined)
+    ) {
       return undefined;
     }
 
@@ -637,17 +641,23 @@ export class OpenAPIGenerator {
     openApiVersions.indexOf(comparison);
 
   private mapNullableType(
-    type: NonNullable<SchemaObject['type']>,
+    type: SchemaObject['type'],
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'> {
     // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
-    if (
-      isNullable &&
-      this.openAPIVersion &&
-      this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-    ) {
+    if (this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')) {
+      if (isNullable) {
+        if (type === undefined) {
+          return { type: 'null' }; // Support for intersections/unions
+        }
+
+        return {
+          type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
+        };
+      }
+
       return {
-        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
+        type,
       };
     }
 
@@ -755,7 +765,7 @@ export class OpenAPIGenerator {
       const itemType = zodSchema._def.type as ZodSchema<any>;
 
       return {
-        type: 'array',
+        ...this.mapNullableType('array', isNullable),
         items: this.generateInnerSchema(itemType),
 
         minItems: zodSchema._def.minLength?.value,
@@ -767,7 +777,10 @@ export class OpenAPIGenerator {
       const options = this.flattenUnionTypes(zodSchema);
 
       return {
-        anyOf: options.map(schema => this.generateInnerSchema(schema)),
+        anyOf: [
+          ...options.map(schema => this.generateInnerSchema(schema)),
+          ...(isNullable ? [this.mapNullableType(undefined, isNullable)] : []),
+        ],
       };
     }
 
@@ -775,24 +788,44 @@ export class OpenAPIGenerator {
       const options = [...zodSchema.options.values()];
 
       return {
-        oneOf: options.map(schema => this.generateInnerSchema(schema)),
-        discriminator: this.mapDiscriminator(options, zodSchema.discriminator),
+        oneOf: [
+          ...options.map(schema => this.generateInnerSchema(schema)),
+          ...(isNullable ? [this.mapNullableType(undefined, isNullable)] : []),
+        ],
+        discriminator: this.mapDiscriminator(
+          options,
+          zodSchema.discriminator,
+          isNullable
+        ),
       };
     }
 
     if (isZodType(zodSchema, 'ZodIntersection')) {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
-      return {
-        allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
+      const allOfSchema: SchemaObject = {
+        allOf: [...subtypes.map(schema => this.generateInnerSchema(schema))],
       };
+
+      if (isNullable) {
+        return {
+          anyOf: [
+            allOfSchema,
+            ...(isNullable
+              ? [this.mapNullableType(undefined, isNullable)]
+              : []),
+          ],
+        };
+      }
+
+      return allOfSchema;
     }
 
     if (isZodType(zodSchema, 'ZodRecord')) {
       const propertiesType = zodSchema._def.valueType;
 
       return {
-        type: 'object',
+        ...this.mapNullableType('object', isNullable),
         additionalProperties: this.generateInnerSchema(propertiesType),
       };
     }

@@ -31,4 +31,39 @@ describe('intersection', () => {
       }
     );
   });
+
+  it('supports nullable intersection types', () => {
+    const Person = z.object({
+      name: z.string(),
+    });
+
+    const Employee = z.object({
+      role: z.string(),
+    });
+
+    expectSchema(
+      [z.intersection(Person, Employee).nullable().openapi({ refId: 'Test' })],
+      {
+        Test: {
+          anyOf: [
+            {
+              allOf: [
+                {
+                  type: 'object',
+                  properties: { name: { type: 'string' } },
+                  required: ['name'],
+                },
+                {
+                  type: 'object',
+                  properties: { role: { type: 'string' } },
+                  required: ['role'],
+                },
+              ],
+            },
+            { nullable: true },
+          ],
+        },
+      }
+    );
+  });
 });
