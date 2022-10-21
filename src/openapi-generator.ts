@@ -53,11 +53,15 @@ import { enumInfo } from './lib/enum-info';
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
 
+const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
+
+export type OpenApiVersion = typeof openApiVersions[number];
+
 // This is essentially OpenAPIObject without the components and paths keys.
 // Omit does not work, since OpenAPIObject extends ISpecificationExtension
 // and is inferred as { [key: number]: any; [key: string]: any }
-interface OpenAPIObjectConfig {
-  openapi: string;
+export interface OpenAPIObjectConfig {
+  openapi: OpenApiVersion;
   info: InfoObject;
   servers?: ServerObject[];
   security?: SecurityRequirementObject[];
@@ -83,7 +87,7 @@ export class OpenAPIGenerator {
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
-  private openAPIVersion: string | undefined;
+  private openAPIVersion: OpenApiVersion | undefined;
 
   constructor(private definitions: OpenAPIDefinitions[]) {
     this.sortDefinitions();
@@ -105,9 +109,9 @@ export class OpenAPIGenerator {
   }
 
   generateComponents(
-    openAPIVersion?: string
+    config?: Pick<OpenAPIObjectConfig, 'openapi'>
   ): Pick<OpenAPIObject, 'components'> {
-    this.openAPIVersion = openAPIVersion;
+    this.openAPIVersion = config?.openapi;
 
     this.definitions.forEach(definition => this.generateSingle(definition));
 
@@ -625,12 +629,23 @@ export class OpenAPIGenerator {
     };
   }
 
+  private openApiVersionSatisfies = (
+    inputVersion: OpenApiVersion,
+    comparison: OpenApiVersion
+  ): boolean =>
+    openApiVersions.indexOf(inputVersion) >=
+    openApiVersions.indexOf(comparison);
+
   private mapNullableType(
     type: NonNullable<SchemaObject['type']>,
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'> {
     // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
-    if (isNullable && this.openAPIVersion && this.openAPIVersion >= '3.1.0') {
+    if (
+      isNullable &&
+      this.openAPIVersion &&
+      this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
+    ) {
       return {
         type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
       };

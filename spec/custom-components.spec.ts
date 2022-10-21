@@ -1,11 +1,14 @@
-import { OpenAPIGenerator } from '../src/openapi-generator';
+import {
+  OpenAPIGenerator,
+  OpenAPIObjectConfig,
+} from '../src/openapi-generator';
 import { OpenAPIRegistry } from '../src/openapi-registry';
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
 
 extendZodWithOpenApi(z);
 
-const testDocConfig = {
+const testDocConfig: OpenAPIObjectConfig = {
   openapi: '3.0.0',
   info: {
     version: '1.0.0',

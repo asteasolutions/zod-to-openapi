@@ -1,6 +1,9 @@
 import { z, ZodSchema } from 'zod';
 import { OperationObject, PathItemObject } from 'openapi3-ts';
-import { OpenAPIGenerator } from '../src/openapi-generator';
+import {
+  OpenAPIGenerator,
+  OpenAPIObjectConfig,
+} from '../src/openapi-generator';
 import { OpenAPIRegistry, RouteConfig } from '../src/openapi-registry';
 
 function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
@@ -16,7 +19,7 @@ function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
   };
 }
 
-const testDocConfig = {
+const testDocConfig: OpenAPIObjectConfig = {
   openapi: '3.0.0',
   info: {
     version: '1.0.0',
