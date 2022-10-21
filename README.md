@@ -143,14 +143,23 @@ const generator = new OpenAPIGenerator(registry.definitions);
 return generator.generateComponents();
 ```
 
+### The Generator
+
 `generateComponents` will generate only the `/components` section of an OpenAPI document (e.g. only `schemas` and `parameters`), not generating actual routes.
+`generateDocument` will generate the entire document.
 
 You can set the override the version of Open API schema to generate (defaults to `3.0.0`) by setting it in the constructor or by manually overriding it using the `openapi` key for both the `generateComponents` and `generateDocument` functions.
 
 ```ts
 const generator = new OpenAPIGenerator(registry.definitions, '3.0.1');
 
-return generator.generateComponents({ openapi: '3.0.3' });
+const components = generator.generateComponents({ openapi: '3.0.3' });
+const document = generator.generateDocument({
+  openapi: '3.1.0'
+  info: {
+    title: 'My API',
+  }
+});
 ```
 
 ### Defining schemas
@@ -325,7 +334,6 @@ A full OpenAPI document can be generated using the `generateDocument` method of 
 
 ```ts
 return generator.generateDocument({
-  openapi: '3.0.0', // By default the version passed into the generator's constructor is used but you can override it here
   info: {
     version: '1.0.0',
     title: 'My API',
