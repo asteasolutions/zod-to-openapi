@@ -61,7 +61,7 @@ export type OpenApiVersion = typeof openApiVersions[number];
 // Omit does not work, since OpenAPIObject extends ISpecificationExtension
 // and is inferred as { [key: number]: any; [key: string]: any }
 export interface OpenAPIObjectConfig {
-  openapi: OpenApiVersion;
+  openapi?: OpenApiVersion;
   info: InfoObject;
   servers?: ServerObject[];
   security?: SecurityRequirementObject[];
@@ -87,18 +87,23 @@ export class OpenAPIGenerator {
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
-  private openAPIVersion: OpenApiVersion = '3.0.0';
 
-  constructor(private definitions: OpenAPIDefinitions[]) {
+  constructor(
+    private definitions: OpenAPIDefinitions[],
+    private openAPIVersion: OpenApiVersion
+  ) {
     this.sortDefinitions();
   }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
-    this.openAPIVersion = config.openapi;
+    if (config.openapi) {
+      this.openAPIVersion = config.openapi;
+    }
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
       ...config,
+      openapi: this.openAPIVersion,
       components: this.buildComponents(),
       paths: this.pathRefs,
       // As the `webhooks` key is invalid in Open API 3.0.x we need to optionally set it
@@ -111,7 +116,9 @@ export class OpenAPIGenerator {
   generateComponents(
     config?: Pick<OpenAPIObjectConfig, 'openapi'>
   ): Pick<OpenAPIObject, 'components'> {
-    this.openAPIVersion = config?.openapi ?? this.openAPIVersion;
+    if (config?.openapi) {
+      this.openAPIVersion = config.openapi;
+    }
 
     this.definitions.forEach(definition => this.generateSingle(definition));
 
