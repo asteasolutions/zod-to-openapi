@@ -53,7 +53,7 @@ describe('Custom components', () => {
       },
     });
 
-    const builder = new OpenAPIGenerator(registry.definitions, '3.0.0');
+    const builder = new OpenAPIGenerator(registry.definitions);
     const document = builder.generateDocument(testDocConfig);
 
     expect(document.paths['/units'].get.security).toEqual([{ bearerAuth: [] }]);
@@ -92,7 +92,7 @@ describe('Custom components', () => {
       },
     });
 
-    const builder = new OpenAPIGenerator(registry.definitions, '3.0.0');
+    const builder = new OpenAPIGenerator(registry.definitions);
     const document = builder.generateDocument(testDocConfig);
 
     expect(document.paths['/units'].get.responses['200'].headers).toEqual({

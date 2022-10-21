@@ -90,7 +90,7 @@ export class OpenAPIGenerator {
 
   constructor(
     private definitions: OpenAPIDefinitions[],
-    private openAPIVersion: OpenApiVersion
+    private openAPIVersion: OpenApiVersion = '3.0.0'
   ) {
     this.sortDefinitions();
   }
