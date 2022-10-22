@@ -5,11 +5,6 @@ import {
   RequestBodyObject,
   PathItemObject,
   OpenAPIObject,
-  InfoObject,
-  ServerObject,
-  SecurityRequirementObject,
-  TagObject,
-  ExternalDocumentationObject,
   ComponentsObject,
   ParameterLocation,
   ResponseObject,
@@ -53,24 +48,15 @@ import { enumInfo } from './lib/enum-info';
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
 
+// List of Open API Versions. Please make sure these are in ascending order
 const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
 
 export type OpenApiVersion = typeof openApiVersions[number];
 
-// This is essentially OpenAPIObject without the components and paths keys.
-// Omit does not work, since OpenAPIObject extends ISpecificationExtension
-// and is inferred as { [key: number]: any; [key: string]: any }
-export interface OpenAPIObjectConfig {
-  openapi?: OpenApiVersion;
-  info: InfoObject;
-  servers?: ServerObject[];
-  security?: SecurityRequirementObject[];
-  tags?: TagObject[];
-  externalDocs?: ExternalDocumentationObject;
-
-  // Allow for specification extension keys
-  [key: string]: unknown;
-}
+export type OpenAPIObjectConfig = Omit<
+  OpenAPIObject,
+  'paths' | 'components' | 'webhooks' | 'openapi'
+>;
 
 interface ParameterData {
   in?: ParameterLocation;
@@ -90,15 +76,12 @@ export class OpenAPIGenerator {
 
   constructor(
     private definitions: OpenAPIDefinitions[],
-    private openAPIVersion: OpenApiVersion = '3.0.0'
+    private openAPIVersion: OpenApiVersion
   ) {
     this.sortDefinitions();
   }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
-    if (config.openapi) {
-      this.openAPIVersion = config.openapi;
-    }
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
@@ -113,13 +96,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  generateComponents(
-    config?: Pick<OpenAPIObjectConfig, 'openapi'>
-  ): Pick<OpenAPIObject, 'components'> {
-    if (config?.openapi) {
-      this.openAPIVersion = config.openapi;
-    }
-
+  generateComponents(): Pick<OpenAPIObject, 'components'> {
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
