@@ -607,14 +607,10 @@ export class OpenAPIGenerator {
 
   private mapDiscriminator(
     zodObjects: ZodObject<any>[],
-    discriminator: string,
-    isNullable: boolean
+    discriminator: string
   ): DiscriminatorObject | undefined {
-    // If schema is nullable we should treat it like a union. All schemas must be registered to use a discriminator
-    if (
-      isNullable ||
-      zodObjects.some(obj => obj._def.openapi?.refId === undefined)
-    ) {
+    // All schemas must be registered to use a discriminator
+    if (zodObjects.some(obj => obj._def.openapi?.refId === undefined)) {
       return undefined;
     }
 
@@ -647,24 +643,30 @@ export class OpenAPIGenerator {
     openApiVersions.indexOf(inputVersion) >=
     openApiVersions.indexOf(comparison);
 
+  private mapNullableOfArray(
+    objects: (SchemaObject | ReferenceObject)[],
+    isNullable: boolean
+  ): (SchemaObject | ReferenceObject)[] {
+    if (isNullable) {
+      if (this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')) {
+        return [...objects, { type: 'null' }];
+      }
+      return [...objects, { nullable: true }];
+    }
+    return objects;
+  }
+
   private mapNullableType(
-    type: SchemaObject['type'],
+    type: NonNullable<SchemaObject['type']>,
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'> {
     // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
-    if (this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')) {
-      if (isNullable) {
-        if (type === undefined) {
-          return { type: 'null' }; // Support for intersections/unions
-        }
-
-        return {
-          type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
-        };
-      }
-
+    if (
+      isNullable &&
+      this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
+    ) {
       return {
-        type,
+        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
       };
     }
 
@@ -784,26 +786,29 @@ export class OpenAPIGenerator {
       const options = this.flattenUnionTypes(zodSchema);
 
       return {
-        anyOf: [
-          ...options.map(schema => this.generateInnerSchema(schema)),
-          ...(isNullable ? [this.mapNullableType(undefined, isNullable)] : []),
-        ],
+        anyOf: this.mapNullableOfArray(
+          options.map(schema => this.generateInnerSchema(schema)),
+          isNullable
+        ),
       };
     }
 
     if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
       const options = [...zodSchema.options.values()];
 
+      const optionSchema = options.map(schema =>
+        this.generateInnerSchema(schema)
+      );
+
+      if (isNullable) {
+        return {
+          oneOf: this.mapNullableOfArray(optionSchema, isNullable),
+        };
+      }
+
       return {
-        oneOf: [
-          ...options.map(schema => this.generateInnerSchema(schema)),
-          ...(isNullable ? [this.mapNullableType(undefined, isNullable)] : []),
-        ],
-        discriminator: this.mapDiscriminator(
-          options,
-          zodSchema.discriminator,
-          isNullable
-        ),
+        oneOf: optionSchema,
+        discriminator: this.mapDiscriminator(options, zodSchema.discriminator),
       };
     }
 
@@ -816,7 +821,7 @@ export class OpenAPIGenerator {
 
       if (isNullable) {
         return {
-          anyOf: [allOfSchema, this.mapNullableType(undefined, isNullable)],
+          anyOf: this.mapNullableOfArray([allOfSchema], isNullable),
         };
       }
 
