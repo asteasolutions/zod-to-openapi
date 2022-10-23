@@ -632,6 +632,13 @@ export class OpenAPIGenerator {
       const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
       return {
         type: 'string',
+        // FIXME: https://github.com/colinhacks/zod/commit/d78047e9f44596a96d637abb0ce209cd2732d88c
+        minLength: Number.isFinite(zodSchema.minLength)
+          ? zodSchema.minLength ?? undefined
+          : undefined,
+        maxLength: Number.isFinite(zodSchema.maxLength)
+          ? zodSchema.maxLength ?? undefined
+          : undefined,
         nullable: isNullable ? true : undefined,
         format: this.mapStringFormat(zodSchema),
         pattern: regexCheck?.regex.source,
