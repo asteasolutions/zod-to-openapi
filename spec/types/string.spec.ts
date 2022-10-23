@@ -8,6 +8,15 @@ describe('string', () => {
     });
   });
 
+  it('supports minLength / maxLength on string', () => {
+    expectSchema(
+      [z.string().min(5).max(10).openapi({ refId: 'minMaxLengthString' })],
+      {
+        minMaxLengthString: { type: 'string', minLength: 5, maxLength: 10 },
+      }
+    );
+  });
+
   it('supports string literals', () => {
     expectSchema([z.literal('John Doe').openapi({ refId: 'Literal' })], {
       Literal: { type: 'string', enum: ['John Doe'] },
