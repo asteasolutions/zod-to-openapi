@@ -67,10 +67,9 @@ registry.registerPath({
 });
 
 function getOpenApiDocumentation() {
-  const generator = new OpenAPIGenerator(registry.definitions);
+  const generator = new OpenAPIGenerator(registry.definitions, '3.0.0');
 
   return generator.generateDocument({
-    openapi: '3.0.0',
     info: {
       version: '1.0.0',
       title: 'My API',

@@ -1,6 +1,9 @@
 import { z, ZodSchema } from 'zod';
 import { OperationObject, PathItemObject } from 'openapi3-ts';
-import { OpenAPIGenerator } from '../src/openapi-generator';
+import {
+  OpenAPIGenerator,
+  OpenAPIObjectConfig,
+} from '../src/openapi-generator';
 import { OpenAPIRegistry, RouteConfig } from '../src/openapi-registry';
 
 function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
@@ -16,8 +19,7 @@ function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
   };
 }
 
-const testDocConfig = {
-  openapi: '3.0.0',
+const testDocConfig: OpenAPIObjectConfig = {
   info: {
     version: '1.0.0',
     title: 'Swagger Petstore',
@@ -67,7 +69,8 @@ const routeTests = ({
       });
 
       const document = new OpenAPIGenerator(
-        registry.definitions
+        registry.definitions,
+        '3.0.0'
       ).generateDocument(testDocConfig);
       const responses = document[rootDocPath]?.['/'].get.responses;
 
@@ -108,7 +111,8 @@ const routeTests = ({
       });
 
       const document = new OpenAPIGenerator(
-        registry.definitions
+        registry.definitions,
+        '3.0.0'
       ).generateDocument(testDocConfig);
       const responses = document[rootDocPath]?.['/'].get.responses;
 
@@ -148,7 +152,8 @@ const routeTests = ({
       });
 
       const document = new OpenAPIGenerator(
-        registry.definitions
+        registry.definitions,
+        '3.0.0'
       ).generateDocument(testDocConfig);
       const responses = document[rootDocPath]?.['/'].get.responses;
 
@@ -175,7 +180,8 @@ const routeTests = ({
       });
 
       const document = new OpenAPIGenerator(
-        registry.definitions
+        registry.definitions,
+        '3.0.0'
       ).generateDocument(testDocConfig);
       const responses = document[rootDocPath]?.['/'].get.responses;
 
@@ -389,10 +395,10 @@ const routeTests = ({
         route,
       };
 
-      const { paths } = new OpenAPIGenerator([
-        ...paramDefinitions,
-        routeDefinition,
-      ]).generateDocument(testDocConfig);
+      const { paths } = new OpenAPIGenerator(
+        [...paramDefinitions, routeDefinition],
+        '3.0.0'
+      ).generateDocument(testDocConfig);
 
       const routes = paths[route.path] as PathItemObject;
 
@@ -423,7 +429,8 @@ const routeTests = ({
       registry[registerFunction](route);
 
       const document = new OpenAPIGenerator(
-        registry.definitions
+        registry.definitions,
+        '3.0.0'
       ).generateDocument(testDocConfig);
 
       const { requestBody } = document[rootDocPath]?.['/'].get;
@@ -459,7 +466,8 @@ const routeTests = ({
       registry[registerFunction](route);
 
       const document = new OpenAPIGenerator(
-        registry.definitions
+        registry.definitions,
+        '3.0.0'
       ).generateDocument(testDocConfig);
 
       const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;
@@ -499,7 +507,8 @@ const routeTests = ({
       registry[registerFunction](route);
 
       const document = new OpenAPIGenerator(
-        registry.definitions
+        registry.definitions,
+        '3.0.0'
       ).generateDocument(testDocConfig);
 
       const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;

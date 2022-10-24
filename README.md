@@ -138,12 +138,38 @@ const registry = new OpenAPIRegistry();
 
 // Register definitions here
 
-const generator = new OpenAPIGenerator(registry.definitions);
+const generator = new OpenAPIGenerator(registry.definitions, '3.0.0');
 
 return generator.generateComponents();
 ```
 
+### The Generator
+
+The generator constructor takes 2 arguments. An array of definitions from the registry and an Open API version.
+
+The Open API version affects how some components are generated. For example: changing the version to `3.1.0` from `3.0.0` will result in following differences:
+
+```ts
+z.string().nullable().openapi(refId: 'name');
+```
+
+```yml
+# 3.1.0
+# nullable is invalid in 3.1.0 but type arrays are invalid in previous versions
+name:
+  type:
+    - 'string'
+    - 'null'
+
+# 3.0.0
+name:
+  type: 'string'
+  nullable: true
+```
+
 `generateComponents` will generate only the `/components` section of an OpenAPI document (e.g. only `schemas` and `parameters`), not generating actual routes.
+
+`generateDocument` will generate the whole OpenAPI document.
 
 ### Defining schemas
 
@@ -317,7 +343,6 @@ A full OpenAPI document can be generated using the `generateDocument` method of 
 
 ```ts
 return generator.generateDocument({
-  openapi: '3.0.0',
   info: {
     version: '1.0.0',
     title: 'My API',

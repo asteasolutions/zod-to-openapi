@@ -4,13 +4,7 @@ import {
   ParameterObject,
   RequestBodyObject,
   PathItemObject,
-  PathObject,
   OpenAPIObject,
-  InfoObject,
-  ServerObject,
-  SecurityRequirementObject,
-  TagObject,
-  ExternalDocumentationObject,
   ComponentsObject,
   ParameterLocation,
   ResponseObject,
@@ -54,20 +48,15 @@ import { enumInfo } from './lib/enum-info';
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
 
-// This is essentially OpenAPIObject without the components and paths keys.
-// Omit does not work, since OpenAPIObject extends ISpecificationExtension
-// and is inferred as { [key: number]: any; [key: string]: any }
-interface OpenAPIObjectConfig {
-  openapi: string;
-  info: InfoObject;
-  servers?: ServerObject[];
-  security?: SecurityRequirementObject[];
-  tags?: TagObject[];
-  externalDocs?: ExternalDocumentationObject;
+// List of Open API Versions. Please make sure these are in ascending order
+const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
 
-  // Allow for specification extension keys
-  [key: string]: unknown;
-}
+export type OpenApiVersion = typeof openApiVersions[number];
+
+export type OpenAPIObjectConfig = Omit<
+  OpenAPIObject,
+  'paths' | 'components' | 'webhooks' | 'openapi'
+>;
 
 interface ParameterData {
   in?: ParameterLocation;
@@ -85,7 +74,10 @@ export class OpenAPIGenerator {
     component: OpenAPIComponentObject;
   }[] = [];
 
-  constructor(private definitions: OpenAPIDefinitions[]) {
+  constructor(
+    private definitions: OpenAPIDefinitions[],
+    private openAPIVersion: OpenApiVersion
+  ) {
     this.sortDefinitions();
   }
 
@@ -94,6 +86,7 @@ export class OpenAPIGenerator {
 
     return {
       ...config,
+      openapi: this.openAPIVersion,
       components: this.buildComponents(),
       paths: this.pathRefs,
       // As the `webhooks` key is invalid in Open API 3.0.x we need to optionally set it
@@ -620,6 +613,46 @@ export class OpenAPIGenerator {
     };
   }
 
+  private openApiVersionSatisfies = (
+    inputVersion: OpenApiVersion,
+    comparison: OpenApiVersion
+  ): boolean =>
+    openApiVersions.indexOf(inputVersion) >=
+    openApiVersions.indexOf(comparison);
+
+  private mapNullableOfArray(
+    objects: (SchemaObject | ReferenceObject)[],
+    isNullable: boolean
+  ): (SchemaObject | ReferenceObject)[] {
+    if (isNullable) {
+      if (this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')) {
+        return [...objects, { type: 'null' }];
+      }
+      return [...objects, { nullable: true }];
+    }
+    return objects;
+  }
+
+  private mapNullableType(
+    type: NonNullable<SchemaObject['type']>,
+    isNullable: boolean
+  ): Pick<SchemaObject, 'type' | 'nullable'> {
+    // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
+    if (
+      isNullable &&
+      this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
+    ) {
+      return {
+        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
+      };
+    }
+
+    return {
+      type,
+      nullable: isNullable ? true : undefined,
+    };
+  }
+
   private toOpenAPISchema(
     zodSchema: ZodSchema<any>,
     isNullable: boolean
@@ -631,8 +664,7 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodString')) {
       const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
       return {
-        type: 'string',
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType('string', isNullable),
         format: this.mapStringFormat(zodSchema),
         pattern: regexCheck?.regex.source,
       };
@@ -640,18 +672,17 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodNumber')) {
       return {
-        type: zodSchema.isInt ? 'integer' : 'number',
+        ...this.mapNullableType(
+          zodSchema.isInt ? 'integer' : 'number',
+          isNullable
+        ),
         minimum: zodSchema.minValue ?? undefined,
         maximum: zodSchema.maxValue ?? undefined,
-        nullable: isNullable ? true : undefined,
       };
     }
 
     if (isZodType(zodSchema, 'ZodBoolean')) {
-      return {
-        type: 'boolean',
-        nullable: isNullable ? true : undefined,
-      };
+      return this.mapNullableType('boolean', isNullable);
     }
 
     if (isZodType(zodSchema, 'ZodDefault')) {
@@ -670,8 +701,10 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
       return {
-        type: typeof zodSchema._def.value as SchemaObject['type'],
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType(
+          typeof zodSchema._def.value as NonNullable<SchemaObject['type']>,
+          isNullable
+        ),
         enum: [zodSchema._def.value],
       };
     }
@@ -679,8 +712,7 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodEnum')) {
       // ZodEnum only accepts strings
       return {
-        type: 'string',
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType('string', isNullable),
         enum: zodSchema._def.values,
       };
     }
@@ -703,8 +735,10 @@ export class OpenAPIGenerator {
       }
 
       return {
-        type: type === 'numeric' ? 'number' : 'string',
-        nullable: isNullable ? true : undefined,
+        ...this.mapNullableType(
+          type === 'numeric' ? 'number' : 'string',
+          isNullable
+        ),
         enum: values,
       };
     }
@@ -717,7 +751,7 @@ export class OpenAPIGenerator {
       const itemType = zodSchema._def.type as ZodSchema<any>;
 
       return {
-        type: 'array',
+        ...this.mapNullableType('array', isNullable),
         items: this.generateInnerSchema(itemType),
 
         minItems: zodSchema._def.minLength?.value,
@@ -729,15 +763,28 @@ export class OpenAPIGenerator {
       const options = this.flattenUnionTypes(zodSchema);
 
       return {
-        anyOf: options.map(schema => this.generateInnerSchema(schema)),
+        anyOf: this.mapNullableOfArray(
+          options.map(schema => this.generateInnerSchema(schema)),
+          isNullable
+        ),
       };
     }
 
     if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
       const options = [...zodSchema.options.values()];
 
+      const optionSchema = options.map(schema =>
+        this.generateInnerSchema(schema)
+      );
+
+      if (isNullable) {
+        return {
+          oneOf: this.mapNullableOfArray(optionSchema, isNullable),
+        };
+      }
+
       return {
-        oneOf: options.map(schema => this.generateInnerSchema(schema)),
+        oneOf: optionSchema,
         discriminator: this.mapDiscriminator(options, zodSchema.discriminator),
       };
     }
@@ -745,16 +792,24 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodIntersection')) {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
-      return {
+      const allOfSchema: SchemaObject = {
         allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
       };
+
+      if (isNullable) {
+        return {
+          anyOf: this.mapNullableOfArray([allOfSchema], isNullable),
+        };
+      }
+
+      return allOfSchema;
     }
 
     if (isZodType(zodSchema, 'ZodRecord')) {
       const propertiesType = zodSchema._def.valueType;
 
       return {
-        type: 'object',
+        ...this.mapNullableType('object', isNullable),
         additionalProperties: this.generateInnerSchema(propertiesType),
       };
     }
@@ -764,10 +819,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
-      return {
-        type: 'string',
-        nullable: isNullable ? true : undefined,
-      };
+      return this.mapNullableType('string', isNullable);
     }
 
     const refId = this.getMetadata(zodSchema)?.refId;
@@ -844,11 +896,8 @@ export class OpenAPIGenerator {
     );
 
     const objectData = {
-      type: 'object' as const,
-
+      ...this.mapNullableType('object', isNullable),
       properties,
-
-      ...(isNullable ? { nullable: true } : {}),
 
       ...(additionallyRequired.length > 0
         ? { required: additionallyRequired }
