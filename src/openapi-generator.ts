@@ -351,13 +351,7 @@ export class OpenAPIGenerator {
   private generateSimpleSchema(
     zodSchema: ZodSchema<any>
   ): SchemaObject | ReferenceObject {
-    console.log(
-      zodSchema,
-      zodSchema.default,
-      (zodSchema as ZodDefault<any>)._def.defaultValue()
-    );
     const innerSchema = OpenAPIMetadata.unwrapChained(zodSchema);
-    console.log(innerSchema);
     const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
 
     const refId = metadata?.refId;
@@ -667,8 +661,6 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<any>,
     isNullable: boolean
   ): SchemaObject | ReferenceObject {
-    console.log(zodSchema);
-
     if (isZodType(zodSchema, 'ZodNull')) {
       return { type: 'null' };
     }
