@@ -10,11 +10,12 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
    1. [Installation](#installation)
    2. [The `openapi` method](#the-openapi-method)
    3. [The Registry](#the-registry)
-   4. [Defining schemas](#defining-schemas)
-   5. [Defining routes](#defining-routes)
-   6. [Defining custom components](#defining-custom-components)
-   6. [A full example](#a-full-example)
-   7. [Adding it as part of your build](#adding-it-as-part-of-your-build)
+   4. [The Generator](#the-generator)
+   5. [Defining schemas](#defining-schemas)
+   6. [Defining routes & webhooks](#defining-routes--webhooks)
+   7. [Defining custom components](#defining-custom-components)
+   8. [A full example](#a-full-example)
+   9. [Adding it as part of your build](#adding-it-as-part-of-your-build)
 3. [Zod schema types](#zod-schema-types)
    1. [Supported types](#supported-types)
    2. [Unsupported types](#unsupported-types)
@@ -218,11 +219,11 @@ Note that `generateComponents` does not return YAML but a JS object - you can th
 
 The resulting schema can then be referenced by using `$ref: #/components/schemas/User` in an existing OpenAPI JSON. This will be done automatically for Routes defined through the registry.
 
-### Defining routes
+### Defining routes & webhooks
 
-#### Registering a path
+#### Registering a path or webhook
 
-An OpenAPI path is registered using the `registerPath` method of an `OpenAPIRegistry` instance.
+An OpenAPI path is registered using the `registerPath` method of an `OpenAPIRegistry` instance. An OpenAPI webhook is registered using the `registerWebhook` method and takes the same parameters as `registerPath`.
 
 ```ts
 registry.registerPath({
