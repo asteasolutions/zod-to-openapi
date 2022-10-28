@@ -79,6 +79,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'number',
+              default: 42,
             },
           },
         },
@@ -104,6 +105,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'number',
+              default: 42,
             },
           },
           required: ['test'],
