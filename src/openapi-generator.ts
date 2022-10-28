@@ -821,18 +821,24 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodIntersection')) {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
-      const allOfSchema: SchemaObject = {
-        allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
-        default: defaultValue,
-      };
-
       if (isNullable) {
         return {
-          anyOf: this.mapNullableOfArray([allOfSchema], isNullable),
+          anyOf: this.mapNullableOfArray(
+            [
+              {
+                allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
+              },
+            ],
+            isNullable
+          ),
+          default: defaultValue,
         };
       }
 
-      return allOfSchema;
+      return {
+        allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
+        default: defaultValue,
+      };
     }
 
     if (isZodType(zodSchema, 'ZodRecord')) {
