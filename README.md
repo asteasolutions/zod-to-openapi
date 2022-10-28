@@ -394,7 +394,9 @@ The list of all supported types as of now is:
   - including `z.number().int()` being inferred as `type: 'integer'`
 - `ZodBoolean`
 - `ZodDefault`
-- `ZodEffects` - only for `.refine()`
+- `ZodNullable`
+- `ZodOptional`
+- `ZodEffects` - only for `.refine()`, `.preprocess()`
 - `ZodLiteral`
 - `ZodEnum`
 - `ZodNativeEnum`
