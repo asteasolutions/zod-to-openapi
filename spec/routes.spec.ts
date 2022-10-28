@@ -297,6 +297,7 @@ const routeTests = ({
           required: false,
           schema: {
             type: 'string',
+            default: 'test',
           },
         },
       ]);
