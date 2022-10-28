@@ -767,10 +767,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
-      return {
-        ...this.toOpenAPIObjectSchema(zodSchema, isNullable),
-        default: defaultValue,
-      };
+      return this.toOpenAPIObjectSchema(zodSchema, isNullable, defaultValue);
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
@@ -879,7 +876,8 @@ export class OpenAPIGenerator {
 
   private toOpenAPIObjectSchema(
     zodSchema: ZodObject<ZodRawShape>,
-    isNullable: boolean
+    isNullable: boolean,
+    defaultValue?: unknown
   ): SchemaObject {
     const extendedFrom = zodSchema._def.openapi?.extendedFrom;
 
@@ -932,6 +930,7 @@ export class OpenAPIGenerator {
 
     const objectData = {
       ...this.mapNullableType('object', isNullable),
+      default: defaultValue,
       properties,
 
       ...(additionallyRequired.length > 0
