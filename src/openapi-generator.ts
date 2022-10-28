@@ -343,9 +343,9 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getDefaultValue(
-    zodSchema: ZodSchema<any, ZodTypeDef | ZodDefaultDef>
-  ): unknown | undefined {
+  private getDefaultValue<T>(
+    zodSchema: ZodSchema<T, ZodTypeDef | ZodDefaultDef>
+  ): T | undefined {
     return (
       ('defaultValue' in zodSchema._def && zodSchema._def.defaultValue()) ||
       undefined
@@ -355,8 +355,8 @@ export class OpenAPIGenerator {
   /**
    * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
    */
-  private generateSimpleSchema(
-    zodSchema: ZodSchema<any>
+  private generateSimpleSchema<T>(
+    zodSchema: ZodSchema<T>
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi ?? innerSchema.schema._def.openapi;
@@ -674,10 +674,10 @@ export class OpenAPIGenerator {
     };
   }
 
-  private toOpenAPISchema(
-    zodSchema: ZodSchema<any>,
+  private toOpenAPISchema<T>(
+    zodSchema: ZodSchema<T>,
     isNullable: boolean,
-    defaultValue?: unknown
+    defaultValue?: T
   ): SchemaObject | ReferenceObject {
     if (isZodType(zodSchema, 'ZodNull')) {
       return { type: 'null' };
@@ -977,12 +977,12 @@ export class OpenAPIGenerator {
     return [...leftSubTypes, ...rightSubTypes];
   }
 
-  private unwrapChained(
-    schema: ZodSchema<any>,
-    defaultValue?: unknown
+  private unwrapChained<T>(
+    schema: ZodSchema<T>,
+    defaultValue?: T
   ): {
     schema: ZodSchema<any>;
-    defaultValue: unknown;
+    defaultValue?: T;
   } {
     if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
       return this.unwrapChained(schema.unwrap(), defaultValue);
