@@ -821,7 +821,7 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodIntersection')) {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
-      const allOfSchema = {
+      const allOfSchema: SchemaObject = {
         allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
       };
 
