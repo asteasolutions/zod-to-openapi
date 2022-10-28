@@ -14,6 +14,24 @@ describe('default', () => {
     );
   });
 
+  it('supports defaults override', () => {
+    expectSchema(
+      [
+        z
+          .string()
+          .default('test')
+          .default('override')
+          .openapi({ refId: 'StringWithDefault' }),
+      ],
+      {
+        StringWithDefault: {
+          type: 'string',
+          default: 'override',
+        },
+      }
+    );
+  });
+
   it('supports optional defaults', () => {
     expectSchema(
       [
