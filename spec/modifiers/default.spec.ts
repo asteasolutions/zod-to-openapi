@@ -8,6 +8,7 @@ describe('default', () => {
       {
         StringWithDefault: {
           type: 'string',
+          default: 'test',
         },
       }
     );
@@ -28,6 +29,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'string',
+              default: 'test',
             },
           },
         },
@@ -50,6 +52,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'string',
+              default: 'test',
             },
           },
           required: ['test'],

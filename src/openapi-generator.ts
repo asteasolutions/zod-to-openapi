@@ -12,12 +12,14 @@ import {
   DiscriminatorObject,
 } from 'openapi3-ts';
 import type {
+  ZodDefaultDef,
   ZodObject,
   ZodRawShape,
   ZodSchema,
   ZodString,
   ZodStringDef,
   ZodTypeAny,
+  ZodTypeDef,
 } from 'zod';
 import {
   compact,
@@ -341,6 +343,15 @@ export class OpenAPIGenerator {
     };
   }
 
+  private getDefaultValue(
+    zodSchema: ZodSchema<any, ZodTypeDef | ZodDefaultDef>
+  ): unknown | undefined {
+    return (
+      ('defaultValue' in zodSchema._def && zodSchema._def.defaultValue()) ||
+      undefined
+    );
+  }
+
   /**
    * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
    */
@@ -372,7 +383,11 @@ export class OpenAPIGenerator {
       // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
       const newSchemaMetadata = !newMetadata.type
         ? omitBy(
-            this.toOpenAPISchema(innerSchema, zodSchema.isNullable()),
+            this.toOpenAPISchema(
+              innerSchema,
+              zodSchema.isNullable(),
+              this.getDefaultValue(zodSchema)
+            ),
             (value, key) =>
               value === undefined || objectEquals(value, schemaRef[key])
           )
@@ -396,7 +411,11 @@ export class OpenAPIGenerator {
       ? {
           type: metadata?.type,
         }
-      : this.toOpenAPISchema(innerSchema, zodSchema.isNullable());
+      : this.toOpenAPISchema(
+          innerSchema,
+          zodSchema.isNullable(),
+          this.getDefaultValue(zodSchema)
+        );
 
     return metadata
       ? this.applySchemaMetadata(result, metadata)
@@ -655,7 +674,8 @@ export class OpenAPIGenerator {
 
   private toOpenAPISchema(
     zodSchema: ZodSchema<any>,
-    isNullable: boolean
+    isNullable: boolean,
+    defaultValue?: unknown
   ): SchemaObject | ReferenceObject {
     if (isZodType(zodSchema, 'ZodNull')) {
       return { type: 'null' };
@@ -667,6 +687,7 @@ export class OpenAPIGenerator {
         ...this.mapNullableType('string', isNullable),
         format: this.mapStringFormat(zodSchema),
         pattern: regexCheck?.regex.source,
+        default: defaultValue,
       };
     }
 
@@ -678,16 +699,15 @@ export class OpenAPIGenerator {
         ),
         minimum: zodSchema.minValue ?? undefined,
         maximum: zodSchema.maxValue ?? undefined,
+        default: defaultValue,
       };
     }
 
     if (isZodType(zodSchema, 'ZodBoolean')) {
-      return this.mapNullableType('boolean', isNullable);
-    }
-
-    if (isZodType(zodSchema, 'ZodDefault')) {
-      const innerSchema = zodSchema._def.innerType as ZodSchema<any>;
-      return this.generateInnerSchema(innerSchema);
+      return {
+        ...this.mapNullableType('boolean', isNullable),
+        default: defaultValue,
+      };
     }
 
     if (
@@ -706,6 +726,7 @@ export class OpenAPIGenerator {
           isNullable
         ),
         enum: [zodSchema._def.value],
+        default: defaultValue,
       };
     }
 
@@ -714,6 +735,7 @@ export class OpenAPIGenerator {
       return {
         ...this.mapNullableType('string', isNullable),
         enum: zodSchema._def.values,
+        default: defaultValue,
       };
     }
 
@@ -740,11 +762,15 @@ export class OpenAPIGenerator {
           isNullable
         ),
         enum: values,
+        default: defaultValue,
       };
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
-      return this.toOpenAPIObjectSchema(zodSchema, isNullable);
+      return {
+        ...this.toOpenAPIObjectSchema(zodSchema, isNullable),
+        default: defaultValue,
+      };
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
@@ -756,6 +782,7 @@ export class OpenAPIGenerator {
 
         minItems: zodSchema._def.minLength?.value,
         maxItems: zodSchema._def.maxLength?.value,
+        default: defaultValue,
       };
     }
 
@@ -767,6 +794,7 @@ export class OpenAPIGenerator {
           options.map(schema => this.generateInnerSchema(schema)),
           isNullable
         ),
+        default: defaultValue,
       };
     }
 
@@ -780,12 +808,14 @@ export class OpenAPIGenerator {
       if (isNullable) {
         return {
           oneOf: this.mapNullableOfArray(optionSchema, isNullable),
+          default: defaultValue,
         };
       }
 
       return {
         oneOf: optionSchema,
         discriminator: this.mapDiscriminator(options, zodSchema.discriminator),
+        default: defaultValue,
       };
     }
 
@@ -794,6 +824,7 @@ export class OpenAPIGenerator {
 
       const allOfSchema: SchemaObject = {
         allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
+        default: defaultValue,
       };
 
       if (isNullable) {
@@ -811,6 +842,7 @@ export class OpenAPIGenerator {
       return {
         ...this.mapNullableType('object', isNullable),
         additionalProperties: this.generateInnerSchema(propertiesType),
+        default: defaultValue,
       };
     }
 
@@ -819,7 +851,10 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
-      return this.mapNullableType('string', isNullable);
+      return {
+        ...this.mapNullableType('string', isNullable),
+        default: defaultValue,
+      };
     }
 
     const refId = this.getMetadata(zodSchema)?.refId;
