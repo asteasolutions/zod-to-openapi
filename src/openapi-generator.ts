@@ -870,6 +870,13 @@ export class OpenAPIGenerator {
   }
 
   private getDefaultSchema<T>(zodSchema: ZodTypeAny): T | undefined {
+    if (
+      isZodType(zodSchema, 'ZodOptional') ||
+      isZodType(zodSchema, 'ZodNullable')
+    ) {
+      return this.getDefaultSchema(zodSchema.unwrap());
+    }
+
     if (isZodType(zodSchema, 'ZodEffects')) {
       return this.getDefaultSchema(zodSchema._def.schema);
     }
