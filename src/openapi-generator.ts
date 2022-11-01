@@ -343,15 +343,6 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getDefaultValue<T>(
-    zodSchema: ZodSchema<T, ZodTypeDef | ZodDefaultDef>
-  ): T | undefined {
-    return (
-      ('defaultValue' in zodSchema._def && zodSchema._def.defaultValue()) ||
-      undefined
-    );
-  }
-
   /**
    * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
    */
@@ -359,9 +350,8 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<T>
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
-    const metadata = zodSchema._def.openapi ?? innerSchema.schema._def.openapi;
-    const defaultValue =
-      this.getDefaultValue(zodSchema) ?? innerSchema.defaultValue;
+    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
+    const defaultValue = this.getDefaultSchema(zodSchema);
 
     const refId = metadata?.refId;
 
@@ -386,7 +376,7 @@ export class OpenAPIGenerator {
       const newSchemaMetadata = !newMetadata.type
         ? omitBy(
             this.toOpenAPISchema(
-              innerSchema.schema,
+              innerSchema,
               zodSchema.isNullable(),
               defaultValue
             ),
@@ -413,11 +403,7 @@ export class OpenAPIGenerator {
       ? {
           type: metadata?.type,
         }
-      : this.toOpenAPISchema(
-          innerSchema.schema,
-          zodSchema.isNullable(),
-          defaultValue
-        );
+      : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
 
     return metadata
       ? this.applySchemaMetadata(result, metadata)
@@ -883,6 +869,21 @@ export class OpenAPIGenerator {
     return zodSchema.isOptional();
   }
 
+  private getDefaultSchema<T>(zodSchema: ZodTypeAny): T | undefined {
+    if (isZodType(zodSchema, 'ZodEffects')) {
+      return this.getDefaultSchema(zodSchema._def.schema);
+    }
+
+    if (isZodType(zodSchema, 'ZodDefault')) {
+      return (
+        ('defaultValue' in zodSchema._def && zodSchema._def.defaultValue()) ||
+        undefined
+      );
+    }
+
+    return undefined;
+  }
+
   private toOpenAPIObjectSchema(
     zodSchema: ZodObject<ZodRawShape>,
     isNullable: boolean,
@@ -981,35 +982,23 @@ export class OpenAPIGenerator {
     return [...leftSubTypes, ...rightSubTypes];
   }
 
-  private unwrapChained<T>(
-    schema: ZodSchema<T>,
-    defaultValue?: T
-  ): {
-    schema: ZodSchema<any>;
-    defaultValue?: T;
-  } {
+  private unwrapChained(schema: ZodSchema<any>): ZodSchema<any> {
     if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
-      return this.unwrapChained(schema.unwrap(), defaultValue);
+      return this.unwrapChained(schema.unwrap());
     }
 
     if (isZodType(schema, 'ZodDefault')) {
-      return this.unwrapChained(
-        schema._def.innerType,
-        this.getDefaultValue(schema)
-      );
+      return this.unwrapChained(schema._def.innerType);
     }
 
     if (
       isZodType(schema, 'ZodEffects') &&
       schema._def.effect.type === 'refinement'
     ) {
-      return this.unwrapChained(schema._def.schema, defaultValue);
+      return this.unwrapChained(schema._def.schema);
     }
 
-    return {
-      schema,
-      defaultValue,
-    };
+    return schema;
   }
 
   private buildSchemaMetadata(metadata: ZodOpenAPIMetadata) {
@@ -1029,7 +1018,7 @@ export class OpenAPIGenerator {
     const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
-      : innerSchema.schema._def.openapi;
+      : innerSchema._def.openapi;
 
     return metadata;
   }
