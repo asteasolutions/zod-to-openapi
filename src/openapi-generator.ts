@@ -842,58 +842,45 @@ export class OpenAPIGenerator {
     return zodSchema.isOptional();
   }
 
+  private requiredKeysOf(objectSchema: ZodObject<ZodRawShape>) {
+    return Object.entries(objectSchema._def.shape())
+      .filter(([_key, type]) => !this.isOptionalSchema(type))
+      .map(([key, _type]) => key);
+  }
+
   private toOpenAPIObjectSchema(
     zodSchema: ZodObject<ZodRawShape>,
     isNullable: boolean
   ): SchemaObject {
     const extendedFrom = zodSchema._def.openapi?.extendedFrom;
 
-    const propTypes = zodSchema._def.shape();
+    const parentShape = extendedFrom?.schema._def.shape();
+    const childShape = zodSchema._def.shape();
+
+    const keysRequiredByParent = extendedFrom
+      ? this.requiredKeysOf(extendedFrom.schema)
+      : [];
+
+    const keysRequiredByChild = this.requiredKeysOf(zodSchema);
+
+    const propsOfParent = parentShape
+      ? mapValues(parentShape, _ => this.generateInnerSchema(_))
+      : {};
+    const propsOfChild = mapValues(childShape, _ =>
+      this.generateInnerSchema(_)
+    );
+
+    const properties = Object.fromEntries(
+      Object.entries(propsOfChild).filter(([key, type]) => {
+        return !objectEquals(propsOfParent[key], type);
+      })
+    );
+
+    const additionallyRequired = keysRequiredByChild.filter(
+      prop => !keysRequiredByParent.includes(prop)
+    );
+
     const unknownKeysOption = zodSchema._unknownKeys as UnknownKeysParam;
-
-    const requiredProperties = Object.entries(propTypes)
-      .filter(([_key, type]) => !this.isOptionalSchema(type))
-      .map(([key, _type]) => key);
-
-    const schemaProperties = mapValues(propTypes, propSchema =>
-      this.generateInnerSchema(propSchema)
-    );
-
-    let alreadyRegistered: string[] = [];
-    let alreadyRequired: string[] = [];
-
-    if (extendedFrom) {
-      const registeredSchema = this.schemaRefs[extendedFrom];
-
-      if (!registeredSchema) {
-        throw new Error(
-          `Attempt to extend an unregistered schema with id ${extendedFrom}.`
-        );
-      }
-
-      const registeredProperties =
-        'properties' in registeredSchema && registeredSchema.properties
-          ? registeredSchema.properties
-          : {};
-
-      alreadyRegistered = Object.keys(registeredProperties).filter(propKey => {
-        return objectEquals(
-          schemaProperties[propKey],
-          registeredProperties[propKey]
-        );
-      });
-
-      alreadyRequired =
-        'properties' in registeredSchema && registeredSchema.required
-          ? registeredSchema.required
-          : [];
-    }
-
-    const properties = omit(schemaProperties, alreadyRegistered);
-
-    const additionallyRequired = requiredProperties.filter(
-      prop => !alreadyRequired.includes(prop)
-    );
 
     const objectData = {
       ...this.mapNullableType('object', isNullable),
@@ -910,7 +897,10 @@ export class OpenAPIGenerator {
 
     if (extendedFrom) {
       return {
-        allOf: [{ $ref: `#/components/schemas/${extendedFrom}` }, objectData],
+        allOf: [
+          { $ref: `#/components/schemas/${extendedFrom.refId}` },
+          objectData,
+        ],
       };
     }
 
