@@ -2,21 +2,6 @@ import { z } from 'zod';
 import { expectSchema } from '../lib/helpers';
 
 describe('object polymorphism', () => {
-  it('has the same behavior of extend', () => {
-    const a = z.object({ a: z.literal(1) });
-    const b = z.object({ b: z.literal(1) });
-
-    b.extend = a.extend;
-
-    const ac = a.extend({ c: z.literal(1) });
-    const bc = b.extend({ c: z.literal(1) });
-
-    console.log('ac', Object.keys(ac._def.shape()));
-    console.log('bc', Object.keys(bc._def.shape()));
-    // Before: { a: 1, c: 1 }
-    // After: { b: 1, c: 1 }
-  });
-
   it('can use allOf for extended schemas', () => {
     const BaseSchema = z.object({ id: z.string() }).openapi({
       refId: 'Base',
