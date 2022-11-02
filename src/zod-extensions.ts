@@ -2,12 +2,13 @@ import { ParameterObject, SchemaObject } from 'openapi3-ts';
 import type { z, ZodObject, ZodRawShape } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
-export interface ZodOpenAPIMetadata<T = any> extends SchemaObject {
+export interface ZodOpenAPIMetadata<T = any, E = T extends Date ? string : T>
+  extends SchemaObject {
   refId?: string;
   extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
-  param?: Partial<ParameterObject> & { example?: T };
-  example?: T;
-  examples?: T[];
+  param?: Partial<ParameterObject> & { example?: E };
+  example?: E;
+  examples?: E[];
   default?: T;
 }
 

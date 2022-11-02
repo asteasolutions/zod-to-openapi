@@ -1,5 +1,8 @@
 # Zod to OpenAPI
 
+[![npm version](https://img.shields.io/npm/v/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
+[![npm downloads](https://img.shields.io/npm/dm/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
+
 A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate an Open API Swagger documentation.
 
 1. [Purpose and quick example](#purpose-and-quick-example)
@@ -7,11 +10,12 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
    1. [Installation](#installation)
    2. [The `openapi` method](#the-openapi-method)
    3. [The Registry](#the-registry)
-   4. [Defining schemas](#defining-schemas)
-   5. [Defining routes](#defining-routes)
-   6. [Defining custom components](#defining-custom-components)
-   6. [A full example](#a-full-example)
-   7. [Adding it as part of your build](#adding-it-as-part-of-your-build)
+   4. [The Generator](#the-generator)
+   5. [Defining schemas](#defining-schemas)
+   6. [Defining routes & webhooks](#defining-routes--webhooks)
+   7. [Defining custom components](#defining-custom-components)
+   8. [A full example](#a-full-example)
+   9. [Adding it as part of your build](#adding-it-as-part-of-your-build)
 3. [Zod schema types](#zod-schema-types)
    1. [Supported types](#supported-types)
    2. [Unsupported types](#unsupported-types)
@@ -138,12 +142,38 @@ const registry = new OpenAPIRegistry();
 
 // Register definitions here
 
-const generator = new OpenAPIGenerator(registry.definitions);
+const generator = new OpenAPIGenerator(registry.definitions, '3.0.0');
 
 return generator.generateComponents();
 ```
 
+### The Generator
+
+The generator constructor takes 2 arguments. An array of definitions from the registry and an Open API version.
+
+The Open API version affects how some components are generated. For example: changing the version to `3.1.0` from `3.0.0` will result in following differences:
+
+```ts
+z.string().nullable().openapi(refId: 'name');
+```
+
+```yml
+# 3.1.0
+# nullable is invalid in 3.1.0 but type arrays are invalid in previous versions
+name:
+  type:
+    - 'string'
+    - 'null'
+
+# 3.0.0
+name:
+  type: 'string'
+  nullable: true
+```
+
 `generateComponents` will generate only the `/components` section of an OpenAPI document (e.g. only `schemas` and `parameters`), not generating actual routes.
+
+`generateDocument` will generate the whole OpenAPI document.
 
 ### Defining schemas
 
@@ -189,11 +219,11 @@ Note that `generateComponents` does not return YAML but a JS object - you can th
 
 The resulting schema can then be referenced by using `$ref: #/components/schemas/User` in an existing OpenAPI JSON. This will be done automatically for Routes defined through the registry.
 
-### Defining routes
+### Defining routes & webhooks
 
-#### Registering a path
+#### Registering a path or webhook
 
-An OpenAPI path is registered using the `registerPath` method of an `OpenAPIRegistry` instance.
+An OpenAPI path is registered using the `registerPath` method of an `OpenAPIRegistry` instance. An OpenAPI webhook is registered using the `registerWebhook` method and takes the same parameters as `registerPath`.
 
 ```ts
 registry.registerPath({
@@ -317,7 +347,6 @@ A full OpenAPI document can be generated using the `generateDocument` method of 
 
 ```ts
 return generator.generateDocument({
-  openapi: '3.0.0',
   info: {
     version: '1.0.0',
     title: 'My API',
@@ -377,6 +406,7 @@ The list of all supported types as of now is:
 - `ZodIntersection`
 - `ZodRecord`
 - `ZodUnknown`
+- `ZodDate`
 
 Extending an instance of `ZodObject` is also supported and results in an OpenApi definition with `allOf`
 

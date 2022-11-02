@@ -28,4 +28,27 @@ describe('union', () => {
       }
     );
   });
+
+  it('supports nullable union types', () => {
+    expectSchema(
+      [z.string().or(z.number()).nullable().openapi({ refId: 'Test' })],
+      {
+        Test: {
+          anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
+        },
+      }
+    );
+  });
+
+  it('supports nullable union types in 3.1.0', () => {
+    expectSchema(
+      [z.string().or(z.number()).nullable().openapi({ refId: 'Test' })],
+      {
+        Test: {
+          anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
+        },
+      },
+      '3.1.0'
+    );
+  });
 });
