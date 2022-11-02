@@ -351,7 +351,7 @@ export class OpenAPIGenerator {
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
-    const defaultValue = this.getDefaultSchema(zodSchema);
+    const defaultValue = this.getDefaultValue(zodSchema);
 
     const refId = metadata?.refId;
 
@@ -869,23 +869,20 @@ export class OpenAPIGenerator {
     return zodSchema.isOptional();
   }
 
-  private getDefaultSchema<T>(zodSchema: ZodTypeAny): T | undefined {
+  private getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
     if (
       isZodType(zodSchema, 'ZodOptional') ||
       isZodType(zodSchema, 'ZodNullable')
     ) {
-      return this.getDefaultSchema(zodSchema.unwrap());
+      return this.getDefaultValue(zodSchema.unwrap());
     }
 
     if (isZodType(zodSchema, 'ZodEffects')) {
-      return this.getDefaultSchema(zodSchema._def.schema);
+      return this.getDefaultValue(zodSchema._def.schema);
     }
 
     if (isZodType(zodSchema, 'ZodDefault')) {
-      return (
-        ('defaultValue' in zodSchema._def && zodSchema._def.defaultValue()) ||
-        undefined
-      );
+      return zodSchema._def.defaultValue();
     }
 
     return undefined;

@@ -32,6 +32,18 @@ describe('default', () => {
     );
   });
 
+  it('supports falsy defaults', () => {
+    expectSchema(
+      [z.boolean().default(false).openapi({ refId: 'BooleanWithDefault' })],
+      {
+        BooleanWithDefault: {
+          type: 'boolean',
+          default: false,
+        },
+      }
+    );
+  });
+
   it('supports optional defaults', () => {
     expectSchema(
       [
