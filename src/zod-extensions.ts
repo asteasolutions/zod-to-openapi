@@ -55,7 +55,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
         extendedResult._def.openapi = {
           extendedFrom: this._def.openapi?.refId
-            ? { refId: this._def.openapi?.refId, schema: this }
+            ? { refId: this._def.openapi.refId, schema: this }
             : this._def.openapi?.extendedFrom,
         };
 
