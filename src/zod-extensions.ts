@@ -76,6 +76,11 @@ export function extendZodWithOpenApi(zod: typeof z) {
       },
     });
 
+    /**
+     * We want to preserve the behavior created by `internal_openapi`
+     * for extended objects. Applying metadata does not change
+     * the parent's `refId` to be used for `extendedFrom`
+     */
     if (isZodType(this, 'ZodObject')) {
       result.extend = this.extend;
     }
@@ -83,10 +88,6 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
-  /**
-   * Previously we relied on this that it would override the extend function from the registry.
-   * Right now the registry is doing it manually!
-   */
   zod.ZodSchema.prototype.internal_openapi = function (openapi) {
     const result = new (this as any).constructor({
       ...this._def,
