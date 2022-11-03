@@ -33,6 +33,13 @@ declare module 'zod' {
       metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
     ): T;
 
+    /**
+     * This method should NOT be used outside of @astesolution/zod-to-openapi code!
+     * Any usage of it can lead to unexpected consequences when generating the
+     * OpenApi schemas!
+     *
+     * @deprecated
+     */
     internal_openapi<T extends ZodSchema<any>>(
       this: T,
       metadata: Partial<ZodOpenAPIInternalMetadata>
