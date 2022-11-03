@@ -81,6 +81,7 @@ describe('refine', () => {
           properties: {
             test: {
               type: 'number',
+              default: 42,
             },
           },
         },
@@ -106,6 +107,7 @@ describe('refine', () => {
           properties: {
             test: {
               type: 'number',
+              default: 42,
             },
           },
           required: ['test'],
