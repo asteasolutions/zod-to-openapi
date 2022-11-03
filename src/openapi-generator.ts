@@ -20,7 +20,7 @@ import type {
   ZodTypeAny,
 } from 'zod';
 import { compact, isNil, mapValues, objectEquals, omitBy } from './lib/lodash';
-import { ZodOpenAPIMetadata } from './zod-extensions';
+import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
 import {
   OpenAPIComponentObject,
   OpenAPIDefinitions,
@@ -163,7 +163,7 @@ export class OpenAPIGenerator {
   private generateParameterDefinition(
     zodSchema: ZodSchema<any>
   ): ParameterObject | ReferenceObject {
-    const metadata = OpenAPIMetadata.getMetadata(zodSchema);
+    const metadata = OpenAPIMetadata.getInternalMetadata(zodSchema);
 
     const result = this.generateParameter(zodSchema);
 
@@ -175,16 +175,16 @@ export class OpenAPIGenerator {
   }
 
   private getParameterRef(
-    schemaMetadata: ZodOpenAPIMetadata | undefined,
+    schemaMetadata: ZodOpenApiFullMetadata | undefined,
     external?: ParameterData
   ): ReferenceObject | undefined {
-    const parameterMetadata = schemaMetadata?.param;
+    const parameterMetadata = schemaMetadata?.metadata?.param;
 
-    const existingRef = schemaMetadata?.refId
-      ? this.paramRefs[schemaMetadata.refId]
+    const existingRef = schemaMetadata?._internal?.refId
+      ? this.paramRefs[schemaMetadata._internal?.refId]
       : undefined;
 
-    if (!schemaMetadata?.refId || !existingRef) {
+    if (!schemaMetadata?._internal?.refId || !existingRef) {
       return undefined;
     }
 
@@ -220,7 +220,7 @@ export class OpenAPIGenerator {
     }
 
     return {
-      $ref: `#/components/parameters/${schemaMetadata.refId}`,
+      $ref: `#/components/parameters/${schemaMetadata._internal?.refId}`,
     };
   }
 
@@ -229,7 +229,7 @@ export class OpenAPIGenerator {
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
     const metadata = OpenAPIMetadata.getMetadata(zodSchema);
-    const parameterMetadata = metadata?.param;
+    const parameterMetadata = metadata?.metadata?.param;
 
     const referencedSchema = this.getParameterRef(metadata, { in: location });
 
@@ -252,7 +252,7 @@ export class OpenAPIGenerator {
           return referencedSchema;
         }
 
-        const innerParameterMetadata = innerMetadata?.param;
+        const innerParameterMetadata = innerMetadata?.metadata?.param;
 
         if (
           innerParameterMetadata?.name &&
@@ -305,7 +305,7 @@ export class OpenAPIGenerator {
   private generateParameter(zodSchema: ZodSchema<any>): ParameterObject {
     const metadata = OpenAPIMetadata.getMetadata(zodSchema);
 
-    const paramMetadata = metadata?.param;
+    const paramMetadata = metadata?.metadata?.param;
 
     const paramName = paramMetadata?.name;
     const paramLocation = paramMetadata?.in;
@@ -347,7 +347,7 @@ export class OpenAPIGenerator {
     const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
     const defaultValue = this.getDefaultValue(zodSchema);
 
-    const refId = metadata?.refId;
+    const refId = metadata?._internal?.refId;
 
     if (refId && this.schemaRefs[refId]) {
       const schemaRef = this.schemaRefs[refId] as SchemaObject;
@@ -359,7 +359,7 @@ export class OpenAPIGenerator {
       const newMetadata = omitBy(
         // We do not want to check our "custom" metadata fields. We only want
         // the plain metadata for a SchemaObject.
-        OpenAPIMetadata.extractOpenApiMetadata(metadata),
+        OpenAPIMetadata.extractOpenApiMetadata(metadata?.metadata ?? {}),
         (value, key) =>
           value === undefined || objectEquals(value, schemaRef[key])
       );
@@ -393,14 +393,14 @@ export class OpenAPIGenerator {
       return referenceObject;
     }
 
-    const result = metadata?.type
+    const result = metadata?.metadata?.type
       ? {
-          type: metadata?.type,
+          type: metadata?.metadata.type,
         }
       : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
 
-    return metadata
-      ? OpenAPIMetadata.applySchemaMetadata(result, metadata)
+    return metadata?.metadata
+      ? OpenAPIMetadata.applySchemaMetadata(result, metadata.metadata)
       : omitBy(result, isNil);
   }
 
@@ -423,12 +423,12 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<any>
   ): SchemaObject | ReferenceObject {
     const metadata = OpenAPIMetadata.getMetadata(zodSchema);
-    const refId = metadata?.refId;
+    const refId = metadata?._internal?.refId;
 
     const simpleSchema = this.generateSimpleSchema(zodSchema);
 
-    const result = metadata
-      ? OpenAPIMetadata.applySchemaMetadata(simpleSchema, metadata)
+    const result = metadata?.metadata
+      ? OpenAPIMetadata.applySchemaMetadata(simpleSchema, metadata.metadata)
       : simpleSchema;
 
     if (refId) {
@@ -588,7 +588,9 @@ export class OpenAPIGenerator {
     discriminator: string
   ): DiscriminatorObject | undefined {
     // All schemas must be registered to use a discriminator
-    if (zodObjects.some(obj => obj._def.openapi?.refId === undefined)) {
+    if (
+      zodObjects.some(obj => obj._def.openapi?._internal?.refId === undefined)
+    ) {
       return undefined;
     }
 
@@ -604,7 +606,7 @@ export class OpenAPIGenerator {
       }
 
       mapping[value] = `#/components/schemas/${
-        obj._def.openapi?.refId as string
+        obj._def.openapi?._internal?.refId as string
       }`;
     });
 
@@ -843,7 +845,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    const refId = OpenAPIMetadata.getMetadata(zodSchema)?.refId;
+    const refId = OpenAPIMetadata.getMetadata(zodSchema)?._internal?.refId;
 
     throw new UnknownZodTypeError({
       currentSchema: zodSchema._def,
@@ -893,7 +895,7 @@ export class OpenAPIGenerator {
     isNullable: boolean,
     defaultValue?: ZodRawShape
   ): SchemaObject {
-    const extendedFrom = zodSchema._def.openapi?.extendedFrom;
+    const extendedFrom = zodSchema._def.openapi?._internal?.extendedFrom;
 
     const parentShape = extendedFrom?.schema._def.shape();
     const childShape = zodSchema._def.shape();

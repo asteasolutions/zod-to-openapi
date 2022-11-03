@@ -2,7 +2,7 @@ import { SchemaObject, ParameterObject, ReferenceObject } from 'openapi3-ts';
 import { ZodSchema } from 'zod';
 import { omitBy, isNil, omit } from './lib/lodash';
 import { isZodType } from './lib/zod-is-type';
-import { ZodOpenAPIMetadata } from './zod-extensions';
+import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
 
 export class OpenAPIMetadata {
   static buildParameterMetadata(
@@ -13,13 +13,22 @@ export class OpenAPIMetadata {
 
   static getMetadata<T extends any>(
     zodSchema: ZodSchema<T>
-  ): ZodOpenAPIMetadata<T> | undefined {
+  ): ZodOpenApiFullMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
       : innerSchema._def.openapi;
 
     return metadata;
+  }
+
+  static getInternalMetadata<T extends any>(zodSchema: ZodSchema<T>) {
+    const innerSchema = this.unwrapChained(zodSchema);
+    const openapi = zodSchema._def.openapi
+      ? zodSchema._def.openapi
+      : innerSchema._def.openapi;
+
+    return openapi?._internal;
   }
 
   static applySchemaMetadata(
@@ -36,7 +45,7 @@ export class OpenAPIMetadata {
   }
 
   static getOpenApiMetadata(schema: Zod.ZodSchema) {
-    const metadata = this.getMetadata(schema);
+    const metadata = this.getMetadata(schema)?.metadata;
     return metadata ? this.extractOpenApiMetadata(metadata) : undefined;
   }
 
@@ -45,7 +54,7 @@ export class OpenAPIMetadata {
    * metadata properties
    */
   static extractOpenApiMetadata(metadata: ZodOpenAPIMetadata) {
-    return omitBy(omit(metadata, ['param', 'refId', 'extendedFrom']), isNil);
+    return omitBy(omit(metadata, ['param']), isNil);
   }
 
   static unwrapChained(schema: ZodSchema<any>): ZodSchema<any> {

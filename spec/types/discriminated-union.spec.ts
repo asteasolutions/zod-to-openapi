@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { expectSchema } from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('discriminated union', () => {
   it('supports basic discriminated unions', () => {
@@ -7,7 +7,7 @@ describe('discriminated union', () => {
     const Image = z.object({ type: z.literal('image'), src: z.string() });
 
     expectSchema(
-      [z.discriminatedUnion('type', [Text, Image]).openapi({ refId: 'Test' })],
+      [registerSchema('Test', z.discriminatedUnion('type', [Text, Image]))],
       {
         Test: {
           oneOf: [
@@ -34,18 +34,20 @@ describe('discriminated union', () => {
   });
 
   it('creates a discriminator mapping when all objects in the discriminated union contain a registered schema', () => {
-    const Text = z
-      .object({ type: z.literal('text'), text: z.string() })
-      .openapi({ refId: 'obj1' });
-    const Image = z
-      .object({ type: z.literal('image'), src: z.string() })
-      .openapi({ refId: 'obj2' });
+    const Text = registerSchema(
+      'obj1',
+      z.object({ type: z.literal('text'), text: z.string() })
+    );
+    const Image = registerSchema(
+      'obj2',
+      z.object({ type: z.literal('image'), src: z.string() })
+    );
 
     expectSchema(
       [
         Text,
         Image,
-        z.discriminatedUnion('type', [Text, Image]).openapi({ refId: 'Test' }),
+        registerSchema('Test', z.discriminatedUnion('type', [Text, Image])),
       ],
       {
         Test: {
@@ -82,21 +84,23 @@ describe('discriminated union', () => {
   });
 
   it('does not create a discriminator mapping when the discrimnated union is nullable', () => {
-    const Text = z
-      .object({ type: z.literal('text'), text: z.string() })
-      .openapi({ refId: 'obj1' });
-    const Image = z
-      .object({ type: z.literal('image'), src: z.string() })
-      .openapi({ refId: 'obj2' });
+    const Text = registerSchema(
+      'obj1',
+      z.object({ type: z.literal('text'), text: z.string() })
+    );
+    const Image = registerSchema(
+      'obj2',
+      z.object({ type: z.literal('image'), src: z.string() })
+    );
 
     expectSchema(
       [
         Text,
         Image,
-        z
-          .discriminatedUnion('type', [Text, Image])
-          .nullable()
-          .openapi({ refId: 'Test' }),
+        registerSchema(
+          'Test',
+          z.discriminatedUnion('type', [Text, Image]).nullable()
+        ),
       ],
       {
         Test: {
@@ -127,16 +131,17 @@ describe('discriminated union', () => {
   });
 
   it('does not create a discriminator mapping when only some objects in the discriminated union contain a registered schema', () => {
-    const Text = z
-      .object({ type: z.literal('text'), text: z.string() })
-      .openapi({ refId: 'obj1' });
+    const Text = registerSchema(
+      'obj1',
+      z.object({ type: z.literal('text'), text: z.string() })
+    );
     const Image = z.object({ type: z.literal('image'), src: z.string() });
 
     expectSchema(
       [
         Text,
         Image,
-        z.discriminatedUnion('type', [Text, Image]).openapi({ refId: 'Test' }),
+        registerSchema('Test', z.discriminatedUnion('type', [Text, Image])),
       ],
       {
         Test: {

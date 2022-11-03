@@ -2,25 +2,43 @@ import { ParameterObject, SchemaObject } from 'openapi3-ts';
 import type { z, ZodObject, ZodRawShape } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
-export interface ZodOpenAPIMetadata<T = any, E = T extends Date ? string : T>
+type ExampleValue<T> = T extends Date ? string : T;
+
+export interface ZodOpenAPIMetadata<T = any, E = ExampleValue<T>>
   extends SchemaObject {
-  refId?: string;
-  extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
   param?: Partial<ParameterObject> & { example?: E };
   example?: E;
   examples?: E[];
   default?: T;
 }
 
+/**
+ * TODO: Make sure those two are not exported
+ */
+export interface ZodOpenAPIInternalMetadata {
+  refId?: string;
+  extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
+}
+
+export interface ZodOpenApiFullMetadata<T = any> {
+  _internal?: ZodOpenAPIInternalMetadata;
+  metadata?: ZodOpenAPIMetadata<T>;
+}
+
 declare module 'zod' {
   interface ZodTypeDef {
-    openapi?: ZodOpenAPIMetadata;
+    openapi?: ZodOpenApiFullMetadata;
   }
 
   abstract class ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
     openapi<T extends ZodSchema<any>>(
       this: T,
       metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
+    ): T;
+
+    internal_openapi<T extends ZodSchema<any>>(
+      this: T,
+      metadata: Partial<ZodOpenAPIInternalMetadata>
     ): T;
   }
 }
@@ -39,12 +57,35 @@ export function extendZodWithOpenApi(zod: typeof z) {
     const result = new (this as any).constructor({
       ...this._def,
       openapi: {
-        ...this._def.openapi,
-        ...restOfOpenApi,
-        param: {
-          ...this._def.openapi?.param,
-          ...param,
+        _internal: this._def.openapi?._internal,
+        metadata: {
+          ...this._def.openapi?.metadata,
+          ...restOfOpenApi,
+          param: {
+            ...this._def.openapi?.metadata?.param,
+            ...param,
+          },
         },
+      },
+    });
+
+    if (isZodType(this, 'ZodObject')) {
+      result.extend = this.extend;
+    }
+
+    return result;
+  };
+
+  /**
+   * Previously we relied on this that it would override the extend function from the registry.
+   * Right now the registry is doing it manually!
+   */
+  zod.ZodSchema.prototype.internal_openapi = function (openapi) {
+    const result = new (this as any).constructor({
+      ...this._def,
+      openapi: {
+        _internal: { ...this._def.openapi?._internal, ...openapi },
+        metadata: this._def.openapi?.metadata,
       },
     });
 
@@ -55,9 +96,12 @@ export function extendZodWithOpenApi(zod: typeof z) {
         const extendedResult = originalExtend.apply(this, args);
 
         extendedResult._def.openapi = {
-          extendedFrom: this._def.openapi?.refId
-            ? { refId: this._def.openapi.refId, schema: this }
-            : this._def.openapi?.extendedFrom,
+          _internal: {
+            extendedFrom: this._def.openapi?._internal?.refId
+              ? { refId: this._def.openapi?._internal?.refId, schema: this }
+              : this._def.openapi?._internal.extendedFrom,
+          },
+          metadata: {},
         };
 
         return extendedResult;

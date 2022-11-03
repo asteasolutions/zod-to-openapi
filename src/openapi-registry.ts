@@ -103,23 +103,21 @@ export class OpenAPIRegistry {
   /**
    * Registers a new component schema under /components/schemas/${name}
    */
-  register<T extends ZodSchema<any>>(refId: string, zodSchema: T) {
-    const currentMetadata = zodSchema._def.openapi;
-    const schemaWithMetadata = zodSchema.openapi({
-      ...currentMetadata,
-      refId,
-    });
+  register<T extends ZodSchema<any>>(refId: string, zodSchema: T): T {
+    const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
-    this._definitions.push({ type: 'schema', schema: schemaWithMetadata });
+    this._definitions.push({ type: 'schema', schema: schemaWithRefId });
 
-    return schemaWithMetadata;
+    return schemaWithRefId;
   }
 
   /**
    * Registers a new parameter schema under /components/parameters/${name}
    */
   registerParameter<T extends ZodSchema<any>>(refId: string, zodSchema: T) {
-    const currentMetadata = zodSchema._def.openapi;
+    const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
+
+    const currentMetadata = schemaWithRefId._def.openapi?.metadata;
 
     const schemaWithMetadata = zodSchema.openapi({
       ...currentMetadata,
@@ -127,7 +125,6 @@ export class OpenAPIRegistry {
         ...currentMetadata?.param,
         name: currentMetadata?.param?.name ?? refId,
       },
-      refId,
     });
 
     this._definitions.push({
@@ -182,5 +179,12 @@ export class OpenAPIRegistry {
       name,
       ref: { $ref: `#/components/${type}/${name}` },
     };
+  }
+
+  private schemaWithRefId<T extends ZodSchema<any>>(
+    refId: string,
+    zodSchema: T
+  ): T {
+    return zodSchema.internal_openapi({ refId });
   }
 }

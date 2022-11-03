@@ -1,17 +1,18 @@
 import { z } from 'zod';
-import { expectSchema } from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('object', () => {
   it('generates OpenAPI schema for nested objects', () => {
     expectSchema(
       [
-        z
-          .object({
+        registerSchema(
+          'NestedObject',
+          z.object({
             test: z.object({
               id: z.string().openapi({ description: 'The entity id' }),
             }),
           })
-          .openapi({ refId: 'NestedObject' }),
+        ),
       ],
       {
         NestedObject: {
@@ -32,14 +33,15 @@ describe('object', () => {
   });
 
   it('creates separate schemas and links them', () => {
-    const SimpleStringSchema = z.string().openapi({ refId: 'SimpleString' });
+    const SimpleStringSchema = registerSchema('SimpleString', z.string());
 
-    const ObjectWithStringsSchema = z
-      .object({
+    const ObjectWithStringsSchema = registerSchema(
+      'ObjectWithStrings',
+      z.object({
         str1: SimpleStringSchema.optional(),
         str2: SimpleStringSchema,
       })
-      .openapi({ refId: 'ObjectWithStrings' });
+    );
 
     expectSchema([SimpleStringSchema, ObjectWithStringsSchema], {
       SimpleString: { type: 'string' },

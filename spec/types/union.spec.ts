@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { expectSchema } from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('union', () => {
   it('supports union types', () => {
-    expectSchema([z.string().or(z.number()).openapi({ refId: 'Test' })], {
+    expectSchema([registerSchema('Test', z.string().or(z.number()))], {
       Test: {
         anyOf: [{ type: 'string' }, { type: 'number' }],
       },
@@ -11,11 +11,10 @@ describe('union', () => {
 
     expectSchema(
       [
-        z
-          .string()
-          .or(z.number())
-          .or(z.array(z.string()))
-          .openapi({ refId: 'Test' }),
+        registerSchema(
+          'Test',
+          z.string().or(z.number()).or(z.array(z.string()))
+        ),
       ],
       {
         Test: {
@@ -31,7 +30,7 @@ describe('union', () => {
 
   it('supports nullable union types', () => {
     expectSchema(
-      [z.string().or(z.number()).nullable().openapi({ refId: 'Test' })],
+      [registerSchema('Test', z.string().or(z.number()).nullable())],
       {
         Test: {
           anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
@@ -42,7 +41,7 @@ describe('union', () => {
 
   it('supports nullable union types in 3.1.0', () => {
     expectSchema(
-      [z.string().or(z.number()).nullable().openapi({ refId: 'Test' })],
+      [registerSchema('Test', z.string().or(z.number()).nullable())],
       {
         Test: {
           anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],

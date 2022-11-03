@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { expectSchema } from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('default', () => {
   it('supports defaults', () => {
     expectSchema(
-      [z.string().default('test').openapi({ refId: 'StringWithDefault' })],
+      [registerSchema('StringWithDefault', z.string().default('test'))],
       {
         StringWithDefault: {
           type: 'string',
@@ -17,11 +17,10 @@ describe('default', () => {
   it('supports defaults override', () => {
     expectSchema(
       [
-        z
-          .string()
-          .default('test')
-          .default('override')
-          .openapi({ refId: 'StringWithDefault' }),
+        registerSchema(
+          'StringWithDefault',
+          z.string().default('test').default('override')
+        ),
       ],
       {
         StringWithDefault: {
@@ -34,7 +33,7 @@ describe('default', () => {
 
   it('supports falsy defaults', () => {
     expectSchema(
-      [z.boolean().default(false).openapi({ refId: 'BooleanWithDefault' })],
+      [registerSchema('BooleanWithDefault', z.boolean().default(false))],
       {
         BooleanWithDefault: {
           type: 'boolean',
@@ -47,11 +46,12 @@ describe('default', () => {
   it('supports optional defaults', () => {
     expectSchema(
       [
-        z
-          .object({
+        registerSchema(
+          'ObjectWithDefault',
+          z.object({
             test: z.ostring().default('test'),
           })
-          .openapi({ refId: 'ObjectWithDefault' }),
+        ),
       ],
       {
         ObjectWithDefault: {
@@ -70,11 +70,12 @@ describe('default', () => {
   it('supports required defaults', () => {
     expectSchema(
       [
-        z
-          .object({
+        registerSchema(
+          'ObjectWithDefault',
+          z.object({
             test: z.string().default('test'),
           })
-          .openapi({ refId: 'ObjectWithDefault' }),
+        ),
       ],
       {
         ObjectWithDefault: {
@@ -94,14 +95,15 @@ describe('default', () => {
   it('supports optional default schemas with refine', () => {
     expectSchema(
       [
-        z
-          .object({
+        registerSchema(
+          'Object',
+          z.object({
             test: z
               .onumber()
               .default(42)
               .refine(num => num && num % 2 === 0),
           })
-          .openapi({ refId: 'Object' }),
+        ),
       ],
       {
         Object: {
@@ -120,14 +122,15 @@ describe('default', () => {
   it('supports required default schemas with refine', () => {
     expectSchema(
       [
-        z
-          .object({
+        registerSchema(
+          'Object',
+          z.object({
             test: z
               .number()
               .default(42)
               .refine(num => num && num % 2 === 0),
           })
-          .openapi({ refId: 'Object' }),
+        ),
       ],
       {
         Object: {
@@ -147,10 +150,10 @@ describe('default', () => {
   it('supports overriding default with .openapi', () => {
     expectSchema(
       [
-        z
-          .enum(['a', 'b'])
-          .default('a')
-          .openapi({ refId: 'EnumWithDefault', default: 'b', examples: ['b'] }),
+        registerSchema(
+          'EnumWithDefault',
+          z.enum(['a', 'b']).default('a')
+        ).openapi({ default: 'b', examples: ['b'] }),
       ],
       {
         EnumWithDefault: {

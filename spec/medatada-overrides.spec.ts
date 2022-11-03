@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { expectSchema } from './lib/helpers';
+import { expectSchema, registerSchema } from './lib/helpers';
 
 describe('metadata overrides', () => {
   it.todo(
@@ -11,43 +11,44 @@ describe('metadata overrides', () => {
   );
 
   it('does not infer the type if one is provided using .openapi', () => {
-    expectSchema(
-      [z.string().openapi({ type: 'number', refId: 'StringAsNumber' })],
-      {
-        StringAsNumber: { type: 'number' },
-      }
-    );
+    const schema = registerSchema('StringAsNumber', z.string()).openapi({
+      type: 'number',
+    });
+    expectSchema([schema], {
+      StringAsNumber: { type: 'number' },
+    });
   });
 
   it('can remove .openapi properties', () => {
-    expectSchema(
-      [
-        z
-          .string()
-          .openapi({ refId: 'Test', description: 'test', deprecated: true })
-          .openapi({ description: undefined, deprecated: undefined }),
-      ],
-      {
-        Test: { type: 'string' },
-      }
-    );
+    const schema = registerSchema('Test', z.string())
+      .openapi({ description: 'test', deprecated: true })
+      .openapi({ description: undefined, deprecated: undefined });
+
+    expectSchema([schema], {
+      Test: { type: 'string' },
+    });
   });
 
   it('generates schemas with metadata', () => {
     expectSchema(
-      [z.string().openapi({ refId: 'SimpleString', description: 'test' })],
+      [
+        registerSchema('SimpleString', z.string()).openapi({
+          description: 'test',
+        }),
+      ],
       { SimpleString: { type: 'string', description: 'test' } }
     );
   });
 
   it('supports .openapi for registered schemas', () => {
-    const StringSchema = z.string().openapi({ refId: 'String' });
+    const StringSchema = registerSchema('String', z.string());
 
-    const TestSchema = z
-      .object({
+    const TestSchema = registerSchema(
+      'Test',
+      z.object({
         key: StringSchema.openapi({ example: 'test', deprecated: true }),
       })
-      .openapi({ refId: 'Test' });
+    );
 
     expectSchema([StringSchema, TestSchema], {
       String: {
@@ -69,16 +70,16 @@ describe('metadata overrides', () => {
   });
 
   it('only adds overrides for new metadata properties', () => {
-    const StringSchema = z.string().openapi({
-      refId: 'String',
+    const StringSchema = registerSchema('String', z.string()).openapi({
       description: 'old field',
       title: 'same title',
       examples: ['same array'],
       discriminator: { propertyName: 'sameProperty' },
     });
 
-    const TestSchema = z
-      .object({
+    const TestSchema = registerSchema(
+      'Test',
+      z.object({
         key: StringSchema.openapi({
           title: 'same title',
           examples: ['same array'],
@@ -86,7 +87,7 @@ describe('metadata overrides', () => {
           discriminator: { propertyName: 'sameProperty' },
         }),
       })
-      .openapi({ refId: 'Test' });
+    );
 
     expectSchema([StringSchema, TestSchema], {
       String: {
@@ -112,16 +113,19 @@ describe('metadata overrides', () => {
   });
 
   it('does not add schema calculated overrides if type is provided in .openapi', () => {
-    const StringSchema = z.string().openapi({
-      refId: 'String',
-      example: 'existing field',
-    });
+    const StringSchema = registerSchema(
+      'String',
+      z.string().openapi({
+        example: 'existing field',
+      })
+    );
 
-    const TestSchema = z
-      .object({
+    const TestSchema = registerSchema(
+      'Test',
+      z.object({
         key: StringSchema.nullable().openapi({ type: 'boolean' }),
       })
-      .openapi({ refId: 'Test' });
+    );
 
     expectSchema([StringSchema, TestSchema], {
       String: {

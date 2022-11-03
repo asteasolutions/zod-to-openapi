@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { expectSchema } from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('record', () => {
   it('supports records', () => {
     const base = z.object({ a: z.string() });
 
-    const record = z.record(base).openapi({ refId: 'Record' });
+    const record = registerSchema('Record', z.record(base));
 
     expectSchema([base, record], {
       Record: {
@@ -22,9 +22,9 @@ describe('record', () => {
   });
 
   it('supports records with refs', () => {
-    const base = z.object({ a: z.string() }).openapi({ refId: 'Base' });
+    const base = registerSchema('Base', z.object({ a: z.string() }));
 
-    const record = z.record(base).openapi({ refId: 'Record' });
+    const record = registerSchema('Record', z.record(base));
 
     expectSchema([base, record], {
       Base: {
