@@ -12,9 +12,6 @@ export interface ZodOpenAPIMetadata<T = any, E = ExampleValue<T>>
   default?: T;
 }
 
-/**
- * TODO: Make sure those two are not exported
- */
 export interface ZodOpenAPIInternalMetadata {
   refId?: string;
   extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
