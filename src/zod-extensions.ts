@@ -91,6 +91,18 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
+  const zodDefault = zod.ZodSchema.prototype.default as any;
+  (zod.ZodSchema.prototype.default as any) = function (
+    this: any,
+    ...args: any[]
+  ) {
+    const result = zodDefault.apply(this, args);
+
+    result._def.openapi = this._def.openapi;
+
+    return result;
+  };
+
   const zodPick = zod.ZodObject.prototype.pick as any;
   zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
     const result = zodPick.apply(this, args);

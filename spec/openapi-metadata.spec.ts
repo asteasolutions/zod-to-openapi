@@ -16,8 +16,7 @@ describe('OpenAPI metadata', () => {
     });
   });
 
-  // TODO: Is this really the expected behavior? Or is the current one okay
-  it.skip('can obtain overridden metadata', () => {
+  it('can obtain overridden metadata', () => {
     const schema = z
       .string()
       .openapi({ description: 'Test' })
