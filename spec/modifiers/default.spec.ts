@@ -8,6 +8,37 @@ describe('default', () => {
       {
         StringWithDefault: {
           type: 'string',
+          default: 'test',
+        },
+      }
+    );
+  });
+
+  it('supports defaults override', () => {
+    expectSchema(
+      [
+        z
+          .string()
+          .default('test')
+          .default('override')
+          .openapi({ refId: 'StringWithDefault' }),
+      ],
+      {
+        StringWithDefault: {
+          type: 'string',
+          default: 'override',
+        },
+      }
+    );
+  });
+
+  it('supports falsy defaults', () => {
+    expectSchema(
+      [z.boolean().default(false).openapi({ refId: 'BooleanWithDefault' })],
+      {
+        BooleanWithDefault: {
+          type: 'boolean',
+          default: false,
         },
       }
     );
@@ -28,6 +59,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'string',
+              default: 'test',
             },
           },
         },
@@ -50,6 +82,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'string',
+              default: 'test',
             },
           },
           required: ['test'],
@@ -76,6 +109,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'number',
+              default: 42,
             },
           },
         },
@@ -101,6 +135,7 @@ describe('default', () => {
           properties: {
             test: {
               type: 'number',
+              default: 42,
             },
           },
           required: ['test'],

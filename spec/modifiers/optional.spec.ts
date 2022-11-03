@@ -13,4 +13,27 @@ describe('optional', () => {
       SimpleString: { type: 'string' },
     });
   });
+
+  it('supports optional nullable', () => {
+    expectSchema(
+      [
+        z
+          .object({
+            test: z.string().nullable().optional(),
+          })
+          .openapi({ refId: 'SimpleObject' }),
+      ],
+      {
+        SimpleObject: {
+          type: 'object',
+          properties: {
+            test: {
+              nullable: true,
+              type: 'string',
+            },
+          },
+        },
+      }
+    );
+  });
 });
