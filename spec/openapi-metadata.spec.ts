@@ -15,4 +15,24 @@ describe('OpenAPI metadata', () => {
       deprecated: true,
     });
   });
+
+  // TODO: Is this really the expected behavior? Or is the current one okay
+  it.skip('can obtain overridden metadata', () => {
+    const schema = z
+      .string()
+      .openapi({ description: 'Test' })
+      .optional()
+      .openapi({ deprecated: true })
+      .nullable()
+      .openapi({ example: 'test-example' })
+      .default('test')
+      .openapi({ maxLength: 40 });
+
+    expect(OpenAPIMetadata.getOpenApiMetadata(schema)).toEqual({
+      description: 'Test',
+      deprecated: true,
+      example: 'test-example',
+      maxLength: 40,
+    });
+  });
 });
