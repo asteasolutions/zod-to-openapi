@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('preprocess', () => {
-  it('supports preprocessed string -> boolean schema', () => {
+  it.concurrent('supports preprocessed string -> boolean schema', () => {
     expectSchema(
       [
         registerSchema(
@@ -29,7 +29,7 @@ describe('preprocess', () => {
     );
   });
 
-  it('supports preprocessed string -> number schema', () => {
+  it.concurrent('supports preprocessed string -> number schema', () => {
     expectSchema(
       [
         registerSchema(

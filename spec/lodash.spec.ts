@@ -2,7 +2,7 @@ import { objectEquals } from '../src/lib/lodash';
 
 describe('Lodash', () => {
   describe('objectEquals', () => {
-    it('can compare plain values', () => {
+    it.concurrent('can compare plain values', () => {
       expect(objectEquals(3, 4)).toEqual(false);
       expect(objectEquals(3, 3)).toEqual(true);
 
@@ -10,7 +10,7 @@ describe('Lodash', () => {
       expect(objectEquals('3', '3')).toEqual(true);
     });
 
-    it('can compare objects', () => {
+    it.concurrent('can compare objects', () => {
       expect(objectEquals({ a: 3 }, { b: 3 })).toEqual(false);
       expect(objectEquals({ a: 3 }, { a: '3' })).toEqual(false);
 
@@ -19,7 +19,7 @@ describe('Lodash', () => {
       expect(objectEquals({ a: 3 }, { a: 3 })).toEqual(true);
     });
 
-    it('can compare nested objects', () => {
+    it.concurrent('can compare nested objects', () => {
       expect(
         objectEquals(
           { test: { a: ['asd', 3, true] } },

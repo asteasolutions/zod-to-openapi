@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('enum', () => {
-  it('supports enums', () => {
+  it.concurrent('supports enums', () => {
     const schema = registerSchema(
       'Enum',
       z.enum(['option1', 'option2'])

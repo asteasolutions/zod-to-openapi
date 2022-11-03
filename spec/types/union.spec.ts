@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('union', () => {
-  it('supports union types', () => {
+  it.concurrent('supports union types', () => {
     expectSchema([registerSchema('Test', z.string().or(z.number()))], {
       Test: {
         anyOf: [{ type: 'string' }, { type: 'number' }],
@@ -28,7 +28,7 @@ describe('union', () => {
     );
   });
 
-  it('supports nullable union types', () => {
+  it.concurrent('supports nullable union types', () => {
     expectSchema(
       [registerSchema('Test', z.string().or(z.number()).nullable())],
       {
@@ -39,7 +39,7 @@ describe('union', () => {
     );
   });
 
-  it('supports nullable union types in 3.1.0', () => {
+  it.concurrent('supports nullable union types in 3.1.0', () => {
     expectSchema(
       [registerSchema('Test', z.string().or(z.number()).nullable())],
       {

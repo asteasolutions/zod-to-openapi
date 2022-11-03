@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('array', () => {
-  it('supports arrays of strings', () => {
+  it.concurrent('supports arrays of strings', () => {
     expectSchema([registerSchema('Array', z.array(z.string()))], {
       Array: {
         type: 'array',
@@ -11,7 +11,7 @@ describe('array', () => {
     });
   });
 
-  it('supports minLength / maxLength on arrays', () => {
+  it.concurrent('supports minLength / maxLength on arrays', () => {
     expectSchema(
       [registerSchema('Array', z.array(z.string()).min(5).max(10))],
       {

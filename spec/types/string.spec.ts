@@ -2,13 +2,13 @@ import { z, ZodString } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('string', () => {
-  it('generates OpenAPI schema for simple types', () => {
+  it.concurrent('generates OpenAPI schema for simple types', () => {
     expectSchema([registerSchema('SimpleString', z.string())], {
       SimpleString: { type: 'string' },
     });
   });
 
-  it('supports string literals', () => {
+  it.concurrent('supports string literals', () => {
     expectSchema([registerSchema('Literal', z.literal('John Doe'))], {
       Literal: { type: 'string', enum: ['John Doe'] },
     });
@@ -28,7 +28,7 @@ describe('string', () => {
     }
   );
 
-  it('maps a ZodString regex to a pattern', () => {
+  it.concurrent('maps a ZodString regex to a pattern', () => {
     expectSchema(
       [registerSchema('RegexString', z.string().regex(/^hello world/))],
       {

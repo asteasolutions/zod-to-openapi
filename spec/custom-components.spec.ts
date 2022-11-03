@@ -23,7 +23,7 @@ const testDocConfig: OpenAPIObjectConfig = {
 };
 
 describe('Custom components', () => {
-  it('can register and generate security schemes', () => {
+  it.concurrent('can register and generate security schemes', () => {
     const registry = new OpenAPIRegistry();
 
     const bearerAuth = registry.registerComponent(
@@ -66,7 +66,7 @@ describe('Custom components', () => {
     });
   });
 
-  it('can register and generate headers', () => {
+  it.concurrent('can register and generate headers', () => {
     const registry = new OpenAPIRegistry();
 
     const apiKeyHeader = registry.registerComponent('headers', 'api-key', {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('default', () => {
-  it('supports defaults', () => {
+  it.concurrent('supports defaults', () => {
     expectSchema(
       [registerSchema('StringWithDefault', z.string().default('test'))],
       {
@@ -14,7 +14,7 @@ describe('default', () => {
     );
   });
 
-  it('supports defaults override', () => {
+  it.concurrent('supports defaults override', () => {
     expectSchema(
       [
         registerSchema(
@@ -31,7 +31,7 @@ describe('default', () => {
     );
   });
 
-  it('supports falsy defaults', () => {
+  it.concurrent('supports falsy defaults', () => {
     expectSchema(
       [registerSchema('BooleanWithDefault', z.boolean().default(false))],
       {
@@ -43,7 +43,7 @@ describe('default', () => {
     );
   });
 
-  it('supports optional defaults', () => {
+  it.concurrent('supports optional defaults', () => {
     expectSchema(
       [
         registerSchema(
@@ -67,7 +67,7 @@ describe('default', () => {
     );
   });
 
-  it('supports required defaults', () => {
+  it.concurrent('supports required defaults', () => {
     expectSchema(
       [
         registerSchema(
@@ -92,7 +92,7 @@ describe('default', () => {
     );
   });
 
-  it('supports optional default schemas with refine', () => {
+  it.concurrent('supports optional default schemas with refine', () => {
     expectSchema(
       [
         registerSchema(
@@ -119,7 +119,7 @@ describe('default', () => {
     );
   });
 
-  it('supports required default schemas with refine', () => {
+  it.concurrent('supports required default schemas with refine', () => {
     expectSchema(
       [
         registerSchema(
@@ -147,7 +147,7 @@ describe('default', () => {
     );
   });
 
-  it('supports overriding default with .openapi', () => {
+  it.concurrent('supports overriding default with .openapi', () => {
     expectSchema(
       [
         registerSchema(

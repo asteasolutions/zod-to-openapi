@@ -2,7 +2,7 @@ import { getOpenApiMetadata } from '../src/openapi-metadata';
 import { z } from 'zod';
 
 describe('OpenAPI metadata', () => {
-  it('can obtain nested metadata', () => {
+  it.concurrent('can obtain nested metadata', () => {
     const schema = z
       .string()
       .openapi({ description: 'Test', deprecated: true })
@@ -16,7 +16,7 @@ describe('OpenAPI metadata', () => {
     });
   });
 
-  it('can obtain overridden metadata', () => {
+  it.concurrent('can obtain overridden metadata', () => {
     const schema = z
       .string()
       .openapi({ description: 'Test' })

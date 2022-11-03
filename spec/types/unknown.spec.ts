@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
-it('supports unknown', () => {
+it.concurrent('supports unknown', () => {
   expectSchema(
     [
       registerSchema('Unknown', z.unknown()).openapi({

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('refine', () => {
-  it('supports refined schemas', () => {
+  it.concurrent('supports refined schemas', () => {
     expectSchema(
       [
         registerSchema(
@@ -18,7 +18,7 @@ describe('refine', () => {
     );
   });
 
-  it('supports required refined schemas', () => {
+  it.concurrent('supports required refined schemas', () => {
     expectSchema(
       [
         registerSchema(
@@ -42,7 +42,7 @@ describe('refine', () => {
     );
   });
 
-  it('supports optional refined schemas', () => {
+  it.concurrent('supports optional refined schemas', () => {
     expectSchema(
       [
         registerSchema(
@@ -65,7 +65,7 @@ describe('refine', () => {
     );
   });
 
-  it('supports optional refined schemas with default', () => {
+  it.concurrent('supports optional refined schemas with default', () => {
     expectSchema(
       [
         registerSchema(
@@ -92,7 +92,7 @@ describe('refine', () => {
     );
   });
 
-  it('supports required refined schemas with default', () => {
+  it.concurrent('supports required refined schemas with default', () => {
     expectSchema(
       [
         registerSchema(
@@ -120,7 +120,7 @@ describe('refine', () => {
     );
   });
 
-  it('supports refined transforms when type is provided', () => {
+  it.concurrent('supports refined transforms when type is provided', () => {
     expectSchema(
       [
         registerSchema(

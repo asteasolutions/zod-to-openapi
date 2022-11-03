@@ -24,7 +24,7 @@
   "homepage": "https://github.com/asteasolutions/zod-to-openapi",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "jest",
+    "test": "jest --maxWorkers=100%",
     "prettier": "prettier --write .",
     "lint": "prettier --check .",
     "prepublishOnly": "npm run build"

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('object polymorphism', () => {
-  it('can use allOf for extended schemas', () => {
+  it.concurrent('can use allOf for extended schemas', () => {
     const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
 
     const ExtendedSchema = registerSchema(
@@ -33,7 +33,7 @@ describe('object polymorphism', () => {
     });
   });
 
-  it('can chain-extend objects correctly', () => {
+  it.concurrent('can chain-extend objects correctly', () => {
     const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
 
     const A = registerSchema(
@@ -89,43 +89,46 @@ describe('object polymorphism', () => {
     });
   });
 
-  it('can chain-extend objects correctly without intermediate link', () => {
-    const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
+  it.concurrent(
+    'can chain-extend objects correctly without intermediate link',
+    () => {
+      const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
 
-    const A = BaseSchema.extend({ bonus: z.number() });
+      const A = BaseSchema.extend({ bonus: z.number() });
 
-    const B = registerSchema(
-      'B',
-      A.extend({
-        points: z.number(),
-      })
-    );
+      const B = registerSchema(
+        'B',
+        A.extend({
+          points: z.number(),
+        })
+      );
 
-    expectSchema([BaseSchema, B], {
-      Base: {
-        type: 'object',
-        required: ['id'],
-        properties: {
-          id: { type: 'string' },
-        },
-      },
-      B: {
-        allOf: [
-          { $ref: '#/components/schemas/Base' },
-          {
-            type: 'object',
-            required: ['bonus', 'points'],
-            properties: {
-              bonus: { type: 'number' },
-              points: { type: 'number' },
-            },
+      expectSchema([BaseSchema, B], {
+        Base: {
+          type: 'object',
+          required: ['id'],
+          properties: {
+            id: { type: 'string' },
           },
-        ],
-      },
-    });
-  });
+        },
+        B: {
+          allOf: [
+            { $ref: '#/components/schemas/Base' },
+            {
+              type: 'object',
+              required: ['bonus', 'points'],
+              properties: {
+                bonus: { type: 'number' },
+                points: { type: 'number' },
+              },
+            },
+          ],
+        },
+      });
+    }
+  );
 
-  it('can apply nullable', () => {
+  it.concurrent('can apply nullable', () => {
     const BaseSchema = registerSchema('Base', z.object({ id: z.ostring() }));
 
     const ExtendedSchema = registerSchema(
@@ -157,7 +160,7 @@ describe('object polymorphism', () => {
     });
   });
 
-  it('can override properties', () => {
+  it.concurrent('can override properties', () => {
     const AnimalSchema = registerSchema(
       'Animal',
       z.object({
@@ -212,7 +215,7 @@ describe('object polymorphism', () => {
     });
   });
 
-  it('treats objects created by .omit as a new object', () => {
+  it.concurrent('treats objects created by .omit as a new object', () => {
     const BaseSchema = registerSchema(
       'Base',
       z.object({
@@ -256,7 +259,7 @@ describe('object polymorphism', () => {
     });
   });
 
-  it('treats objects created by .pick as a new object', () => {
+  it.concurrent('treats objects created by .pick as a new object', () => {
     const BaseSchema = registerSchema(
       'Base',
       z.object({

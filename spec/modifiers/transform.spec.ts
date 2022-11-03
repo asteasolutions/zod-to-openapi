@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createSchemas, registerSchema } from '../lib/helpers';
 
 describe('transform', () => {
-  it('does not support transformed schemas', () => {
+  it.concurrent('does not support transformed schemas', () => {
     expect(() =>
       createSchemas([
         registerSchema(

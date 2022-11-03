@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('record', () => {
-  it('supports records', () => {
+  it.concurrent('supports records', () => {
     const base = z.object({ a: z.string() });
 
     const record = registerSchema('Record', z.record(base));
@@ -21,7 +21,7 @@ describe('record', () => {
     });
   });
 
-  it('supports records with refs', () => {
+  it.concurrent('supports records with refs', () => {
     const base = registerSchema('Base', z.object({ a: z.string() }));
 
     const record = registerSchema('Record', z.record(base));

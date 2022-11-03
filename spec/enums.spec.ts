@@ -2,7 +2,7 @@ import { enumInfo } from '../src/lib/enum-info';
 
 describe('Enums', () => {
   describe('enumInfo', () => {
-    it('can extract enum values from string enum', () => {
+    it.concurrent('can extract enum values from string enum', () => {
       enum Test {
         A = 'test-1',
         B = 'test-2',
@@ -14,7 +14,7 @@ describe('Enums', () => {
       expect(type).toEqual('string');
     });
 
-    it('can extract enum values from numeric enum', () => {
+    it.concurrent('can extract enum values from numeric enum', () => {
       enum Test {
         A = 31,
         B = 42,
@@ -26,7 +26,7 @@ describe('Enums', () => {
       expect(type).toEqual('numeric');
     });
 
-    it('can extract enum values from auto-incremented enum', () => {
+    it.concurrent('can extract enum values from auto-incremented enum', () => {
       enum Test {
         A,
         B,
@@ -38,7 +38,7 @@ describe('Enums', () => {
       expect(type).toEqual('numeric');
     });
 
-    it('can extract enum values from mixed enums', () => {
+    it.concurrent('can extract enum values from mixed enums', () => {
       enum Test {
         A = 42,
         B = 'test',

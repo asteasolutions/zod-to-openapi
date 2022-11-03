@@ -42,7 +42,7 @@ const routeTests = ({
   rootDocPath: 'paths' | 'webhooks';
 }) => {
   describe('response definitions', () => {
-    it('can set description', () => {
+    it.concurrent('can set description', () => {
       const registry = new OpenAPIRegistry();
 
       registry[registerFunction]({
@@ -79,7 +79,7 @@ const routeTests = ({
       expect(responses['404'].description).toEqual('Missing object');
     });
 
-    it('can specify response with plain OpenApi format', () => {
+    it.concurrent('can specify response with plain OpenApi format', () => {
       const registry = new OpenAPIRegistry();
 
       registry[registerFunction]({
@@ -126,7 +126,7 @@ const routeTests = ({
       });
     });
 
-    it('can set multiple response formats', () => {
+    it.concurrent('can set multiple response formats', () => {
       const registry = new OpenAPIRegistry();
 
       const UserSchema = registry.register(
@@ -167,7 +167,7 @@ const routeTests = ({
       });
     });
 
-    it('can generate responses without content', () => {
+    it.concurrent('can generate responses without content', () => {
       const registry = new OpenAPIRegistry();
 
       registry[registerFunction]({
@@ -191,7 +191,7 @@ const routeTests = ({
   });
 
   describe('parameters', () => {
-    it('generates a query parameter for route', () => {
+    it.concurrent('generates a query parameter for route', () => {
       const routeParameters = generateParamsForRoute({
         request: { query: z.object({ test: z.string() }) },
       });
@@ -208,7 +208,7 @@ const routeTests = ({
       ]);
     });
 
-    it('generates a path parameter for route', () => {
+    it.concurrent('generates a path parameter for route', () => {
       const routeParameters = generateParamsForRoute({
         request: { params: z.object({ test: z.string() }) },
       });
@@ -225,7 +225,7 @@ const routeTests = ({
       ]);
     });
 
-    it('generates a header parameter for route', () => {
+    it.concurrent('generates a header parameter for route', () => {
       const routeParameters = generateParamsForRoute({
         request: {
           headers: [z.string().openapi({ param: { name: 'test' } })],
@@ -244,7 +244,7 @@ const routeTests = ({
       ]);
     });
 
-    it('generates a reference header parameter for route', () => {
+    it.concurrent('generates a reference header parameter for route', () => {
       const TestHeader = registerSchema('TestHeader', z.string()).openapi({
         param: { name: 'test', in: 'header' },
       });
@@ -263,7 +263,7 @@ const routeTests = ({
       ]);
     });
 
-    it('generates a reference query parameter for route', () => {
+    it.concurrent('generates a reference query parameter for route', () => {
       const TestQuery = registerSchema('TestQuery', z.string()).openapi({
         param: { name: 'test', in: 'query' },
       });
@@ -282,7 +282,7 @@ const routeTests = ({
       ]);
     });
 
-    it('generates required based on inner schema', () => {
+    it.concurrent('generates required based on inner schema', () => {
       const routeParameters = generateParamsForRoute({
         request: {
           query: z.object({ test: z.string().optional().default('test') }),
@@ -303,7 +303,7 @@ const routeTests = ({
     });
 
     describe('errors', () => {
-      it('throws an error in case of names mismatch', () => {
+      it.concurrent('throws an error in case of names mismatch', () => {
         expect(() =>
           generateParamsForRoute({
             request: {
@@ -315,7 +315,7 @@ const routeTests = ({
         ).toThrowError(/^Conflicting name/);
       });
 
-      it('throws an error in case of location mismatch', () => {
+      it.concurrent('throws an error in case of location mismatch', () => {
         expect(() =>
           generateParamsForRoute({
             request: {
@@ -327,37 +327,43 @@ const routeTests = ({
         ).toThrowError(/^Conflicting location/);
       });
 
-      it('throws an error in case of location mismatch with reference', () => {
-        const TestHeader = registerSchema('TestHeader', z.string()).openapi({
-          param: { name: 'test', in: 'header' },
-        });
+      it.concurrent(
+        'throws an error in case of location mismatch with reference',
+        () => {
+          const TestHeader = registerSchema('TestHeader', z.string()).openapi({
+            param: { name: 'test', in: 'header' },
+          });
 
-        expect(() =>
-          generateParamsForRoute(
-            {
-              request: { query: z.object({ test: TestHeader }) },
-            },
-            [TestHeader]
-          )
-        ).toThrowError(/^Conflicting location/);
-      });
+          expect(() =>
+            generateParamsForRoute(
+              {
+                request: { query: z.object({ test: TestHeader }) },
+              },
+              [TestHeader]
+            )
+          ).toThrowError(/^Conflicting location/);
+        }
+      );
 
-      it('throws an error in case of name mismatch with reference', () => {
-        const TestQuery = registerSchema('TestQuery', z.string()).openapi({
-          param: { name: 'test', in: 'query' },
-        });
+      it.concurrent(
+        'throws an error in case of name mismatch with reference',
+        () => {
+          const TestQuery = registerSchema('TestQuery', z.string()).openapi({
+            param: { name: 'test', in: 'query' },
+          });
 
-        expect(() =>
-          generateParamsForRoute(
-            {
-              request: { query: z.object({ randomName: TestQuery }) },
-            },
-            [TestQuery]
-          )
-        ).toThrowError(/^Conflicting name/);
-      });
+          expect(() =>
+            generateParamsForRoute(
+              {
+                request: { query: z.object({ randomName: TestQuery }) },
+              },
+              [TestQuery]
+            )
+          ).toThrowError(/^Conflicting name/);
+        }
+      );
 
-      it('throws an error in case of missing name', () => {
+      it.concurrent('throws an error in case of missing name', () => {
         expect(() =>
           generateParamsForRoute({
             request: { headers: [z.string()] },
@@ -365,15 +371,18 @@ const routeTests = ({
         ).toThrowError(/^Missing parameter data, please specify `name`/);
       });
 
-      it('throws an error in case of missing location when registering a parameter', () => {
-        const TestQuery = registerSchema('TestQuery', z.string()).openapi({
-          param: { name: 'test' },
-        });
+      it.concurrent(
+        'throws an error in case of missing location when registering a parameter',
+        () => {
+          const TestQuery = registerSchema('TestQuery', z.string()).openapi({
+            param: { name: 'test' },
+          });
 
-        expect(() => generateParamsForRoute({}, [TestQuery])).toThrowError(
-          /^Missing parameter data, please specify `in`/
-        );
-      });
+          expect(() => generateParamsForRoute({}, [TestQuery])).toThrowError(
+            /^Missing parameter data, please specify `in`/
+          );
+        }
+      );
     });
 
     function generateParamsForRoute(
@@ -407,40 +416,43 @@ const routeTests = ({
   });
 
   describe('request body', () => {
-    it('can specify request body metadata - description/required', () => {
-      const registry = new OpenAPIRegistry();
+    it.concurrent(
+      'can specify request body metadata - description/required',
+      () => {
+        const registry = new OpenAPIRegistry();
 
-      const route = createTestRoute({
-        request: {
-          body: {
-            description: 'Test description',
-            required: true,
-            content: {
-              'application/json': {
-                schema: z.string(),
+        const route = createTestRoute({
+          request: {
+            body: {
+              description: 'Test description',
+              required: true,
+              content: {
+                'application/json': {
+                  schema: z.string(),
+                },
               },
             },
           },
-        },
-      });
+        });
 
-      registry[registerFunction](route);
+        registry[registerFunction](route);
 
-      const document = new OpenAPIGenerator(
-        registry.definitions,
-        '3.0.0'
-      ).generateDocument(testDocConfig);
+        const document = new OpenAPIGenerator(
+          registry.definitions,
+          '3.0.0'
+        ).generateDocument(testDocConfig);
 
-      const { requestBody } = document[rootDocPath]?.['/'].get;
+        const { requestBody } = document[rootDocPath]?.['/'].get;
 
-      expect(requestBody).toEqual({
-        description: 'Test description',
-        required: true,
-        content: { 'application/json': { schema: { type: 'string' } } },
-      });
-    });
+        expect(requestBody).toEqual({
+          description: 'Test description',
+          required: true,
+          content: { 'application/json': { schema: { type: 'string' } } },
+        });
+      }
+    );
 
-    it('can specify request body using plain OpenApi format', () => {
+    it.concurrent('can specify request body using plain OpenApi format', () => {
       const registry = new OpenAPIRegistry();
 
       const route = createTestRoute({
@@ -479,7 +491,7 @@ const routeTests = ({
       });
     });
 
-    it('can have multiple media format bodies', () => {
+    it.concurrent('can have multiple media format bodies', () => {
       const registry = new OpenAPIRegistry();
 
       const UserSchema = registry.register(

@@ -10,16 +10,19 @@ describe('metadata overrides', () => {
     'throws error for openapi data to be provided for unrecognized enum types'
   );
 
-  it('does not infer the type if one is provided using .openapi', () => {
-    const schema = registerSchema('StringAsNumber', z.string()).openapi({
-      type: 'number',
-    });
-    expectSchema([schema], {
-      StringAsNumber: { type: 'number' },
-    });
-  });
+  it.concurrent(
+    'does not infer the type if one is provided using .openapi',
+    () => {
+      const schema = registerSchema('StringAsNumber', z.string()).openapi({
+        type: 'number',
+      });
+      expectSchema([schema], {
+        StringAsNumber: { type: 'number' },
+      });
+    }
+  );
 
-  it('can remove .openapi properties', () => {
+  it.concurrent('can remove .openapi properties', () => {
     const schema = registerSchema('Test', z.string())
       .openapi({ description: 'test', deprecated: true })
       .openapi({ description: undefined, deprecated: undefined });
@@ -29,7 +32,7 @@ describe('metadata overrides', () => {
     });
   });
 
-  it('generates schemas with metadata', () => {
+  it.concurrent('generates schemas with metadata', () => {
     expectSchema(
       [
         registerSchema('SimpleString', z.string()).openapi({
@@ -40,7 +43,7 @@ describe('metadata overrides', () => {
     );
   });
 
-  it('supports .openapi for registered schemas', () => {
+  it.concurrent('supports .openapi for registered schemas', () => {
     const StringSchema = registerSchema('String', z.string());
 
     const TestSchema = registerSchema(
@@ -69,7 +72,7 @@ describe('metadata overrides', () => {
     });
   });
 
-  it('only adds overrides for new metadata properties', () => {
+  it.concurrent('only adds overrides for new metadata properties', () => {
     const StringSchema = registerSchema('String', z.string()).openapi({
       description: 'old field',
       title: 'same title',
@@ -112,38 +115,41 @@ describe('metadata overrides', () => {
     });
   });
 
-  it('does not add schema calculated overrides if type is provided in .openapi', () => {
-    const StringSchema = registerSchema(
-      'String',
-      z.string().openapi({
-        example: 'existing field',
-      })
-    );
+  it.concurrent(
+    'does not add schema calculated overrides if type is provided in .openapi',
+    () => {
+      const StringSchema = registerSchema(
+        'String',
+        z.string().openapi({
+          example: 'existing field',
+        })
+      );
 
-    const TestSchema = registerSchema(
-      'Test',
-      z.object({
-        key: StringSchema.nullable().openapi({ type: 'boolean' }),
-      })
-    );
+      const TestSchema = registerSchema(
+        'Test',
+        z.object({
+          key: StringSchema.nullable().openapi({ type: 'boolean' }),
+        })
+      );
 
-    expectSchema([StringSchema, TestSchema], {
-      String: {
-        example: 'existing field',
-        type: 'string',
-      },
-      Test: {
-        type: 'object',
-        properties: {
-          key: {
-            allOf: [
-              { $ref: '#/components/schemas/String' },
-              { type: 'boolean' },
-            ],
-          },
+      expectSchema([StringSchema, TestSchema], {
+        String: {
+          example: 'existing field',
+          type: 'string',
         },
-        required: ['key'],
-      },
-    });
-  });
+        Test: {
+          type: 'object',
+          properties: {
+            key: {
+              allOf: [
+                { $ref: '#/components/schemas/String' },
+                { type: 'boolean' },
+              ],
+            },
+          },
+          required: ['key'],
+        },
+      });
+    }
+  );
 });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createSchemas, expectSchema, registerSchema } from '../lib/helpers';
 
 describe('native enum', () => {
-  it('supports native enums', () => {
+  it.concurrent('supports native enums', () => {
     enum NativeEnum {
       OPTION = 'Option',
       ANOTHER = 'Another',
@@ -25,7 +25,7 @@ describe('native enum', () => {
     });
   });
 
-  it('supports native numeric enums', () => {
+  it.concurrent('supports native numeric enums', () => {
     enum NativeEnum {
       OPTION = 1,
       ANOTHER = 42,
@@ -48,7 +48,7 @@ describe('native enum', () => {
     });
   });
 
-  it('does not support mixed native enums', () => {
+  it.concurrent('does not support mixed native enums', () => {
     enum NativeEnum {
       OPTION = 1,
       ANOTHER = '42',
@@ -66,7 +66,7 @@ describe('native enum', () => {
     }).toThrowError(/Enum has mixed string and number values/);
   });
 
-  it('can manually set type of mixed native enums', () => {
+  it.concurrent('can manually set type of mixed native enums', () => {
     enum NativeEnum {
       OPTION = 1,
       ANOTHER = '42',

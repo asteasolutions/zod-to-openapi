@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('intersection', () => {
-  it('supports intersection types', () => {
+  it.concurrent('supports intersection types', () => {
     const Person = z.object({
       name: z.string(),
     });
@@ -29,7 +29,7 @@ describe('intersection', () => {
     });
   });
 
-  it('supports nullable intersection types', () => {
+  it.concurrent('supports nullable intersection types', () => {
     const Person = z.object({
       name: z.string(),
     });
@@ -64,7 +64,7 @@ describe('intersection', () => {
     );
   });
 
-  it('supports default intersection types', () => {
+  it.concurrent('supports default intersection types', () => {
     const Person = z.object({
       name: z.string(),
     });
@@ -105,7 +105,7 @@ describe('intersection', () => {
     );
   });
 
-  it('supports nullable default intersection types', () => {
+  it.concurrent('supports nullable default intersection types', () => {
     const Person = z.object({
       name: z.string(),
     });

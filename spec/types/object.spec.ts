@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('object', () => {
-  it('generates OpenAPI schema for nested objects', () => {
+  it.concurrent('generates OpenAPI schema for nested objects', () => {
     expectSchema(
       [
         registerSchema(
@@ -32,7 +32,7 @@ describe('object', () => {
     );
   });
 
-  it('creates separate schemas and links them', () => {
+  it.concurrent('creates separate schemas and links them', () => {
     const SimpleStringSchema = registerSchema('SimpleString', z.string());
 
     const ObjectWithStringsSchema = registerSchema(

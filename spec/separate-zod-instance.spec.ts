@@ -18,7 +18,7 @@ describe('Separate Zod instance', () => {
   const zod2 = requireSeparateZodInstance();
   extendZodWithOpenApi(zod2);
 
-  it('can check object types of different zod instances', () => {
+  it.concurrent('can check object types of different zod instances', () => {
     expectSchema([registerSchema('SimpleString', zod1.string())], {
       SimpleString: { type: 'string' },
     });
