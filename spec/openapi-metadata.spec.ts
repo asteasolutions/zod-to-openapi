@@ -1,4 +1,4 @@
-import { OpenAPIMetadata } from '../src/openapi-metadata';
+import { getOpenApiMetadata } from '../src/openapi-metadata';
 import { z } from 'zod';
 
 describe('OpenAPI metadata', () => {
@@ -10,7 +10,7 @@ describe('OpenAPI metadata', () => {
       .nullable()
       .default('test');
 
-    expect(OpenAPIMetadata.getOpenApiMetadata(schema)).toEqual({
+    expect(getOpenApiMetadata(schema)).toEqual({
       description: 'Test',
       deprecated: true,
     });
@@ -27,7 +27,7 @@ describe('OpenAPI metadata', () => {
       .default('test')
       .openapi({ maxLength: 40 });
 
-    expect(OpenAPIMetadata.getOpenApiMetadata(schema)).toEqual({
+    expect(getOpenApiMetadata(schema)).toEqual({
       description: 'Test',
       deprecated: true,
       example: 'test-example',

@@ -61,10 +61,13 @@ export function extendZodWithOpenApi(zod: typeof z) {
         metadata: {
           ...this._def.openapi?.metadata,
           ...restOfOpenApi,
-          param: {
-            ...this._def.openapi?.metadata?.param,
-            ...param,
-          },
+          param:
+            this._def.openapi?.metadata?.param || param
+              ? {
+                  ...this._def.openapi?.metadata?.param,
+                  ...param,
+                }
+              : undefined,
         },
       },
     });
