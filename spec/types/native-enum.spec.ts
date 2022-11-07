@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createSchemas, expectSchema } from '../lib/helpers';
+import { createSchemas, expectSchema, registerSchema } from '../lib/helpers';
 
 describe('native enum', () => {
   it('supports native enums', () => {
@@ -9,10 +9,12 @@ describe('native enum', () => {
       DEFAULT = 'Default',
     }
 
-    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
-      refId: 'NativeEnum',
-      description: 'A native enum in zod',
-    });
+    const nativeEnumSchema = registerSchema(
+      'NativeEnum',
+      z.nativeEnum(NativeEnum).openapi({
+        description: 'A native enum in zod',
+      })
+    );
 
     expectSchema([nativeEnumSchema], {
       NativeEnum: {
@@ -30,10 +32,12 @@ describe('native enum', () => {
       DEFAULT = 3,
     }
 
-    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
-      refId: 'NativeEnum',
-      description: 'A native numbers enum in zod',
-    });
+    const nativeEnumSchema = registerSchema(
+      'NativeEnum',
+      z.nativeEnum(NativeEnum).openapi({
+        description: 'A native numbers enum in zod',
+      })
+    );
 
     expectSchema([nativeEnumSchema], {
       NativeEnum: {
@@ -50,10 +54,12 @@ describe('native enum', () => {
       ANOTHER = '42',
     }
 
-    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
-      refId: 'NativeEnum',
-      description: 'A native mixed enum in zod',
-    });
+    const nativeEnumSchema = registerSchema(
+      'NativeEnum',
+      z.nativeEnum(NativeEnum).openapi({
+        description: 'A native mixed enum in zod',
+      })
+    );
 
     expect(() => {
       createSchemas([nativeEnumSchema]);
@@ -66,11 +72,13 @@ describe('native enum', () => {
       ANOTHER = '42',
     }
 
-    const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi({
-      refId: 'NativeEnum',
-      description: 'A native mixed enum in zod',
-      type: 'string',
-    });
+    const nativeEnumSchema = registerSchema(
+      'NativeEnum',
+      z.nativeEnum(NativeEnum).openapi({
+        description: 'A native mixed enum in zod',
+        type: 'string',
+      })
+    );
 
     expectSchema([nativeEnumSchema], {
       NativeEnum: {

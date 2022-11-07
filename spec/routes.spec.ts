@@ -5,6 +5,7 @@ import {
   OpenAPIObjectConfig,
 } from '../src/openapi-generator';
 import { OpenAPIRegistry, RouteConfig } from '../src/openapi-registry';
+import { registerSchema } from './lib/helpers';
 
 function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
   return {
@@ -244,8 +245,7 @@ const routeTests = ({
     });
 
     it('generates a reference header parameter for route', () => {
-      const TestHeader = z.string().openapi({
-        refId: 'TestHeader',
+      const TestHeader = registerSchema('TestHeader', z.string()).openapi({
         param: { name: 'test', in: 'header' },
       });
 
@@ -264,8 +264,7 @@ const routeTests = ({
     });
 
     it('generates a reference query parameter for route', () => {
-      const TestQuery = z.string().openapi({
-        refId: 'TestQuery',
+      const TestQuery = registerSchema('TestQuery', z.string()).openapi({
         param: { name: 'test', in: 'query' },
       });
 
@@ -329,8 +328,7 @@ const routeTests = ({
       });
 
       it('throws an error in case of location mismatch with reference', () => {
-        const TestHeader = z.string().openapi({
-          refId: 'TestHeader',
+        const TestHeader = registerSchema('TestHeader', z.string()).openapi({
           param: { name: 'test', in: 'header' },
         });
 
@@ -345,8 +343,7 @@ const routeTests = ({
       });
 
       it('throws an error in case of name mismatch with reference', () => {
-        const TestQuery = z.string().openapi({
-          refId: 'TestQuery',
+        const TestQuery = registerSchema('TestQuery', z.string()).openapi({
           param: { name: 'test', in: 'query' },
         });
 
@@ -369,9 +366,9 @@ const routeTests = ({
       });
 
       it('throws an error in case of missing location when registering a parameter', () => {
-        const TestQuery = z
-          .string()
-          .openapi({ refId: 'TestQuery', param: { name: 'test' } });
+        const TestQuery = registerSchema('TestQuery', z.string()).openapi({
+          param: { name: 'test' },
+        });
 
         expect(() => generateParamsForRoute({}, [TestQuery])).toThrowError(
           /^Missing parameter data, please specify `in`/

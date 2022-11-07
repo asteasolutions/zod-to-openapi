@@ -1,9 +1,9 @@
 import { z, ZodString } from 'zod';
-import { expectSchema } from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('string', () => {
   it('generates OpenAPI schema for simple types', () => {
-    expectSchema([z.string().openapi({ refId: 'SimpleString' })], {
+    expectSchema([registerSchema('SimpleString', z.string())], {
       SimpleString: { type: 'string' },
     });
   });
@@ -18,7 +18,7 @@ describe('string', () => {
   });
 
   it('supports string literals', () => {
-    expectSchema([z.literal('John Doe').openapi({ refId: 'Literal' })], {
+    expectSchema([registerSchema('Literal', z.literal('John Doe'))], {
       Literal: { type: 'string', enum: ['John Doe'] },
     });
   });
@@ -31,7 +31,7 @@ describe('string', () => {
   `(
     'maps a ZodString $format to $expected format',
     ({ zodString, expected }: { zodString: ZodString; expected: string }) => {
-      expectSchema([zodString.openapi({ refId: 'ZodString' })], {
+      expectSchema([registerSchema('ZodString', zodString)], {
         ZodString: { type: 'string', format: expected },
       });
     }
@@ -39,12 +39,7 @@ describe('string', () => {
 
   it('maps a ZodString regex to a pattern', () => {
     expectSchema(
-      [
-        z
-          .string()
-          .regex(/^hello world/)
-          .openapi({ refId: 'RegexString' }),
-      ],
+      [registerSchema('RegexString', z.string().regex(/^hello world/))],
       {
         RegexString: { type: 'string', pattern: '^hello world' },
       }

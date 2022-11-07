@@ -1,4 +1,5 @@
-export * from './zod-extensions';
+export { ZodOpenAPIMetadata, extendZodWithOpenApi } from './zod-extensions';
+export * from './openapi-metadata';
 export { OpenAPIGenerator } from './openapi-generator';
 export {
   OpenAPIRegistry,
