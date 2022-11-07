@@ -10,7 +10,7 @@ describe('string', () => {
 
   it('supports minLength / maxLength on string', () => {
     expectSchema(
-      [z.string().min(5).max(10).openapi({ refId: 'minMaxLengthString' })],
+      [registerSchema('minMaxLengthString', z.string().min(5).max(10))],
       {
         minMaxLengthString: { type: 'string', minLength: 5, maxLength: 10 },
       }
