@@ -146,4 +146,131 @@ describe('metadata overrides', () => {
       },
     });
   });
+
+  // This was broken with the metadata overrides code so this feels like
+  // the best sport for it
+  it('supports referencing zod effects', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+          additionalProperties: false,
+          description: 'An empty object',
+        })
+    );
+
+    const TestSchema = registerSchema('Test', z.object({ key: EmptySchema }));
+
+    expectSchema([EmptySchema, TestSchema], {
+      Empty: {
+        type: 'object',
+        additionalProperties: false,
+        description: 'An empty object',
+      },
+      Test: {
+        type: 'object',
+        required: ['key'],
+        properties: {
+          key: {
+            $ref: '#/components/schemas/Empty',
+          },
+        },
+      },
+    });
+  });
+
+  it('TODO', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+          additionalProperties: false,
+          description: 'An empty object',
+        })
+    );
+
+    const TestSchema = registerSchema(
+      'Test',
+      z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
+    );
+
+    expectSchema(
+      [EmptySchema, TestSchema],
+      {
+        Empty: {
+          type: 'object',
+          additionalProperties: false,
+          description: 'An empty object',
+        },
+        Test: {
+          type: 'object',
+          required: ['key'],
+          properties: {
+            key: {
+              allOf: [
+                {
+                  $ref: '#/components/schemas/Empty',
+                },
+                {
+                  type: ['object', 'null'],
+                  deprecated: true,
+                },
+              ],
+            },
+          },
+        },
+      },
+      '3.1.0'
+    );
+
+    it('TODO 2', () => {
+      const EmptySchema = registerSchema(
+        'Empty',
+        z
+          .object({})
+          .transform(obj => obj as { [key: string]: never })
+          .openapi({
+            type: 'object',
+            additionalProperties: false,
+            description: 'An empty object',
+          })
+      );
+
+      const TestSchema = registerSchema(
+        'Test',
+        z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
+      );
+
+      expectSchema([EmptySchema, TestSchema], {
+        Empty: {
+          type: 'object',
+          additionalProperties: false,
+          description: 'An empty object',
+        },
+        Test: {
+          type: 'object',
+          required: ['key'],
+          properties: {
+            key: {
+              allOf: [
+                {
+                  $ref: '#/components/schemas/Empty',
+                },
+                {
+                  nullable: true,
+                  deprecated: true,
+                },
+              ],
+            },
+          },
+        },
+      });
+    });
+  });
 });
