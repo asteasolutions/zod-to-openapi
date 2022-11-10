@@ -273,4 +273,50 @@ describe('metadata overrides', () => {
       });
     });
   });
+
+  it('TODO 3', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+          additionalProperties: false,
+          description: 'An empty object',
+        })
+    );
+
+    const TestSchema = registerSchema(
+      'Test',
+      z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
+    );
+
+    // TODO: Something with a union of empty schema and something else
+
+    expectSchema([EmptySchema, TestSchema], {
+      // Empty: {
+      //   type: 'object',
+      //   additionalProperties: false,
+      //   description: 'An empty object',
+      // },
+      // Test: {
+      //   type: 'object',
+      //   required: ['key'],
+      //   properties: {
+      //     key: {
+      //       allOf: [
+      //         {
+      //           $ref: '#/components/schemas/Empty',
+      //         },
+      //         {
+      //           nullable: true,
+      //           deprecated: true,
+      //         },
+      //       ],
+      //     },
+      //   },
+      // },
+    });
+  });
 });
