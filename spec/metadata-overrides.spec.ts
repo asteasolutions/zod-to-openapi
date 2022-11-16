@@ -148,7 +148,7 @@ describe('metadata overrides', () => {
   });
 
   // This was broken with the metadata overrides code so this feels like
-  // the best sport for it
+  // the best support for it
   it('supports referencing zod effects', () => {
     const EmptySchema = registerSchema(
       'Empty',
@@ -157,8 +157,6 @@ describe('metadata overrides', () => {
         .transform(obj => obj as { [key: string]: never })
         .openapi({
           type: 'object',
-          additionalProperties: false,
-          description: 'An empty object',
         })
     );
 
@@ -167,8 +165,6 @@ describe('metadata overrides', () => {
     expectSchema([EmptySchema, TestSchema], {
       Empty: {
         type: 'object',
-        additionalProperties: false,
-        description: 'An empty object',
       },
       Test: {
         type: 'object',
@@ -182,7 +178,7 @@ describe('metadata overrides', () => {
     });
   });
 
-  it('TODO', () => {
+  it('supports referencing zod effects in unions', () => {
     const EmptySchema = registerSchema(
       'Empty',
       z
@@ -190,133 +186,24 @@ describe('metadata overrides', () => {
         .transform(obj => obj as { [key: string]: never })
         .openapi({
           type: 'object',
-          additionalProperties: false,
-          description: 'An empty object',
         })
     );
 
-    const TestSchema = registerSchema(
-      'Test',
-      z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
+    const UnionTestSchema = registerSchema(
+      'UnionTest',
+      z.union([z.string(), EmptySchema]).openapi({
+        description: 'Union with empty object',
+      })
     );
 
-    expectSchema(
-      [EmptySchema, TestSchema],
-      {
-        Empty: {
-          type: 'object',
-          additionalProperties: false,
-          description: 'An empty object',
-        },
-        Test: {
-          type: 'object',
-          required: ['key'],
-          properties: {
-            key: {
-              allOf: [
-                {
-                  $ref: '#/components/schemas/Empty',
-                },
-                {
-                  type: ['object', 'null'],
-                  deprecated: true,
-                },
-              ],
-            },
-          },
-        },
+    expectSchema([EmptySchema, UnionTestSchema], {
+      Empty: {
+        type: 'object',
       },
-      '3.1.0'
-    );
-
-    it('TODO 2', () => {
-      const EmptySchema = registerSchema(
-        'Empty',
-        z
-          .object({})
-          .transform(obj => obj as { [key: string]: never })
-          .openapi({
-            type: 'object',
-            additionalProperties: false,
-            description: 'An empty object',
-          })
-      );
-
-      const TestSchema = registerSchema(
-        'Test',
-        z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
-      );
-
-      expectSchema([EmptySchema, TestSchema], {
-        Empty: {
-          type: 'object',
-          additionalProperties: false,
-          description: 'An empty object',
-        },
-        Test: {
-          type: 'object',
-          required: ['key'],
-          properties: {
-            key: {
-              allOf: [
-                {
-                  $ref: '#/components/schemas/Empty',
-                },
-                {
-                  nullable: true,
-                  deprecated: true,
-                },
-              ],
-            },
-          },
-        },
-      });
-    });
-  });
-
-  it('TODO 3', () => {
-    const EmptySchema = registerSchema(
-      'Empty',
-      z
-        .object({})
-        .transform(obj => obj as { [key: string]: never })
-        .openapi({
-          type: 'object',
-          additionalProperties: false,
-          description: 'An empty object',
-        })
-    );
-
-    const TestSchema = registerSchema(
-      'Test',
-      z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
-    );
-
-    // TODO: Something with a union of empty schema and something else
-
-    expectSchema([EmptySchema, TestSchema], {
-      // Empty: {
-      //   type: 'object',
-      //   additionalProperties: false,
-      //   description: 'An empty object',
-      // },
-      // Test: {
-      //   type: 'object',
-      //   required: ['key'],
-      //   properties: {
-      //     key: {
-      //       allOf: [
-      //         {
-      //           $ref: '#/components/schemas/Empty',
-      //         },
-      //         {
-      //           nullable: true,
-      //           deprecated: true,
-      //         },
-      //       ],
-      //     },
-      //   },
-      // },
+      UnionTest: {
+        anyOf: [{ type: 'string' }, { $ref: '#/components/schemas/Empty' }],
+        description: 'Union with empty object',
+      },
     });
   });
 });
