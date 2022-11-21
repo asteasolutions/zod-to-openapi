@@ -374,7 +374,7 @@ export class OpenAPIGenerator {
       // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
       const newSchemaMetadata = !newMetadata.type
         ? omitBy(
-            this.getOpenAPISchema(zodSchema, metadata.metadata, defaultValue),
+            this.getOpenAPISchema(zodSchema, innerSchema, defaultValue),
             (value, key) =>
               value === undefined || objectEquals(value, schemaRef[key])
           )
@@ -394,11 +394,7 @@ export class OpenAPIGenerator {
       return referenceObject;
     }
 
-    const result = metadata?.metadata?.type
-      ? {
-          type: metadata?.metadata.type,
-        }
-      : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
+    const result = this.getOpenAPISchema(zodSchema, innerSchema, defaultValue);
 
     return metadata?.metadata
       ? this.applySchemaMetadata(result, metadata.metadata)
@@ -659,17 +655,20 @@ export class OpenAPIGenerator {
 
   private getOpenAPISchema<T>(
     zodSchema: ZodSchema<T>,
-    metadata?: ZodOpenAPIMetadata,
+    innerSchema: ZodSchema<T>,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
-    const isNullableSchema = zodSchema.isNullable();
+    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
 
-    if (metadata?.type) {
-      return this.mapNullableType(metadata.type, isNullableSchema);
+    if (metadata?.metadata?.type) {
+      return { type: metadata.metadata.type };
     }
 
-    const innerSchema = this.unwrapChained(zodSchema);
-    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
+    return this.toOpenAPISchema(
+      innerSchema,
+      zodSchema.isNullable(),
+      defaultValue
+    );
   }
 
   private toOpenAPISchema<T>(
