@@ -55,4 +55,29 @@ describe('object', () => {
       },
     });
   });
+
+  it('maps additionalProperties to false for strict objects', () => {
+    expectSchema(
+      [
+        registerSchema(
+          'StrictObject',
+          z.strictObject({
+            test: z.string(),
+          })
+        ),
+      ],
+      {
+        StrictObject: {
+          type: 'object',
+          required: ['test'],
+          additionalProperties: false,
+          properties: {
+            test: {
+              type: 'string',
+            },
+          },
+        },
+      }
+    );
+  });
 });
