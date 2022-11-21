@@ -896,14 +896,16 @@ export class OpenAPIGenerator {
     return undefined;
   }
 
-  private requiredKeysOf(objectSchema: ZodObject<ZodRawShape>) {
+  private requiredKeysOf(
+    objectSchema: ZodObject<ZodRawShape, UnknownKeysParam>
+  ) {
     return Object.entries(objectSchema._def.shape())
       .filter(([_key, type]) => !this.isOptionalSchema(type))
       .map(([key, _type]) => key);
   }
 
   private toOpenAPIObjectSchema(
-    zodSchema: ZodObject<ZodRawShape>,
+    zodSchema: ZodObject<ZodRawShape, UnknownKeysParam>,
     isNullable: boolean,
     defaultValue?: ZodRawShape
   ): SchemaObject {
@@ -935,7 +937,7 @@ export class OpenAPIGenerator {
       prop => !keysRequiredByParent.includes(prop)
     );
 
-    const unknownKeysOption = zodSchema._unknownKeys as UnknownKeysParam;
+    const unknownKeysOption = zodSchema._def.unknownKeys;
 
     const objectData = {
       ...this.mapNullableType('object', isNullable),
@@ -946,8 +948,8 @@ export class OpenAPIGenerator {
         ? { required: additionallyRequired }
         : {}),
 
-      ...(unknownKeysOption === 'passthrough'
-        ? { additionalProperties: true }
+      ...(unknownKeysOption === 'strict'
+        ? { additionalProperties: false }
         : {}),
     };
 

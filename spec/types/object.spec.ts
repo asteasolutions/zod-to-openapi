@@ -55,4 +55,29 @@ describe('object', () => {
       },
     });
   });
+
+  it('supports strict objects', () => {
+    expectSchema(
+      [
+        registerSchema(
+          'StrictObject',
+          z.strictObject({
+            test: z.string(),
+          })
+        ),
+      ],
+      {
+        StrictObject: {
+          type: 'object',
+          required: ['test'],
+          additionalProperties: false,
+          properties: {
+            test: {
+              type: 'string',
+            },
+          },
+        },
+      }
+    );
+  });
 });
