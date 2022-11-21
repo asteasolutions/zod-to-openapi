@@ -17,7 +17,7 @@ import {
   SchemaObject,
   SecuritySchemeObject,
 } from 'openapi3-ts';
-import type { ZodObject, ZodSchema, ZodType } from 'zod';
+import type { AnyZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
@@ -50,8 +50,8 @@ export interface RouteConfig extends OperationObject {
   path: string;
   request?: {
     body?: ZodRequestBody;
-    params?: ZodObject<any>;
-    query?: ZodObject<any>;
+    params?: AnyZodObject;
+    query?: AnyZodObject;
     headers?: ZodType<unknown>[];
   };
   responses: {

@@ -12,6 +12,7 @@ import {
   DiscriminatorObject,
 } from 'openapi3-ts';
 import type {
+  AnyZodObject,
   ZodObject,
   ZodRawShape,
   ZodSchema,
@@ -588,7 +589,7 @@ export class OpenAPIGenerator {
   }
 
   private mapDiscriminator(
-    zodObjects: ZodObject<any>[],
+    zodObjects: AnyZodObject[],
     discriminator: string
   ): DiscriminatorObject | undefined {
     // All schemas must be registered to use a discriminator

@@ -302,6 +302,28 @@ const routeTests = ({
       ]);
     });
 
+    it('supports strict zod objects', () => {
+      const routeParameters = generateParamsForRoute({
+        request: {
+          query: z.strictObject({
+            test: z.string().optional().default('test'),
+          }),
+        },
+      });
+
+      expect(routeParameters).toEqual([
+        {
+          in: 'query',
+          name: 'test',
+          required: false,
+          schema: {
+            type: 'string',
+            default: 'test',
+          },
+        },
+      ]);
+    });
+
     describe('errors', () => {
       it('throws an error in case of names mismatch', () => {
         expect(() =>
