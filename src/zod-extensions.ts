@@ -27,7 +27,7 @@ declare module 'zod' {
     openapi?: ZodOpenApiFullMetadata;
   }
 
-  abstract class ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
+  interface ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
     openapi<T extends ZodSchema<any>>(
       this: T,
       metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
