@@ -12,7 +12,7 @@ type ZodTypes = {
   ZodNull: z.ZodNull;
   ZodNullable: z.ZodNullable<any>;
   ZodNumber: z.ZodNumber;
-  ZodObject: z.ZodObject<any>;
+  ZodObject: z.AnyZodObject;
   ZodOptional: z.ZodOptional<any>;
   ZodRecord: z.ZodRecord;
   ZodSchema: z.ZodSchema;
