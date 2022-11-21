@@ -56,7 +56,7 @@ describe('object', () => {
     });
   });
 
-  it('supports strict objects', () => {
+  it('maps additionalProperties to false for strict objects', () => {
     expectSchema(
       [
         registerSchema(
