@@ -212,4 +212,23 @@ describe('nullable', () => {
       '3.1.0'
     );
   });
+
+  it('overrides zod nullable when there is specified type in openapi', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .nullable()
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+        })
+    );
+
+    expectSchema([EmptySchema], {
+      Empty: {
+        type: 'object',
+      },
+    });
+  });
 });
