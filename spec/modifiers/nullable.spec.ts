@@ -124,4 +124,111 @@ describe('nullable', () => {
       '3.1.0'
     );
   });
+
+  it('supports referencing nullable zod effects', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+        })
+    );
+
+    const TestSchema = registerSchema(
+      'Test',
+      z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
+    );
+
+    expectSchema([EmptySchema, TestSchema], {
+      Empty: {
+        type: 'object',
+      },
+      Test: {
+        type: 'object',
+        required: ['key'],
+        properties: {
+          key: {
+            allOf: [
+              {
+                $ref: '#/components/schemas/Empty',
+              },
+              {
+                nullable: true,
+                deprecated: true,
+              },
+            ],
+          },
+        },
+      },
+    });
+  });
+
+  it('supports referencing nullable zod effects with Openapi v3.1.0', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+        })
+    );
+
+    const TestSchema = registerSchema(
+      'Test',
+      z.object({
+        key: EmptySchema.nullable().openapi({
+          deprecated: true,
+        }),
+      })
+    );
+
+    expectSchema(
+      [EmptySchema, TestSchema],
+      {
+        Empty: {
+          type: 'object',
+        },
+        Test: {
+          type: 'object',
+          required: ['key'],
+          properties: {
+            key: {
+              allOf: [
+                {
+                  $ref: '#/components/schemas/Empty',
+                },
+                {
+                  type: ['object', 'null'],
+                  deprecated: true,
+                },
+              ],
+            },
+          },
+        },
+      },
+      '3.1.0'
+    );
+  });
+
+  it('overrides zod nullable when there is specified type in openapi', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .nullable()
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+        })
+    );
+
+    expectSchema([EmptySchema], {
+      Empty: {
+        type: 'object',
+      },
+    });
+  });
 });

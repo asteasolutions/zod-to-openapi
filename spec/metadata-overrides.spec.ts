@@ -146,4 +146,64 @@ describe('metadata overrides', () => {
       },
     });
   });
+
+  // This was broken with the metadata overrides code so this feels like
+  // the best support for it
+  it('supports referencing zod effects', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+        })
+    );
+
+    const TestSchema = registerSchema('Test', z.object({ key: EmptySchema }));
+
+    expectSchema([EmptySchema, TestSchema], {
+      Empty: {
+        type: 'object',
+      },
+      Test: {
+        type: 'object',
+        required: ['key'],
+        properties: {
+          key: {
+            $ref: '#/components/schemas/Empty',
+          },
+        },
+      },
+    });
+  });
+
+  it('supports referencing zod effects in unions', () => {
+    const EmptySchema = registerSchema(
+      'Empty',
+      z
+        .object({})
+        .transform(obj => obj as { [key: string]: never })
+        .openapi({
+          type: 'object',
+        })
+    );
+
+    const UnionTestSchema = registerSchema(
+      'UnionTest',
+      z.union([z.string(), EmptySchema]).openapi({
+        description: 'Union with empty object',
+      })
+    );
+
+    expectSchema([EmptySchema, UnionTestSchema], {
+      Empty: {
+        type: 'object',
+      },
+      UnionTest: {
+        anyOf: [{ type: 'string' }, { $ref: '#/components/schemas/Empty' }],
+        description: 'Union with empty object',
+      },
+    });
+  });
 });

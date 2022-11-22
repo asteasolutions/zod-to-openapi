@@ -131,6 +131,7 @@ export class OpenAPIGenerator {
     const generationOrder: OpenAPIDefinitions['type'][] = [
       'schema',
       'parameter',
+      'component',
       'route',
       'webhook',
     ];
@@ -374,9 +375,9 @@ export class OpenAPIGenerator {
       // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
       const newSchemaMetadata = !newMetadata.type
         ? omitBy(
-            this.toOpenAPISchema(
+            this.constructReferencedOpenAPISchema(
+              zodSchema,
               innerSchema,
-              zodSchema.isNullable(),
               defaultValue
             ),
             (value, key) =>
@@ -659,6 +660,21 @@ export class OpenAPIGenerator {
       type,
       nullable: isNullable ? true : undefined,
     };
+  }
+
+  private constructReferencedOpenAPISchema<T>(
+    zodSchema: ZodSchema<T>,
+    innerSchema: ZodSchema<T>,
+    defaultValue?: T
+  ): SchemaObject | ReferenceObject {
+    const isNullableSchema = zodSchema.isNullable();
+    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
+
+    if (metadata?.metadata?.type) {
+      return this.mapNullableType(metadata.metadata.type, isNullableSchema);
+    }
+
+    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
   }
 
   private toOpenAPISchema<T>(
