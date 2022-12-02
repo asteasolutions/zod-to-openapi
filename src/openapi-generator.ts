@@ -1003,7 +1003,11 @@ export class OpenAPIGenerator {
   }
 
   private unwrapChained(schema: ZodSchema<any>): ZodSchema<any> {
-    if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
+    if (
+      isZodType(schema, 'ZodOptional') ||
+      isZodType(schema, 'ZodNullable') ||
+      isZodType(schema, 'ZodBranded')
+    ) {
       return this.unwrapChained(schema.unwrap());
     }
 
