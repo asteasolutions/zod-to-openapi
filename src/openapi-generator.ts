@@ -13,6 +13,7 @@ import {
 } from 'openapi3-ts';
 import type {
   AnyZodObject,
+  ZodNumberDef,
   ZodObject,
   ZodRawShape,
   ZodSchema,
@@ -662,6 +663,37 @@ export class OpenAPIGenerator {
     };
   }
 
+  private getNumberChecks(
+    checks: ZodNumberDef['checks']
+  ): Pick<
+    SchemaObject,
+    'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
+  > {
+    return Object.assign(
+      {},
+      ...checks.map<SchemaObject>(check => {
+        switch (check.kind) {
+          case 'min':
+            return check.inclusive
+              ? { minimum: check.value }
+              : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
+              ? { exclusiveMinimum: check.value }
+              : { minimum: check.value, exclusiveMinimum: true };
+
+          case 'max':
+            return check.inclusive
+              ? { maximum: check.value }
+              : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
+              ? { exclusiveMaximum: check.value }
+              : { maximum: check.value, exclusiveMaximum: true };
+
+          default:
+            return {};
+        }
+      })
+    );
+  }
+
   private constructReferencedOpenAPISchema<T>(
     zodSchema: ZodSchema<T>,
     innerSchema: ZodSchema<T>,
@@ -709,8 +741,7 @@ export class OpenAPIGenerator {
           zodSchema.isInt ? 'integer' : 'number',
           isNullable
         ),
-        minimum: zodSchema.minValue ?? undefined,
-        maximum: zodSchema.maxValue ?? undefined,
+        ...this.getNumberChecks(zodSchema._def.checks),
         default: defaultValue,
       };
     }
