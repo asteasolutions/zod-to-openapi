@@ -3,6 +3,7 @@ import type { z } from 'zod';
 type ZodTypes = {
   ZodArray: z.ZodArray<any>;
   ZodBoolean: z.ZodBoolean;
+  ZodBranded: z.ZodBranded<any, any>;
   ZodDefault: z.ZodDefault<any>;
   ZodEffects: z.ZodEffects<any>;
   ZodEnum: z.ZodEnum<any>;
