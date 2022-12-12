@@ -588,7 +588,7 @@ export class OpenAPIGenerator {
     }
 
     if (zodString.isDatetime?.()) {
-      return 'datetime';
+      return 'date-time';
     }
 
     return undefined;

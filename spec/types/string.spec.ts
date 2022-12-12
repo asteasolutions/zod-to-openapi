@@ -28,7 +28,7 @@ describe('string', () => {
     ${'uuid'}     | ${z.string().uuid()}     | ${'uuid'}
     ${'email'}    | ${z.string().email()}    | ${'email'}
     ${'url'}      | ${z.string().url()}      | ${'uri'}
-    ${'datetime'} | ${z.string().datetime()} | ${'datetime'}
+    ${'datetime'} | ${z.string().datetime()} | ${'date-time'}
   `(
     'maps a ZodString $format to $expected format',
     ({ zodString, expected }: { zodString: ZodString; expected: string }) => {
