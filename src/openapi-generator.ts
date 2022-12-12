@@ -587,7 +587,7 @@ export class OpenAPIGenerator {
       return 'uri';
     }
 
-    if (zodString.isDatetime()) {
+    if (zodString?.isDatetime()) {
       return 'datetime';
     }
 
