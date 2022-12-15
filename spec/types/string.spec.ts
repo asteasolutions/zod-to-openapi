@@ -24,10 +24,11 @@ describe('string', () => {
   });
 
   it.each`
-    format     | zodString             | expected
-    ${'uuid'}  | ${z.string().uuid()}  | ${'uuid'}
-    ${'email'} | ${z.string().email()} | ${'email'}
-    ${'url'}   | ${z.string().url()}   | ${'uri'}
+    format        | zodString                | expected
+    ${'uuid'}     | ${z.string().uuid()}     | ${'uuid'}
+    ${'email'}    | ${z.string().email()}    | ${'email'}
+    ${'url'}      | ${z.string().url()}      | ${'uri'}
+    ${'datetime'} | ${z.string().datetime()} | ${'date-time'}
   `(
     'maps a ZodString $format to $expected format',
     ({ zodString, expected }: { zodString: ZodString; expected: string }) => {

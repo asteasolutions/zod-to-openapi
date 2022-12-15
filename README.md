@@ -389,7 +389,7 @@ Then you can create a script that executes the exported `generateOpenAPI` functi
 The list of all supported types as of now is:
 
 - `ZodString`
-  - adding `format` for `.uuid()`, `.email()` and `.url()` and `pattern` for `.regex()` is also supported
+  - adding `format` for `.datetime()`, `.uuid()`, `.email()` and `.url()` and `pattern` for `.regex()` is also supported
 - `ZodNumber`
   - including `z.number().int()` being inferred as `type: 'integer'`
 - `ZodBoolean`
