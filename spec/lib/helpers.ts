@@ -1,7 +1,11 @@
-import { OpenAPIGenerator, OpenApiVersion } from '../../src/openapi-generator';
+import {
+  OpenAPIGenerator,
+  OpenAPIObjectConfig,
+  OpenApiVersion,
+} from '../../src/openapi-generator';
 import type { SchemasObject } from 'openapi3-ts';
 import type { ZodSchema } from 'zod';
-import { OpenAPIRegistry } from '../../src/openapi-registry';
+import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
 
 export function createSchemas(
   zodSchemas: ZodSchema<any>[],
@@ -38,3 +42,30 @@ export function registerSchema<T extends ZodSchema<any>>(
 
   return registry.register(refId, zodSchema);
 }
+
+export function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
+  return {
+    method: 'get',
+    path: '/',
+    responses: {
+      200: {
+        description: 'OK Response',
+      },
+    },
+    ...props,
+  };
+}
+
+export const testDocConfig: OpenAPIObjectConfig = {
+  info: {
+    version: '1.0.0',
+    title: 'Swagger Petstore',
+    description: 'A sample API',
+    termsOfService: 'http://swagger.io/terms/',
+    license: {
+      name: 'Apache 2.0',
+      url: 'https://www.apache.org/licenses/LICENSE-2.0.html',
+    },
+  },
+  servers: [{ url: 'v1' }],
+};
