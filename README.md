@@ -25,7 +25,7 @@ We keep a changelog as part of the [GitHub releases](https://github.com/asteasol
 
 ## Purpose and quick example
 
-We at [Astea Solutions](https://asteasolutions.com/) made this library because we use [zod](https://github.com/colinhacks/zod) for validation in our APIs and are tired of the duplication to also support a separate OpenAPI definition that must be kept in sync. Using `zod-to-openapi`, we generate OpenAPI definitions directly from our zod schemas, this having single source of truth.
+We at [Astea Solutions](https://asteasolutions.com/) made this library because we use [zod](https://github.com/colinhacks/zod) for validation in our APIs and are tired of the duplication to also support a separate OpenAPI definition that must be kept in sync. Using `zod-to-openapi`, we generate OpenAPI definitions directly from our zod schemas, thus having a single source of truth.
 
 Simply put, it turns this:
 
