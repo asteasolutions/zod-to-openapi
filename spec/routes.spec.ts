@@ -225,7 +225,26 @@ const routeTests = ({
       ]);
     });
 
-    it('generates a header parameter for route', () => {
+    it('generates a header parameter with array for route', () => {
+      const routeParameters = generateParamsForRoute({
+        request: {
+          headers: z.object({ test: z.string() }),
+        },
+      });
+
+      expect(routeParameters).toEqual([
+        {
+          in: 'header',
+          name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
+    it('generates a header parameter with object for route', () => {
       const routeParameters = generateParamsForRoute({
         request: {
           headers: [z.string().openapi({ param: { name: 'test' } })],

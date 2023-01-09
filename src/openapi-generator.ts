@@ -477,10 +477,15 @@ export class OpenAPIGenerator {
       ? this.generateInlineParameters(request.params, 'path')
       : [];
 
-    const headerParameters =
-      request.headers?.flatMap(header =>
-        this.generateInlineParameters(header, 'header')
-      ) ?? [];
+    const { headers } = request;
+
+    const headerParameters = headers
+      ? isZodType(headers, 'ZodObject')
+        ? this.generateInlineParameters(headers, 'header')
+        : headers.flatMap(header =>
+            this.generateInlineParameters(header, 'header')
+          )
+      : [];
 
     return [...pathParameters, ...queryParameters, ...headerParameters];
   }
