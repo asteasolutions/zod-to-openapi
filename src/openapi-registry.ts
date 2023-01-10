@@ -52,7 +52,7 @@ export interface RouteConfig extends OperationObject {
     body?: ZodRequestBody;
     params?: AnyZodObject;
     query?: AnyZodObject;
-    headers?: ZodType<unknown>[];
+    headers?: AnyZodObject | ZodType<unknown>[];
   };
   responses: {
     [statusCode: string]: ResponseConfig;
