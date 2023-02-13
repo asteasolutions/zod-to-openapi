@@ -41,7 +41,7 @@ describe('native enum', () => {
 
     expectSchema([nativeEnumSchema], {
       NativeEnum: {
-        type: 'number',
+        type: 'integer',
         description: 'A native numbers enum in zod',
         enum: [1, 42, 3],
       },
