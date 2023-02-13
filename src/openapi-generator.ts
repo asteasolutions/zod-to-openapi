@@ -810,7 +810,7 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType(
-          type === 'numeric' ? 'number' : 'string',
+          type === 'numeric' ? 'integer' : 'string',
           isNullable
         ),
         enum: values,
