@@ -83,6 +83,57 @@ describe('discriminated union', () => {
     );
   });
 
+  it('creates a discriminator mapping when a registered object uses a zodEnum as the discriminator', () => {
+    const Text = registerSchema(
+      'obj1',
+      z.object({ type: z.enum(['text', 'other']), text: z.string() })
+    );
+    const Image = registerSchema(
+      'obj2',
+      z.object({ type: z.literal('image'), src: z.string() })
+    );
+
+    expectSchema(
+      [
+        Text,
+        Image,
+        registerSchema('Test', z.discriminatedUnion('type', [Text, Image])),
+      ],
+      {
+        Test: {
+          oneOf: [
+            { $ref: '#/components/schemas/obj1' },
+            { $ref: '#/components/schemas/obj2' },
+          ],
+          discriminator: {
+            propertyName: 'type',
+            mapping: {
+              text: '#/components/schemas/obj1',
+              other: '#/components/schemas/obj1',
+              image: '#/components/schemas/obj2',
+            },
+          },
+        },
+        obj1: {
+          type: 'object',
+          required: ['type', 'text'],
+          properties: {
+            type: { type: 'string', enum: ['text', 'other'] },
+            text: { type: 'string' },
+          },
+        },
+        obj2: {
+          type: 'object',
+          required: ['type', 'src'],
+          properties: {
+            type: { type: 'string', enum: ['image'] },
+            src: { type: 'string' },
+          },
+        },
+      }
+    );
+  });
+
   it('does not create a discriminator mapping when the discrimnated union is nullable', () => {
     const Text = registerSchema(
       'obj1',
