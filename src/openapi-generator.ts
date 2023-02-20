@@ -359,7 +359,7 @@ export class OpenAPIGenerator {
     if (refId && this.schemaRefs[refId]) {
       const schemaRef = this.schemaRefs[refId] as SchemaObject;
       const referenceObject: ReferenceObject = {
-        $ref: `#/components/schemas/${refId}`,
+        $ref: this.generateSchemaRef(refId),
       };
 
       // New metadata from .openapi()
@@ -443,6 +443,10 @@ export class OpenAPIGenerator {
     }
 
     return result;
+  }
+
+  private generateSchemaRef(refId: string) {
+    return `#/components/schemas/${refId}`;
   }
 
   private getRequestBody(
@@ -612,18 +616,26 @@ export class OpenAPIGenerator {
 
     const mapping: Record<string, string> = {};
     zodObjects.forEach(obj => {
-      const value = obj.shape?.[discriminator]?._def.value;
+      const refId = obj._def.openapi?._internal?.refId as string; // type-checked earlier
+      const value = obj.shape?.[discriminator];
+
+      if (isZodType(value, 'ZodEnum')) {
+        value._def.values.forEach((enumValue: string) => {
+          mapping[enumValue] = this.generateSchemaRef(refId);
+        });
+        return;
+      }
+
+      const literalValue = value?._def.value;
 
       // This should never happen because Zod checks the disciminator type but to keep the types happy
-      if (typeof value !== 'string') {
+      if (typeof literalValue !== 'string') {
         throw new Error(
           `Discriminator ${discriminator} could not be found in one of the values of a discriminated union`
         );
       }
 
-      mapping[value] = `#/components/schemas/${
-        obj._def.openapi?._internal?.refId as string
-      }`;
+      mapping[literalValue] = this.generateSchemaRef(refId);
     });
 
     return {
