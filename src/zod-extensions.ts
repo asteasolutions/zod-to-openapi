@@ -155,6 +155,14 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
+  const zodDescribe = zod.ZodSchema.prototype.describe;
+  zod.ZodSchema.prototype.describe = function (this: any, ...args: [string]) {
+    const [description] = args;
+    const result = zodDescribe.apply(this, args).openapi({ description });
+
+    return result;
+  };
+
   const zodPick = zod.ZodObject.prototype.pick as any;
   zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
     const result = zodPick.apply(this, args);
