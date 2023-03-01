@@ -119,7 +119,7 @@ export class OpenAPIRegistry {
 
     const currentMetadata = schemaWithRefId._def.openapi?.metadata;
 
-    const schemaWithMetadata = zodSchema.openapi({
+    const schemaWithMetadata = schemaWithRefId.openapi({
       ...currentMetadata,
       param: {
         ...currentMetadata?.param,
