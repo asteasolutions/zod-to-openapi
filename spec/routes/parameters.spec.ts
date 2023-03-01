@@ -114,6 +114,25 @@ describe('parameters', () => {
     ]);
   });
 
+  it('generates a reference path parameter for route', () => {
+    const TestParam = registerSchema('TestParam', z.string()).openapi({
+      param: { name: 'test', in: 'path' },
+    });
+
+    const routeParameters = generateParamsForRoute(
+      {
+        request: { params: z.object({ test: TestParam }) },
+      },
+      [TestParam]
+    );
+
+    expect(routeParameters).toEqual([
+      {
+        $ref: '#/components/parameters/TestParam',
+      },
+    ]);
+  });
+
   it('generates required based on inner schema', () => {
     const routeParameters = generateParamsForRoute({
       request: {
