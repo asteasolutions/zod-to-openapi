@@ -333,7 +333,7 @@ export class OpenAPIGenerator {
     const required =
       !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
 
-    const schema = this.generateSimpleSchema(zodSchema);
+    const schema = this.generateSchemaDefinition(zodSchema);
 
     return {
       in: paramLocation,
@@ -347,7 +347,7 @@ export class OpenAPIGenerator {
   /**
    * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
    */
-  private generateSimpleSchema<T>(
+  private generateSchemaDefinition<T>(
     zodSchema: ZodSchema<T>
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
@@ -406,16 +406,22 @@ export class OpenAPIGenerator {
         }
       : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
 
-    return metadata?.metadata
+    const final = metadata?.metadata
       ? this.applySchemaMetadata(result, metadata.metadata)
       : omitBy(result, isNil);
+
+    if (refId) {
+      this.schemaRefs[refId] = final;
+    }
+
+    return final;
   }
 
   private generateInnerSchema(
     zodSchema: ZodSchema<any>,
     metadata?: ZodOpenAPIMetadata
   ): SchemaObject | ReferenceObject {
-    const simpleSchema = this.generateSimpleSchema(zodSchema);
+    const simpleSchema = this.generateSchemaDefinition(zodSchema);
 
     if ('$ref' in simpleSchema && simpleSchema.$ref) {
       return simpleSchema;
@@ -424,25 +430,6 @@ export class OpenAPIGenerator {
     return metadata
       ? this.applySchemaMetadata(simpleSchema, metadata)
       : simpleSchema;
-  }
-
-  private generateSchemaDefinition(
-    zodSchema: ZodSchema<any>
-  ): SchemaObject | ReferenceObject {
-    const metadata = this.getMetadata(zodSchema);
-    const refId = metadata?._internal?.refId;
-
-    const simpleSchema = this.generateSimpleSchema(zodSchema);
-
-    const result = metadata?.metadata
-      ? this.applySchemaMetadata(simpleSchema, metadata.metadata)
-      : simpleSchema;
-
-    if (refId) {
-      this.schemaRefs[refId] = result;
-    }
-
-    return result;
   }
 
   private generateSchemaRef(refId: string) {
