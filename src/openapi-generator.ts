@@ -406,9 +406,7 @@ export class OpenAPIGenerator {
         }
       : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
 
-    const final = metadata?.metadata
-      ? this.applySchemaMetadata(result, metadata.metadata)
-      : omitBy(result, isNil);
+    const final = this.applySchemaMetadata(result, metadata?.metadata);
 
     if (refId) {
       this.schemaRefs[refId] = final;
@@ -1100,12 +1098,12 @@ export class OpenAPIGenerator {
 
   private applySchemaMetadata(
     initialData: SchemaObject | ParameterObject | ReferenceObject,
-    metadata: Partial<ZodOpenAPIMetadata>
+    metadata?: Partial<ZodOpenAPIMetadata>
   ): SchemaObject | ReferenceObject {
     return omitBy(
       {
         ...initialData,
-        ...this.buildSchemaMetadata(metadata),
+        ...this.buildSchemaMetadata(metadata ?? {}),
       },
       isNil
     );
