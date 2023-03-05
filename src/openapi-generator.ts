@@ -554,12 +554,14 @@ export class OpenAPIGenerator {
   private getBodyContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
       if (!isAnyZodType(config.schema)) {
-        return { schema: config.schema };
+        return config;
       }
 
-      const schema = this.generateInnerSchema(config.schema);
+      const { schema: configSchema, ...rest } = config;
 
-      return { schema };
+      const schema = this.generateInnerSchema(configSchema);
+
+      return { schema, ...rest };
     });
   }
 
