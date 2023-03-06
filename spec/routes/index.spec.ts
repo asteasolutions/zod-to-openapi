@@ -160,6 +160,54 @@ const routeTests = ({
     });
   });
 
+  it('can generate paths with multiple examples', () => {
+    const registry = new OpenAPIRegistry();
+
+    registry[registerFunction]({
+      method: 'get',
+      path: '/',
+      responses: {
+        400: {
+          description: 'Failure',
+          content: {
+            'application/json': {
+              schema: z.string(),
+              examples: {
+                example0: {
+                  value: 'Oh no',
+                },
+                example1: {
+                  value: 'Totally gone wrong',
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const document = new OpenAPIGenerator(
+      registry.definitions,
+      '3.0.0'
+    ).generateDocument(testDocConfig);
+    const responses = document[rootDocPath]?.['/'].get.responses;
+
+    expect(responses['400']).toEqual(
+      expect.objectContaining({ description: 'Failure' })
+    );
+
+    const examples = responses['400']?.content['application/json']?.examples;
+
+    expect(examples).toEqual({
+      example0: {
+        value: 'Oh no',
+      },
+      example1: {
+        value: 'Totally gone wrong',
+      },
+    });
+  });
+
   describe('request body', () => {
     it('can specify request body metadata - description/required', () => {
       const registry = new OpenAPIRegistry();
