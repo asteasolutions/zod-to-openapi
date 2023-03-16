@@ -1,3 +1,5 @@
+import { isEqual, ObjectSet } from './object-set';
+
 export function isUndefined<T>(value: any): value is undefined {
   return value === undefined;
 }
@@ -55,34 +57,12 @@ export function compact<T extends any>(arr: (T | null | undefined)[]) {
   return arr.filter((elem): elem is T => !isNil(elem));
 }
 
-export function objectEquals(x: any, y: any): boolean {
-  if (x === null || x === undefined || y === null || y === undefined) {
-    return x === y;
-  }
+export const objectEquals = isEqual;
 
-  if (x === y || x.valueOf() === y.valueOf()) {
-    return true;
-  }
+export function uniq<T>(values: T[]) {
+  const set = new ObjectSet<T>();
 
-  if (Array.isArray(x)) {
-    if (!Array.isArray(y)) {
-      return false;
-    }
+  values.forEach(value => set.put(value));
 
-    if (x.length !== y.length) {
-      return false;
-    }
-  }
-
-  // if they are strictly equal, they both need to be object at least
-  if (!(x instanceof Object) || !(y instanceof Object)) {
-    return false;
-  }
-
-  // recursive object equality check
-  const keysX = Object.keys(x);
-  return (
-    Object.keys(y).every(keyY => keysX.indexOf(keyY) !== -1) &&
-    keysX.every(key => objectEquals(x[key], y[key]))
-  );
+  return [...set.values()];
 }

@@ -28,6 +28,7 @@ import {
   objectEquals,
   omit,
   omitBy,
+  uniq,
 } from './lib/lodash';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
 import {
@@ -850,6 +851,35 @@ export class OpenAPIGenerator {
         minItems: zodSchema._def.minLength?.value,
         maxItems: zodSchema._def.maxLength?.value,
         default: defaultValue,
+      };
+    }
+
+    if (isZodType(zodSchema, 'ZodTuple')) {
+      const { items } = zodSchema._def;
+
+      const tupleLength = items.length;
+
+      const schemas = items.map(schema => this.generateInnerSchema(schema));
+
+      const uniqueSchemas = uniq(schemas);
+
+      if (uniqueSchemas.length === 1) {
+        return {
+          type: 'array',
+          items: uniqueSchemas[0],
+          minItems: tupleLength,
+          maxItems: tupleLength,
+        };
+      }
+
+      return {
+        ...this.mapNullableType('array', isNullable),
+        // TODO: Compact is extra
+        items: {
+          anyOf: uniqueSchemas,
+        },
+        minItems: tupleLength,
+        maxItems: tupleLength,
       };
     }
 
