@@ -743,15 +743,22 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodString')) {
       const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
+
+      const length = this.getZodStringCheck(zodSchema, 'length')?.value;
+
+      const maxLength = Number.isFinite(zodSchema.minLength)
+        ? zodSchema.minLength ?? undefined
+        : undefined;
+
+      const minLength = Number.isFinite(zodSchema.maxLength)
+        ? zodSchema.maxLength ?? undefined
+        : undefined;
+
       return {
         ...this.mapNullableType('string', isNullable),
         // FIXME: https://github.com/colinhacks/zod/commit/d78047e9f44596a96d637abb0ce209cd2732d88c
-        minLength: Number.isFinite(zodSchema.minLength)
-          ? zodSchema.minLength ?? undefined
-          : undefined,
-        maxLength: Number.isFinite(zodSchema.maxLength)
-          ? zodSchema.maxLength ?? undefined
-          : undefined,
+        minLength: length ?? maxLength,
+        maxLength: length ?? minLength,
         format: this.mapStringFormat(zodSchema),
         pattern: regexCheck?.regex.source,
         default: defaultValue,
