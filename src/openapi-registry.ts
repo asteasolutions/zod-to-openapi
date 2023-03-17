@@ -19,7 +19,15 @@ import {
 } from 'openapi3-ts';
 import type { AnyZodObject, ZodSchema, ZodType } from 'zod';
 
-type Method = 'get' | 'post' | 'put' | 'delete' | 'patch';
+type Method =
+  | 'get'
+  | 'post'
+  | 'put'
+  | 'delete'
+  | 'patch'
+  | 'head'
+  | 'options'
+  | 'trace';
 
 export interface ZodMediaTypeObject {
   schema: ZodType<unknown> | SchemaObject | ReferenceObject;
