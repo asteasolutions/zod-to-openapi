@@ -1137,7 +1137,28 @@ export class OpenAPIGenerator {
       ? zodSchema._def.openapi
       : innerSchema._def.openapi;
 
-    return metadata;
+    /**
+     * Every zod schema can receive a `description` by using the .describe method.
+     * That description should be used when generating an OpenApi schema.
+     * The `??` bellow makes sure we can handle both:
+     * - schema.describe('Test').optional()
+     * - schema.optional().describe('Test')
+     */
+    const zodDescription = zodSchema.description ?? innerSchema.description;
+
+    /**
+     * A description provided from .openapi() should be taken with higher
+     * precedence. Note that there is an overload of .describe() that uses
+     * .openapi() internally, however the generator should be working with
+     * native descriptions of zod schemas.
+     */
+    return {
+      _internal: metadata?._internal,
+      metadata: {
+        description: zodDescription,
+        ...metadata?.metadata,
+      },
+    };
   }
 
   private getInternalMetadata<T extends any>(zodSchema: ZodSchema<T>) {

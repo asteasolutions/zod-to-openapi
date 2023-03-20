@@ -27,6 +27,28 @@ describe('describe', () => {
     });
   });
 
+  it('can get description from a schema made optional', () => {
+    const schema = registerSchema(
+      'SimpleString',
+      z.string().describe('This is a test string').optional()
+    );
+
+    expectSchema([schema], {
+      SimpleString: { type: 'string', description: 'This is a test string' },
+    });
+  });
+
+  it('can get description from an optional schema', () => {
+    const schema = registerSchema(
+      'SimpleString',
+      z.string().optional().describe('This is a test string')
+    );
+
+    expectSchema([schema], {
+      SimpleString: { type: 'string', description: 'This is a test string' },
+    });
+  });
+
   it('can overload descriptions from .describe with .openapi', () => {
     const schema = registerSchema(
       'SimpleString',
