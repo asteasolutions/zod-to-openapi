@@ -8,11 +8,30 @@ describe('string', () => {
     });
   });
 
+  it('supports exact length on string', () => {
+    expectSchema([registerSchema('minMaxLengthString', z.string().length(5))], {
+      minMaxLengthString: { type: 'string', minLength: 5, maxLength: 5 },
+    });
+  });
+
   it('supports minLength / maxLength on string', () => {
     expectSchema(
       [registerSchema('minMaxLengthString', z.string().min(5).max(10))],
       {
         minMaxLengthString: { type: 'string', minLength: 5, maxLength: 10 },
+      }
+    );
+  });
+
+  it('supports the combination of min/max + length on string', () => {
+    expectSchema(
+      [
+        registerSchema('minAndLengthString', z.string().length(5).min(6)),
+        registerSchema('maxAndLengthString', z.string().max(10).length(5)),
+      ],
+      {
+        minAndLengthString: { type: 'string', minLength: 5, maxLength: 5 },
+        maxAndLengthString: { type: 'string', minLength: 5, maxLength: 5 },
       }
     );
   });
