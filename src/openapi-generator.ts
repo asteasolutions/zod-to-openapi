@@ -28,6 +28,7 @@ import {
   objectEquals,
   omit,
   omitBy,
+  uniq,
 } from './lib/lodash';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
 import {
@@ -743,15 +744,22 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodString')) {
       const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
+
+      const length = this.getZodStringCheck(zodSchema, 'length')?.value;
+
+      const maxLength = Number.isFinite(zodSchema.minLength)
+        ? zodSchema.minLength ?? undefined
+        : undefined;
+
+      const minLength = Number.isFinite(zodSchema.maxLength)
+        ? zodSchema.maxLength ?? undefined
+        : undefined;
+
       return {
         ...this.mapNullableType('string', isNullable),
         // FIXME: https://github.com/colinhacks/zod/commit/d78047e9f44596a96d637abb0ce209cd2732d88c
-        minLength: Number.isFinite(zodSchema.minLength)
-          ? zodSchema.minLength ?? undefined
-          : undefined,
-        maxLength: Number.isFinite(zodSchema.maxLength)
-          ? zodSchema.maxLength ?? undefined
-          : undefined,
+        minLength: length ?? maxLength,
+        maxLength: length ?? minLength,
         format: this.mapStringFormat(zodSchema),
         pattern: regexCheck?.regex.source,
         default: defaultValue,
@@ -850,6 +858,34 @@ export class OpenAPIGenerator {
         minItems: zodSchema._def.minLength?.value,
         maxItems: zodSchema._def.maxLength?.value,
         default: defaultValue,
+      };
+    }
+
+    if (isZodType(zodSchema, 'ZodTuple')) {
+      const { items } = zodSchema._def;
+
+      const tupleLength = items.length;
+
+      const schemas = items.map(schema => this.generateInnerSchema(schema));
+
+      const uniqueSchemas = uniq(schemas);
+
+      if (uniqueSchemas.length === 1) {
+        return {
+          type: 'array',
+          items: uniqueSchemas[0],
+          minItems: tupleLength,
+          maxItems: tupleLength,
+        };
+      }
+
+      return {
+        ...this.mapNullableType('array', isNullable),
+        items: {
+          anyOf: uniqueSchemas,
+        },
+        minItems: tupleLength,
+        maxItems: tupleLength,
       };
     }
 

@@ -388,27 +388,28 @@ Then you can create a script that executes the exported `generateOpenAPI` functi
 
 The list of all supported types as of now is:
 
-- `ZodString`
-  - adding `format` for `.datetime()`, `.uuid()`, `.email()` and `.url()` and `pattern` for `.regex()` is also supported
-- `ZodNumber`
-  - including `z.number().int()` being inferred as `type: 'integer'`
-- `ZodBoolean`
-- `ZodDefault`
-- `ZodNullable`
-- `ZodOptional`
-- `ZodEffects` - only for `.refine()`, `.preprocess()`
-- `ZodLiteral`
-- `ZodEnum`
-- `ZodNativeEnum`
-- `ZodObject`
 - `ZodArray`
+- `ZodBoolean`
+- `ZodDate`
+- `ZodDefault`
 - `ZodDiscriminatedUnion`
   - including `discriminator` mapping when all Zod objects in the union are registered with `.register()` or contain a `refId`.
-- `ZodUnion`
+- `ZodEffects` - only for `.refine()`, `.preprocess()`
+- `ZodEnum`
 - `ZodIntersection`
+- `ZodLiteral`
+- `ZodNativeEnum`
+- `ZodNullable`
+- `ZodNumber`
+  - including `z.number().int()` being inferred as `type: 'integer'`
+- `ZodObject`
+- `ZodOptional`
 - `ZodRecord`
+- `ZodString`
+  - adding `format` for `.datetime()`, `.uuid()`, `.email()` and `.url()` and `pattern` for `.regex()` is also supported
+- `ZodTuple`
+- `ZodUnion`
 - `ZodUnknown`
-- `ZodDate`
 
 Extending an instance of `ZodObject` is also supported and results in an OpenApi definition with `allOf`
 
