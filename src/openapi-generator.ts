@@ -874,7 +874,6 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType('array', isNullable),
-        // TODO: Compact is extra
         items: {
           anyOf: uniqueSchemas,
         },

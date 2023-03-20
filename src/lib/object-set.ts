@@ -34,11 +34,13 @@ export class ObjectSet<V> {
   private buckets = new Map<number, V[]>();
   put(value: V) {
     const hashCode = this.hashCodeOf(value);
+
     const itemsByCode = this.buckets.get(hashCode);
     if (!itemsByCode) {
       this.buckets.set(hashCode, [value]);
       return;
     }
+
     const alreadyHasItem = itemsByCode.some(_ => isEqual(_, value));
     if (!alreadyHasItem) {
       itemsByCode.push(value);
@@ -47,6 +49,7 @@ export class ObjectSet<V> {
 
   contains(value: V): boolean {
     const hashCode = this.hashCodeOf(value);
+
     const itemsByCode = this.buckets.get(hashCode);
     if (!itemsByCode) {
       return false;
@@ -62,6 +65,7 @@ export class ObjectSet<V> {
     let totalBuckets = 0;
     let totalValues = 0;
     let collisions = 0;
+
     for (const bucket of this.buckets.values()) {
       totalBuckets += 1;
       totalValues += bucket.length;
@@ -69,27 +73,37 @@ export class ObjectSet<V> {
         collisions += 1;
       }
     }
+
     const hashEffectiveness = totalBuckets / totalValues;
     return { totalBuckets, collisions, totalValues, hashEffectiveness };
   }
   private hashCodeOf(object: any): number {
     let hashCode = 0;
+
     if (Array.isArray(object)) {
       for (let i = 0; i < object.length; i++) {
         hashCode ^= this.hashCodeOf(object[i]) * i;
       }
-    } else if (typeof object === 'string') {
+      return hashCode;
+    }
+
+    if (typeof object === 'string') {
       for (let i = 0; i < object.length; i++) {
         hashCode ^= object.charCodeAt(i) * i;
       }
-    } else if (typeof object === 'number') {
+      return hashCode;
+    }
+
+    if (typeof object === 'number') {
       return object;
-    } else if (typeof object === 'object') {
-      for (const key of Object.keys(object)) {
-        hashCode ^=
-          this.hashCodeOf(key) + this.hashCodeOf((object as any)[key] ?? '');
+    }
+
+    if (typeof object === 'object') {
+      for (const [key, value] of Object.entries(object)) {
+        hashCode ^= this.hashCodeOf(key) + this.hashCodeOf(value ?? '');
       }
     }
+
     return hashCode;
   }
 }
