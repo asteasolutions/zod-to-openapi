@@ -5,6 +5,9 @@ export {
   OpenAPIRegistry,
   RouteConfig,
   ResponseConfig,
+  ZodMediaTypeObject,
+  ZodContentObject,
+  ZodRequestBody,
 } from './openapi-registry';
 
 export * as OpenAPI from 'openapi3-ts';
