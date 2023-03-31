@@ -42,6 +42,7 @@ import {
 import {
   ConflictError,
   MissingParameterDataError,
+  MissingParameterDataErrorProps,
   UnknownZodTypeError,
   ZodToOpenAPIError,
 } from './errors';
@@ -474,23 +475,29 @@ export class OpenAPIGenerator {
       return [];
     }
 
-    const queryParameters = request.query
-      ? this.generateInlineParameters(request.query, 'query')
-      : [];
+    const { query, params, headers } = request;
 
-    const pathParameters = request.params
-      ? this.generateInlineParameters(request.params, 'path')
-      : [];
+    const queryParameters = this.enhanceMissingParametersError(
+      () => (query ? this.generateInlineParameters(query, 'query') : []),
+      { location: 'query' }
+    );
 
-    const { headers } = request;
+    const pathParameters = this.enhanceMissingParametersError(
+      () => (params ? this.generateInlineParameters(params, 'path') : []),
+      { location: 'path' }
+    );
 
-    const headerParameters = headers
-      ? isZodType(headers, 'ZodObject')
-        ? this.generateInlineParameters(headers, 'header')
-        : headers.flatMap(header =>
-            this.generateInlineParameters(header, 'header')
-          )
-      : [];
+    const headerParameters = this.enhanceMissingParametersError(
+      () =>
+        headers
+          ? isZodType(headers, 'ZodObject')
+            ? this.generateInlineParameters(headers, 'header')
+            : headers.flatMap(header =>
+                this.generateInlineParameters(header, 'header')
+              )
+          : [],
+      { location: 'header' }
+    );
 
     return [...pathParameters, ...queryParameters, ...headerParameters];
   }
@@ -502,7 +509,11 @@ export class OpenAPIGenerator {
       return this.getResponse(response);
     });
 
-    const parameters = this.getParameters(request);
+    const parameters = this.enhanceMissingParametersError(
+      () => this.getParameters(request),
+      { route: `${method} ${path}` }
+    );
+
     const requestBody = this.getRequestBody(request?.body);
 
     const routeDoc: PathItemObject = {
@@ -1176,5 +1187,22 @@ export class OpenAPIGenerator {
       },
       isNil
     );
+  }
+
+  private enhanceMissingParametersError<T>(
+    action: () => T,
+    paramsToAdd: Partial<MissingParameterDataErrorProps>
+  ) {
+    try {
+      return action();
+    } catch (error) {
+      if (error instanceof MissingParameterDataError) {
+        throw new MissingParameterDataError({
+          ...error.data,
+          ...paramsToAdd,
+        });
+      }
+      throw error;
+    }
   }
 }

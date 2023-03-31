@@ -12,13 +12,15 @@ export class ConflictError extends ZodToOpenAPIError {
     super(message);
   }
 }
-interface MissingParameterDataErrorProps {
+export interface MissingParameterDataErrorProps {
   paramName?: string;
+  route?: string;
+  location?: string;
   missingField: string;
 }
 
 export class MissingParameterDataError extends ZodToOpenAPIError {
-  constructor(private data: MissingParameterDataErrorProps) {
+  constructor(public data: MissingParameterDataErrorProps) {
     super(
       `Missing parameter data, please specify \`${data.missingField}\` and other OpenAPI parameter props using the \`param\` field of \`ZodSchema.openapi\``
     );

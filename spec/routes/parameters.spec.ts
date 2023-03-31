@@ -1,6 +1,7 @@
 import { OperationObject, PathItemObject } from 'openapi3-ts';
 import { z, ZodSchema } from 'zod';
 import { OpenAPIGenerator, RouteConfig } from '../../src';
+import { MissingParameterDataError } from '../../src/errors';
 import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
 
 describe('parameters', () => {
@@ -231,11 +232,19 @@ describe('parameters', () => {
     });
 
     it('throws an error in case of missing name', () => {
-      expect(() =>
+      try {
         generateParamsForRoute({
+          method: 'get',
+          path: '/path',
           request: { headers: [z.string()] },
-        })
-      ).toThrowError(/^Missing parameter data, please specify `name`/);
+        });
+
+        expect("Should've thrown").toEqual('Did throw');
+      } catch (error) {
+        expect(error).toBeInstanceOf(MissingParameterDataError);
+        expect(error).toHaveProperty('data.location', 'header');
+        expect(error).toHaveProperty('data.route', 'get /path');
+      }
     });
 
     it('throws an error in case of missing location when registering a parameter', () => {
