@@ -1146,12 +1146,7 @@ export class OpenAPIGenerator {
      */
     const zodDescription = zodSchema.description ?? innerSchema.description;
 
-    /**
-     * A description provided from .openapi() should be taken with higher
-     * precedence. Note that there is an overload of .describe() that uses
-     * .openapi() internally, however the generator should be working with
-     * native descriptions of zod schemas.
-     */
+    // A description provided from .openapi() should be taken with higher precedence
     return {
       _internal: metadata?._internal,
       metadata: {

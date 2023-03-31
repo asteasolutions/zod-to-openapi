@@ -13,20 +13,6 @@ describe('describe', () => {
     });
   });
 
-  it('can overload .openapi description when the .describe method is used', () => {
-    const schema = registerSchema(
-      'SimpleString',
-      z
-        .string()
-        .openapi({ description: 'Alternative description' })
-        .describe('This is a test string')
-    );
-
-    expectSchema([schema], {
-      SimpleString: { type: 'string', description: 'This is a test string' },
-    });
-  });
-
   it('can get description from a schema made optional', () => {
     const schema = registerSchema(
       'SimpleString',
