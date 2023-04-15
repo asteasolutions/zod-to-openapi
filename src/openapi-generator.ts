@@ -353,7 +353,8 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<T>
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
-    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
+    const metadata =
+      this.getMetadata(zodSchema) ?? this.getMetadata(innerSchema);
     const defaultValue = this.getDefaultValue(zodSchema);
 
     const refId = metadata?._internal?.refId;
@@ -411,21 +412,6 @@ export class OpenAPIGenerator {
     return metadata?.metadata
       ? this.applySchemaMetadata(result, metadata.metadata)
       : omitBy(result, isNil);
-  }
-
-  private generateInnerSchema(
-    zodSchema: ZodSchema<any>,
-    metadata?: ZodOpenAPIMetadata
-  ): SchemaObject | ReferenceObject {
-    const simpleSchema = this.generateSimpleSchema(zodSchema);
-
-    if ('$ref' in simpleSchema && simpleSchema.$ref) {
-      return simpleSchema;
-    }
-
-    return metadata
-      ? this.applySchemaMetadata(simpleSchema, metadata)
-      : simpleSchema;
   }
 
   private generateSchemaDefinition(
@@ -571,7 +557,7 @@ export class OpenAPIGenerator {
 
       const { schema: configSchema, ...rest } = config;
 
-      const schema = this.generateInnerSchema(configSchema);
+      const schema = this.generateSimpleSchema(configSchema);
 
       return { schema, ...rest };
     });
@@ -801,7 +787,7 @@ export class OpenAPIGenerator {
         zodSchema._def.effect.type === 'preprocess')
     ) {
       const innerSchema = zodSchema._def.schema as ZodSchema<any>;
-      return this.generateInnerSchema(innerSchema);
+      return this.generateSimpleSchema(innerSchema);
     }
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
@@ -864,7 +850,7 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType('array', isNullable),
-        items: this.generateInnerSchema(itemType),
+        items: this.generateSimpleSchema(itemType),
 
         minItems: zodSchema._def.minLength?.value,
         maxItems: zodSchema._def.maxLength?.value,
@@ -877,7 +863,7 @@ export class OpenAPIGenerator {
 
       const tupleLength = items.length;
 
-      const schemas = items.map(schema => this.generateInnerSchema(schema));
+      const schemas = items.map(schema => this.generateSimpleSchema(schema));
 
       const uniqueSchemas = uniq(schemas);
 
@@ -905,7 +891,7 @@ export class OpenAPIGenerator {
 
       return {
         anyOf: this.mapNullableOfArray(
-          options.map(schema => this.generateInnerSchema(schema)),
+          options.map(schema => this.generateSimpleSchema(schema)),
           isNullable
         ),
         default: defaultValue,
@@ -916,7 +902,7 @@ export class OpenAPIGenerator {
       const options = [...zodSchema.options.values()];
 
       const optionSchema = options.map(schema =>
-        this.generateInnerSchema(schema)
+        this.generateSimpleSchema(schema)
       );
 
       if (isNullable) {
@@ -937,7 +923,7 @@ export class OpenAPIGenerator {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
       const allOfSchema: SchemaObject = {
-        allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
+        allOf: subtypes.map(schema => this.generateSimpleSchema(schema)),
       };
 
       if (isNullable) {
@@ -958,7 +944,7 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType('object', isNullable),
-        additionalProperties: this.generateInnerSchema(propertiesType),
+        additionalProperties: this.generateSimpleSchema(propertiesType),
         default: defaultValue,
       };
     }
@@ -1038,10 +1024,10 @@ export class OpenAPIGenerator {
     const keysRequiredByChild = this.requiredKeysOf(zodSchema);
 
     const propsOfParent = parentShape
-      ? mapValues(parentShape, _ => this.generateInnerSchema(_))
+      ? mapValues(parentShape, _ => this.generateSimpleSchema(_))
       : {};
     const propsOfChild = mapValues(childShape, _ =>
-      this.generateInnerSchema(_)
+      this.generateSimpleSchema(_)
     );
 
     const properties = Object.fromEntries(
@@ -1144,6 +1130,7 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<T>
   ): ZodOpenApiFullMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
+
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
       : innerSchema._def.openapi;

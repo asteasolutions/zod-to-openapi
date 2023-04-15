@@ -48,4 +48,34 @@ describe('describe', () => {
       SimpleString: { type: 'string', description: 'Alternative description' },
     });
   });
+
+  it('can use nested descriptions from .describe with .openapi', () => {
+    const schema = registerSchema(
+      'Test',
+      z
+        .object({
+          type: z.string().describe('Just a type'),
+          title: z.string().describe('Just a title').optional(),
+        })
+        .describe('Whole object')
+    );
+
+    expectSchema([schema], {
+      Test: {
+        type: 'object',
+        properties: {
+          type: {
+            type: 'string',
+            description: 'Just a type',
+          },
+          title: {
+            type: 'string',
+            description: 'Just a title',
+          },
+        },
+        required: ['type'],
+        description: 'Whole object',
+      },
+    });
+  });
 });
