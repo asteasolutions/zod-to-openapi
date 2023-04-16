@@ -600,7 +600,7 @@ export class OpenAPIGenerator {
 
       const { schema: configSchema, ...rest } = config;
 
-      const schema = this.generateInnerSchema(configSchema);
+      const schema = this.generateInnerSchemaWithReference(configSchema);
 
       return { schema, ...rest };
     });
