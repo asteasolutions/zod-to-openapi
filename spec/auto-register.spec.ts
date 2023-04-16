@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { createTestRoute, expectSchema, testDocConfig } from './lib/helpers';
-import { OpenAPIGenerator, OpenAPIRegistry } from '../src';
-
-const ads: unknown = { a: 3 };
+import { expectSchema, generateDataForRoute } from './lib/helpers';
 
 describe('Automatic registration', () => {
   it('can automatically register schemas', () => {
@@ -297,22 +294,13 @@ describe('Automatic registration', () => {
           })
           .refId('Person');
 
-        const route = createTestRoute({
+        const { documentSchemas, requestBody } = generateDataForRoute({
           request: {
             body: { content: { 'application/json': { schema: Person } } },
           },
         });
 
-        const registry = new OpenAPIRegistry();
-
-        registry[registerFunction](route);
-
-        const document = new OpenAPIGenerator(
-          registry.definitions,
-          '3.0.0'
-        ).generateDocument(testDocConfig);
-
-        expect(document.components?.schemas).toEqual({
+        expect(documentSchemas).toEqual({
           Person: {
             type: 'object',
             properties: {
@@ -321,9 +309,6 @@ describe('Automatic registration', () => {
             required: ['name'],
           },
         });
-
-        // TODO: Implicit - make an expectRoute helper
-        const { requestBody } = document[rootDocPath]?.['/'].get;
 
         expect(requestBody).toEqual({
           content: {
@@ -341,11 +326,7 @@ describe('Automatic registration', () => {
           })
           .refId('Person');
 
-        const registry = new OpenAPIRegistry();
-
-        registry[registerFunction]({
-          path: '/',
-          method: 'post',
+        const { documentSchemas, responses } = generateDataForRoute({
           responses: {
             '200': {
               description: 'Test response',
@@ -358,12 +339,7 @@ describe('Automatic registration', () => {
           },
         });
 
-        const document = new OpenAPIGenerator(
-          registry.definitions,
-          '3.0.0'
-        ).generateDocument(testDocConfig);
-
-        expect(document.components?.schemas).toEqual({
+        expect(documentSchemas).toEqual({
           Person: {
             type: 'object',
             properties: {
@@ -373,11 +349,7 @@ describe('Automatic registration', () => {
           },
         });
 
-        // TODO: Implicit - make an expectRoute helper
-        const response =
-          document[rootDocPath]?.['/'].post.responses['200'].content[
-            'application/json'
-          ];
+        const response = responses['200'].content['application/json'];
 
         expect(response).toEqual({
           schema: {
@@ -387,13 +359,9 @@ describe('Automatic registration', () => {
       });
 
       it('can automatically register request query parameters', () => {
-        const Person = z
-          .object({
-            name: z.string(),
-          })
-          .refId('Person');
+        const Person = z.object({ name: z.string() }).refId('Person');
 
-        const route = createTestRoute({
+        const { documentSchemas, parameters } = generateDataForRoute({
           request: {
             query: z.object({
               person: Person,
@@ -401,18 +369,7 @@ describe('Automatic registration', () => {
           },
         });
 
-        const registry = new OpenAPIRegistry();
-
-        registry[registerFunction](route);
-
-        const document = new OpenAPIGenerator(
-          registry.definitions,
-          '3.0.0'
-        ).generateDocument(testDocConfig);
-
-        console.log(JSON.stringify(document, null, 4));
-
-        expect(document.components?.schemas).toEqual({
+        expect(documentSchemas).toEqual({
           Person: {
             type: 'object',
             properties: {
@@ -421,9 +378,6 @@ describe('Automatic registration', () => {
             required: ['name'],
           },
         });
-
-        // TODO: Can use `generateParamsForRoute`
-        const { parameters } = document[rootDocPath]?.['/'].get;
 
         expect(parameters).toEqual([
           {
@@ -440,7 +394,7 @@ describe('Automatic registration', () => {
       it('can automatically register request path parameters', () => {
         const UserId = z.string().refId('UserId').length(6);
 
-        const route = createTestRoute({
+        const { documentSchemas, parameters } = generateDataForRoute({
           request: {
             params: z.object({
               id: UserId,
@@ -448,27 +402,13 @@ describe('Automatic registration', () => {
           },
         });
 
-        const registry = new OpenAPIRegistry();
-
-        registry[registerFunction](route);
-
-        const document = new OpenAPIGenerator(
-          registry.definitions,
-          '3.0.0'
-        ).generateDocument(testDocConfig);
-
-        console.log(JSON.stringify(document, null, 4));
-
-        expect(document.components?.schemas).toEqual({
+        expect(documentSchemas).toEqual({
           UserId: {
             type: 'string',
             minLength: 6,
             maxLength: 6,
           },
         });
-
-        // TODO: Can use `generateParamsForRoute`
-        const { parameters } = document[rootDocPath]?.['/'].get;
 
         expect(parameters).toEqual([
           {
@@ -485,7 +425,7 @@ describe('Automatic registration', () => {
       it('can automatically register headers', () => {
         const SessionToken = z.string().refId('SessionToken').length(6);
 
-        const route = createTestRoute({
+        const { documentSchemas, parameters } = generateDataForRoute({
           request: {
             headers: z.object({
               'x-session': SessionToken,
@@ -493,27 +433,13 @@ describe('Automatic registration', () => {
           },
         });
 
-        const registry = new OpenAPIRegistry();
-
-        registry[registerFunction](route);
-
-        const document = new OpenAPIGenerator(
-          registry.definitions,
-          '3.0.0'
-        ).generateDocument(testDocConfig);
-
-        console.log(JSON.stringify(document, null, 4));
-
-        expect(document.components?.schemas).toEqual({
+        expect(documentSchemas).toEqual({
           SessionToken: {
             type: 'string',
             minLength: 6,
             maxLength: 6,
           },
         });
-
-        // TODO: Can use `generateParamsForRoute`
-        const { parameters } = document[rootDocPath]?.['/'].get;
 
         expect(parameters).toEqual([
           {
@@ -527,11 +453,16 @@ describe('Automatic registration', () => {
         ]);
       });
 
+      // TODO: Route parameters should be registered under `parameters` and not `schemas`
+      // TODO: What happens if a schemas is being used once as a parameter and once as a schema. In that sense I think it
+      // might be more reasonable to always default to "schemas". However when we check for data (references) we might need to check
+      // both reference arrays.
+      // Additional note: It is okay for a parameter schema to reference a components/schemas/{Name} => we can just put everything there and
+      // registry.registerParameter would then be just an alias that makes the parameters. And that sound okay
+
       // TODO: Check the only leftover usage of `generateInnerSchema` for ZodEffects
 
       // TODO: Refactor the code by merging the branch with the removal of generateInnerSchema for generateSimpleSchema - rename stuff
-
-      // TODO: Improve tests above by extracting some common logic in a helper
 
       // TODO: Make sure that tests that use the two registration methods have proper names that can be used to distinguish them
 

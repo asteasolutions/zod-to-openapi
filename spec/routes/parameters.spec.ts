@@ -1,20 +1,14 @@
-import { OperationObject, PathItemObject } from 'openapi3-ts';
-import { z, ZodSchema } from 'zod';
-import { OpenAPIGenerator, RouteConfig } from '../../src';
+import { z } from 'zod';
 import { MissingParameterDataError } from '../../src/errors';
-import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
-
-/**
- * TODO: Tests with new approach
- */
+import { generateDataForRoute, registerParameter } from '../lib/helpers';
 
 describe('parameters', () => {
   it('generates a query parameter for route', () => {
-    const routeParameters = generateParamsForRoute({
+    const { parameters } = generateDataForRoute({
       request: { query: z.object({ test: z.string() }) },
     });
 
-    expect(routeParameters).toEqual([
+    expect(parameters).toEqual([
       {
         in: 'query',
         name: 'test',
@@ -27,11 +21,11 @@ describe('parameters', () => {
   });
 
   it('generates a path parameter for route', () => {
-    const routeParameters = generateParamsForRoute({
+    const { parameters } = generateDataForRoute({
       request: { params: z.object({ test: z.string() }) },
     });
 
-    expect(routeParameters).toEqual([
+    expect(parameters).toEqual([
       {
         in: 'path',
         name: 'test',
@@ -44,13 +38,13 @@ describe('parameters', () => {
   });
 
   it('generates a header parameter with array for route', () => {
-    const routeParameters = generateParamsForRoute({
+    const { parameters } = generateDataForRoute({
       request: {
         headers: z.object({ test: z.string() }),
       },
     });
 
-    expect(routeParameters).toEqual([
+    expect(parameters).toEqual([
       {
         in: 'header',
         name: 'test',
@@ -63,13 +57,13 @@ describe('parameters', () => {
   });
 
   it('generates a header parameter with object for route', () => {
-    const routeParameters = generateParamsForRoute({
+    const { parameters } = generateDataForRoute({
       request: {
         headers: [z.string().openapi({ param: { name: 'test' } })],
       },
     });
 
-    expect(routeParameters).toEqual([
+    expect(parameters).toEqual([
       {
         in: 'header',
         name: 'test',
@@ -82,82 +76,96 @@ describe('parameters', () => {
   });
 
   it('generates a reference header parameter for route', () => {
-    const TestHeader = registerSchema(
+    const TestHeader = registerParameter(
       'TestHeader',
-      z.string(),
-      'registry'
-    ).openapi({
-      param: { name: 'test', in: 'header' },
-    });
+      z.string().openapi({
+        param: { name: 'test', in: 'header' },
+      })
+    );
 
-    const routeParameters = generateParamsForRoute(
-      {
-        request: { headers: [TestHeader] },
-      },
+    const { parameters, documentParameters } = generateDataForRoute(
+      { request: { headers: [TestHeader.schema] } },
       [TestHeader]
     );
 
-    expect(routeParameters).toEqual([
-      {
-        $ref: '#/components/parameters/TestHeader',
+    expect(documentParameters).toEqual({
+      TestHeader: {
+        in: 'header',
+        name: 'test',
+        required: true,
+        schema: {
+          $ref: '#/components/schemas/TestHeader',
+        },
       },
+    });
+
+    expect(parameters).toEqual([
+      { $ref: '#/components/parameters/TestHeader' },
     ]);
   });
 
   it('generates a reference query parameter for route', () => {
-    const TestQuery = registerSchema(
+    const TestQuery = registerParameter(
       'TestQuery',
-      z.string(),
-      'registry'
-    ).openapi({
-      param: { name: 'test', in: 'query' },
-    });
+      z.string().openapi({
+        param: { name: 'test', in: 'query' },
+      })
+    );
 
-    const routeParameters = generateParamsForRoute(
-      {
-        request: { query: z.object({ test: TestQuery }) },
-      },
+    const { parameters, documentParameters } = generateDataForRoute(
+      { request: { query: z.object({ test: TestQuery.schema }) } },
       [TestQuery]
     );
 
-    expect(routeParameters).toEqual([
-      {
-        $ref: '#/components/parameters/TestQuery',
+    expect(documentParameters).toEqual({
+      TestQuery: {
+        in: 'query',
+        name: 'test',
+        required: true,
+        schema: {
+          $ref: '#/components/schemas/TestQuery',
+        },
       },
-    ]);
+    });
+
+    expect(parameters).toEqual([{ $ref: '#/components/parameters/TestQuery' }]);
   });
 
   it('generates a reference path parameter for route', () => {
-    const TestParam = registerSchema(
+    const TestParam = registerParameter(
       'TestParam',
-      z.string(),
-      'registry'
-    ).openapi({
-      param: { name: 'test', in: 'path' },
-    });
+      z.string().openapi({
+        param: { name: 'test', in: 'path' },
+      })
+    );
 
-    const routeParameters = generateParamsForRoute(
-      {
-        request: { params: z.object({ test: TestParam }) },
-      },
+    const { parameters, documentParameters } = generateDataForRoute(
+      { request: { params: z.object({ test: TestParam.schema }) } },
       [TestParam]
     );
 
-    expect(routeParameters).toEqual([
-      {
-        $ref: '#/components/parameters/TestParam',
+    expect(documentParameters).toEqual({
+      TestParam: {
+        in: 'path',
+        name: 'test',
+        required: true,
+        schema: {
+          $ref: '#/components/schemas/TestParam',
+        },
       },
-    ]);
+    });
+
+    expect(parameters).toEqual([{ $ref: '#/components/parameters/TestParam' }]);
   });
 
   it('generates required based on inner schema', () => {
-    const routeParameters = generateParamsForRoute({
+    const { parameters } = generateDataForRoute({
       request: {
         query: z.object({ test: z.string().optional().default('test') }),
       },
     });
 
-    expect(routeParameters).toEqual([
+    expect(parameters).toEqual([
       {
         in: 'query',
         name: 'test',
@@ -171,7 +179,7 @@ describe('parameters', () => {
   });
 
   it('supports strict zod objects', () => {
-    const routeParameters = generateParamsForRoute({
+    const { parameters } = generateDataForRoute({
       request: {
         query: z.strictObject({
           test: z.string().optional().default('test'),
@@ -179,7 +187,7 @@ describe('parameters', () => {
       },
     });
 
-    expect(routeParameters).toEqual([
+    expect(parameters).toEqual([
       {
         in: 'query',
         name: 'test',
@@ -195,7 +203,7 @@ describe('parameters', () => {
   describe('errors', () => {
     it('throws an error in case of names mismatch', () => {
       expect(() =>
-        generateParamsForRoute({
+        generateDataForRoute({
           request: {
             query: z.object({
               test: z.string().openapi({ param: { name: 'another' } }),
@@ -207,7 +215,7 @@ describe('parameters', () => {
 
     it('throws an error in case of location mismatch', () => {
       expect(() =>
-        generateParamsForRoute({
+        generateDataForRoute({
           request: {
             query: z.object({
               test: z.string().openapi({ param: { in: 'header' } }),
@@ -218,18 +226,17 @@ describe('parameters', () => {
     });
 
     it('throws an error in case of location mismatch with reference', () => {
-      const TestHeader = registerSchema(
+      const TestHeader = registerParameter(
         'TestHeader',
-        z.string(),
-        'registry'
-      ).openapi({
-        param: { name: 'test', in: 'header' },
-      });
+        z.string().openapi({
+          param: { name: 'test', in: 'header' },
+        })
+      );
 
       expect(() =>
-        generateParamsForRoute(
+        generateDataForRoute(
           {
-            request: { query: z.object({ test: TestHeader }) },
+            request: { query: z.object({ test: TestHeader.schema }) },
           },
           [TestHeader]
         )
@@ -237,18 +244,17 @@ describe('parameters', () => {
     });
 
     it('throws an error in case of name mismatch with reference', () => {
-      const TestQuery = registerSchema(
+      const TestQuery = registerParameter(
         'TestQuery',
-        z.string(),
-        'registry'
-      ).openapi({
-        param: { name: 'test', in: 'query' },
-      });
+        z.string().openapi({
+          param: { name: 'test', in: 'query' },
+        })
+      );
 
       expect(() =>
-        generateParamsForRoute(
+        generateDataForRoute(
           {
-            request: { query: z.object({ randomName: TestQuery }) },
+            request: { query: z.object({ randomName: TestQuery.schema }) },
           },
           [TestQuery]
         )
@@ -257,7 +263,7 @@ describe('parameters', () => {
 
     it('throws an error in case of missing name', () => {
       try {
-        generateParamsForRoute({
+        generateDataForRoute({
           method: 'get',
           path: '/path',
           request: { headers: [z.string()] },
@@ -272,46 +278,16 @@ describe('parameters', () => {
     });
 
     it('throws an error in case of missing location when registering a parameter', () => {
-      const TestQuery = registerSchema(
+      const TestQuery = registerParameter(
         'TestQuery',
-        z.string(),
-        'registry'
-      ).openapi({
-        param: { name: 'test' },
-      });
+        z.string().openapi({
+          param: { name: 'test' },
+        })
+      );
 
-      expect(() => generateParamsForRoute({}, [TestQuery])).toThrowError(
+      expect(() => generateDataForRoute({}, [TestQuery])).toThrowError(
         /^Missing parameter data, please specify `in`/
       );
     });
   });
-
-  function generateParamsForRoute(
-    props: Partial<RouteConfig> = {},
-    paramsToRegister?: ZodSchema<any>[]
-  ): OperationObject['parameters'] {
-    const route = createTestRoute(props);
-
-    const paramDefinitions =
-      paramsToRegister?.map(schema => ({
-        type: 'parameter' as const,
-        schema,
-      })) ?? [];
-
-    const routeDefinition = {
-      type: 'route' as const,
-      route,
-    };
-
-    const { paths } = new OpenAPIGenerator(
-      [...paramDefinitions, routeDefinition],
-      '3.0.0'
-    ).generateDocument(testDocConfig);
-
-    const routes = paths[route.path] as PathItemObject;
-
-    const routeDoc = routes[route.method];
-
-    return routeDoc?.parameters;
-  }
 });
