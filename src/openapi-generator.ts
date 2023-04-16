@@ -188,12 +188,12 @@ export class OpenAPIGenerator {
   private generateParameterDefinition(
     zodSchema: ZodSchema<any>
   ): ParameterObject | ReferenceObject {
-    const metadata = this.getInternalMetadata(zodSchema);
+    const refId = this.getRefId(zodSchema);
 
     const result = this.generateParameter(zodSchema);
 
-    if (metadata?.refId) {
-      this.paramRefs[metadata.refId] = result;
+    if (refId) {
+      this.paramRefs[refId] = result;
     }
 
     return result;
@@ -367,7 +367,7 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<T>
   ): SchemaObject | ReferenceObject {
     const innerSchema = this.unwrapChained(zodSchema);
-    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
+    const metadata = this.getMetadata(zodSchema);
     const defaultValue = this.getDefaultValue(zodSchema);
 
     const refId = metadata?._internal?.refId;
@@ -427,21 +427,6 @@ export class OpenAPIGenerator {
       : omitBy(result, isNil);
   }
 
-  private generateInnerSchema(
-    zodSchema: ZodSchema<any>,
-    metadata?: ZodOpenAPIMetadata
-  ): SchemaObject | ReferenceObject {
-    const simpleSchema = this.generateSimpleSchema(zodSchema);
-
-    if ('$ref' in simpleSchema && simpleSchema.$ref) {
-      return simpleSchema;
-    }
-
-    return metadata
-      ? this.applySchemaMetadata(simpleSchema, metadata)
-      : simpleSchema;
-  }
-
   private generateInnerSchemaWithReference(zodSchema: ZodSchema<any>) {
     const refId = this.getMetadata(zodSchema)?._internal?.refId;
 
@@ -461,7 +446,7 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<any>
   ): SchemaObject | ReferenceObject {
     const metadata = this.getMetadata(zodSchema);
-    const refId = metadata?._internal?.refId;
+    const refId = this.getRefId(zodSchema);
 
     const simpleSchema = this.generateSimpleSchema(zodSchema);
 
@@ -651,15 +636,13 @@ export class OpenAPIGenerator {
     discriminator: string
   ): DiscriminatorObject | undefined {
     // All schemas must be registered to use a discriminator
-    if (
-      zodObjects.some(obj => obj._def.openapi?._internal?.refId === undefined)
-    ) {
+    if (zodObjects.some(obj => this.getRefId(obj) === undefined)) {
       return undefined;
     }
 
     const mapping: Record<string, string> = {};
     zodObjects.forEach(obj => {
-      const refId = obj._def.openapi?._internal?.refId as string; // type-checked earlier
+      const refId = this.getRefId(obj) as string; // type-checked earlier
       const value = obj.shape?.[discriminator];
 
       if (isZodType(value, 'ZodEnum')) {
@@ -764,7 +747,7 @@ export class OpenAPIGenerator {
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
     const isNullableSchema = zodSchema.isNullable();
-    const metadata = zodSchema._def.openapi ?? innerSchema._def.openapi;
+    const metadata = this.getMetadata(zodSchema);
 
     if (metadata?.metadata?.type) {
       return this.mapNullableType(metadata.metadata.type, isNullableSchema);
@@ -830,7 +813,7 @@ export class OpenAPIGenerator {
         zodSchema._def.effect.type === 'preprocess')
     ) {
       const innerSchema = zodSchema._def.schema as ZodSchema<any>;
-      return this.generateInnerSchema(innerSchema);
+      return this.generateSimpleSchema(innerSchema);
     }
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
@@ -1008,7 +991,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    const refId = this.getMetadata(zodSchema)?._internal?.refId;
+    const refId = this.getRefId(zodSchema);
 
     throw new UnknownZodTypeError({
       currentSchema: zodSchema._def,
@@ -1060,7 +1043,7 @@ export class OpenAPIGenerator {
     isNullable: boolean,
     defaultValue?: ZodRawShape
   ): SchemaObject {
-    const extendedFrom = zodSchema._def.openapi?._internal?.extendedFrom;
+    const extendedFrom = this.getInternalMetadata(zodSchema)?.extendedFrom;
 
     const parent = extendedFrom?.schema;
 
@@ -1081,7 +1064,7 @@ export class OpenAPIGenerator {
     const propsOfParent = parentShape
       ? // TODO: Would I need the same here? Probably. What would happen - add
         // Temporary answer. Right now this works only because we are generating the whole schema of the parent above.
-        mapValues(parentShape, _ => this.generateInnerSchema(_))
+        mapValues(parentShape, _ => this.generateSimpleSchema(_))
       : {};
 
     const propsOfChild = mapValues(childShape, _ =>
@@ -1188,6 +1171,7 @@ export class OpenAPIGenerator {
     zodSchema: ZodSchema<T>
   ): ZodOpenApiFullMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
+
     const metadata = zodSchema._def.openapi
       ? zodSchema._def.openapi
       : innerSchema._def.openapi;
@@ -1218,6 +1202,10 @@ export class OpenAPIGenerator {
       : innerSchema._def.openapi;
 
     return openapi?._internal;
+  }
+
+  private getRefId<T extends any>(zodSchema: ZodSchema<T>) {
+    return this.getInternalMetadata(zodSchema)?.refId;
   }
 
   private applySchemaMetadata(
