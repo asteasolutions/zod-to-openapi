@@ -158,7 +158,7 @@ export class OpenAPIGenerator {
 
   private generateSingle(definition: OpenAPIDefinitions | ZodSchema): void {
     if (!('type' in definition)) {
-      this.generateSchemaDefinition(definition);
+      this.generateSchema(definition);
       return;
     }
 
@@ -168,7 +168,7 @@ export class OpenAPIGenerator {
         return;
 
       case 'schema':
-        this.generateSchemaDefinition(definition.schema);
+        this.generateSchema(definition.schema);
         return;
 
       case 'route':
@@ -349,7 +349,7 @@ export class OpenAPIGenerator {
     const required =
       !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
 
-    const schema = this.generateInnerSchemaWithReference(zodSchema);
+    const schema = this.generateSchemaWithRef(zodSchema);
 
     return {
       in: paramLocation,
@@ -360,66 +360,13 @@ export class OpenAPIGenerator {
     };
   }
 
-  /**
-   * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
-   */
-  private generateSimpleSchema<T>(
-    zodSchema: ZodSchema<T>
-  ): SchemaObject | ReferenceObject {
+  private generateSchemaWithMetadata<T>(zodSchema: ZodSchema<T>) {
     const innerSchema = this.unwrapChained(zodSchema);
     const metadata = this.getMetadata(zodSchema);
     const defaultValue = this.getDefaultValue(zodSchema);
 
-    const refId = metadata?._internal?.refId;
-
-    if (refId && this.schemaRefs[refId]) {
-      const schemaRef = this.schemaRefs[refId] as SchemaObject;
-      const referenceObject: ReferenceObject = {
-        $ref: this.generateSchemaRef(refId),
-      };
-
-      // New metadata from .openapi()
-      const newMetadata = omitBy(
-        // We do not want to check our "custom" metadata fields. We only want
-        // the plain metadata for a SchemaObject.
-        this.buildSchemaMetadata(metadata?.metadata ?? {}),
-        (value, key) =>
-          value === undefined || objectEquals(value, schemaRef[key])
-      );
-
-      // New metadata from ZodSchema properties.
-      // Do not calculate schema metadata overrides if type is provided in .openapi
-      // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
-      const newSchemaMetadata = !newMetadata.type
-        ? omitBy(
-            this.constructReferencedOpenAPISchema(
-              zodSchema,
-              innerSchema,
-              defaultValue
-            ),
-            (value, key) =>
-              value === undefined || objectEquals(value, schemaRef[key])
-          )
-        : {};
-
-      const appliedMetadata = this.applySchemaMetadata(
-        newSchemaMetadata,
-        newMetadata
-      );
-
-      if (Object.keys(appliedMetadata).length > 0) {
-        return {
-          allOf: [referenceObject, appliedMetadata],
-        };
-      }
-
-      return referenceObject;
-    }
-
     const result = metadata?.metadata?.type
-      ? {
-          type: metadata?.metadata.type,
-        }
+      ? { type: metadata?.metadata.type }
       : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
 
     return metadata?.metadata
@@ -427,35 +374,91 @@ export class OpenAPIGenerator {
       : omitBy(result, isNil);
   }
 
-  private generateInnerSchemaWithReference(zodSchema: ZodSchema<any>) {
-    const refId = this.getMetadata(zodSchema)?._internal?.refId;
+  /**
+   * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
+   */
+  private generateSimpleSchema<T>(
+    zodSchema: ZodSchema<T>
+  ): SchemaObject | ReferenceObject {
+    const metadata = this.getMetadata(zodSchema);
+
+    const refId = this.getRefId(zodSchema);
+
+    if (!refId || !this.schemaRefs[refId]) {
+      return this.generateSchemaWithMetadata(zodSchema);
+    }
+
+    const schemaRef = this.schemaRefs[refId] as SchemaObject;
+    const referenceObject: ReferenceObject = {
+      $ref: this.generateSchemaRef(refId),
+    };
+
+    // Metadata provided from .openapi() that is new to what we had already registered
+    const newMetadata = omitBy(
+      this.buildSchemaMetadata(metadata?.metadata ?? {}),
+      (value, key) => value === undefined || objectEquals(value, schemaRef[key])
+    );
+
+    // Do not calculate schema metadata overrides if type is provided in .openapi
+    // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
+    if (newMetadata.type) {
+      return {
+        allOf: [referenceObject, newMetadata],
+      };
+    }
+
+    // New metadata from ZodSchema properties.
+    const newSchemaMetadata = omitBy(
+      this.constructReferencedOpenAPISchema(zodSchema),
+      (value, key) => value === undefined || objectEquals(value, schemaRef[key])
+    );
+
+    const appliedMetadata = this.applySchemaMetadata(
+      newSchemaMetadata,
+      newMetadata
+    );
+
+    if (Object.keys(appliedMetadata).length > 0) {
+      return {
+        allOf: [referenceObject, appliedMetadata],
+      };
+    }
+
+    return referenceObject;
+  }
+
+  /**
+   * Generates a whole OpenApi schema and saves it into
+   * schemaRefs if a `refId` is provided.
+   */
+  private generateSchema(zodSchema: ZodSchema<any>) {
+    const refId = this.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
 
     if (refId && this.schemaRefs[refId] === undefined) {
       this.schemaRefs[refId] = result;
-      return {
-        $ref: this.generateSchemaRef(refId),
-      };
     }
 
     return result;
   }
 
-  private generateSchemaDefinition(
-    zodSchema: ZodSchema<any>
-  ): SchemaObject | ReferenceObject {
-    const metadata = this.getMetadata(zodSchema);
+  /**
+   * Same as `generateSchema` but if the new schema is added into the
+   * referenced schemas, it would return a ReferenceObject and not the
+   * whole result.
+   *
+   * Should be used for nested objects, arrays, etc.
+   */
+  private generateSchemaWithRef(zodSchema: ZodSchema<any>) {
     const refId = this.getRefId(zodSchema);
 
-    const simpleSchema = this.generateSimpleSchema(zodSchema);
+    const result = this.generateSimpleSchema(zodSchema);
 
-    const result = metadata?.metadata
-      ? this.applySchemaMetadata(simpleSchema, metadata.metadata)
-      : simpleSchema;
-
-    if (refId) {
+    if (refId && this.schemaRefs[refId] === undefined) {
       this.schemaRefs[refId] = result;
+
+      return { $ref: this.generateSchemaRef(refId) };
     }
 
     return result;
@@ -585,7 +588,7 @@ export class OpenAPIGenerator {
 
       const { schema: configSchema, ...rest } = config;
 
-      const schema = this.generateInnerSchemaWithReference(configSchema);
+      const schema = this.generateSchemaWithRef(configSchema);
 
       return { schema, ...rest };
     });
@@ -742,12 +745,15 @@ export class OpenAPIGenerator {
   }
 
   private constructReferencedOpenAPISchema<T>(
-    zodSchema: ZodSchema<T>,
-    innerSchema: ZodSchema<T>,
-    defaultValue?: T
+    zodSchema: ZodSchema<T>
   ): SchemaObject | ReferenceObject {
-    const isNullableSchema = zodSchema.isNullable();
     const metadata = this.getMetadata(zodSchema);
+    const innerSchema = this.unwrapChained(zodSchema);
+
+    const defaultValue = this.getDefaultValue(zodSchema);
+    const isNullableSchema = zodSchema.isNullable();
+
+    console.log({ metadata });
 
     if (metadata?.metadata?.type) {
       return this.mapNullableType(metadata.metadata.type, isNullableSchema);
@@ -876,7 +882,7 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType('array', isNullable),
-        items: this.generateInnerSchemaWithReference(itemType),
+        items: this.generateSchemaWithRef(itemType),
 
         minItems: zodSchema._def.minLength?.value,
         maxItems: zodSchema._def.maxLength?.value,
@@ -889,9 +895,7 @@ export class OpenAPIGenerator {
 
       const tupleLength = items.length;
 
-      const schemas = items.map(schema =>
-        this.generateInnerSchemaWithReference(schema)
-      );
+      const schemas = items.map(schema => this.generateSchemaWithRef(schema));
 
       const uniqueSchemas = uniq(schemas);
 
@@ -919,7 +923,7 @@ export class OpenAPIGenerator {
 
       return {
         anyOf: this.mapNullableOfArray(
-          options.map(schema => this.generateInnerSchemaWithReference(schema)),
+          options.map(schema => this.generateSchemaWithRef(schema)),
           isNullable
         ),
         default: defaultValue,
@@ -930,7 +934,7 @@ export class OpenAPIGenerator {
       const options = [...zodSchema.options.values()];
 
       const optionSchema = options.map(schema =>
-        this.generateInnerSchemaWithReference(schema)
+        this.generateSchemaWithRef(schema)
       );
 
       if (isNullable) {
@@ -951,9 +955,7 @@ export class OpenAPIGenerator {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
       const allOfSchema: SchemaObject = {
-        allOf: subtypes.map(schema =>
-          this.generateInnerSchemaWithReference(schema)
-        ),
+        allOf: subtypes.map(schema => this.generateSchemaWithRef(schema)),
       };
 
       if (isNullable) {
@@ -974,8 +976,7 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType('object', isNullable),
-        additionalProperties:
-          this.generateInnerSchemaWithReference(propertiesType),
+        additionalProperties: this.generateSchemaWithRef(propertiesType),
         default: defaultValue,
       };
     }
@@ -1048,7 +1049,7 @@ export class OpenAPIGenerator {
     const parent = extendedFrom?.schema;
 
     if (parent) {
-      this.generateInnerSchemaWithReference(parent);
+      this.generateSchemaWithRef(parent);
     }
 
     const parentShape = parent?._def.shape();
@@ -1064,11 +1065,11 @@ export class OpenAPIGenerator {
     const propsOfParent = parentShape
       ? // TODO: Would I need the same here? Probably. What would happen - add
         // Temporary answer. Right now this works only because we are generating the whole schema of the parent above.
-        mapValues(parentShape, _ => this.generateSimpleSchema(_))
+        mapValues(parentShape, _ => this.generateSchemaWithRef(_))
       : {};
 
     const propsOfChild = mapValues(childShape, _ =>
-      this.generateInnerSchemaWithReference(_)
+      this.generateSchemaWithRef(_)
     );
 
     const properties = Object.fromEntries(
