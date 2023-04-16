@@ -442,6 +442,21 @@ export class OpenAPIGenerator {
       : simpleSchema;
   }
 
+  private generateInnerSchemaWithReference(zodSchema: ZodSchema<any>) {
+    const refId = this.getMetadata(zodSchema)?._internal?.refId;
+
+    const result = this.generateSimpleSchema(zodSchema);
+
+    if (refId && this.schemaRefs[refId] === undefined) {
+      this.schemaRefs[refId] = result;
+      return {
+        $ref: this.generateSchemaRef(refId),
+      };
+    }
+
+    return result;
+  }
+
   private generateSchemaDefinition(
     zodSchema: ZodSchema<any>
   ): SchemaObject | ReferenceObject {
@@ -878,7 +893,7 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType('array', isNullable),
-        items: this.generateInnerSchema(itemType),
+        items: this.generateInnerSchemaWithReference(itemType),
 
         minItems: zodSchema._def.minLength?.value,
         maxItems: zodSchema._def.maxLength?.value,
@@ -891,7 +906,9 @@ export class OpenAPIGenerator {
 
       const tupleLength = items.length;
 
-      const schemas = items.map(schema => this.generateInnerSchema(schema));
+      const schemas = items.map(schema =>
+        this.generateInnerSchemaWithReference(schema)
+      );
 
       const uniqueSchemas = uniq(schemas);
 
@@ -919,7 +936,7 @@ export class OpenAPIGenerator {
 
       return {
         anyOf: this.mapNullableOfArray(
-          options.map(schema => this.generateInnerSchema(schema)),
+          options.map(schema => this.generateInnerSchemaWithReference(schema)),
           isNullable
         ),
         default: defaultValue,
@@ -930,7 +947,7 @@ export class OpenAPIGenerator {
       const options = [...zodSchema.options.values()];
 
       const optionSchema = options.map(schema =>
-        this.generateInnerSchema(schema)
+        this.generateInnerSchemaWithReference(schema)
       );
 
       if (isNullable) {
@@ -951,7 +968,9 @@ export class OpenAPIGenerator {
       const subtypes = this.flattenIntersectionTypes(zodSchema);
 
       const allOfSchema: SchemaObject = {
-        allOf: subtypes.map(schema => this.generateInnerSchema(schema)),
+        allOf: subtypes.map(schema =>
+          this.generateInnerSchemaWithReference(schema)
+        ),
       };
 
       if (isNullable) {
@@ -972,7 +991,8 @@ export class OpenAPIGenerator {
 
       return {
         ...this.mapNullableType('object', isNullable),
-        additionalProperties: this.generateInnerSchema(propertiesType),
+        additionalProperties:
+          this.generateInnerSchemaWithReference(propertiesType),
         default: defaultValue,
       };
     }
@@ -1042,7 +1062,14 @@ export class OpenAPIGenerator {
   ): SchemaObject {
     const extendedFrom = zodSchema._def.openapi?._internal?.extendedFrom;
 
-    const parentShape = extendedFrom?.schema._def.shape();
+    const parent = extendedFrom?.schema;
+
+    if (parent) {
+      this.generateInnerSchemaWithReference(parent);
+    }
+
+    const parentShape = parent?._def.shape();
+
     const childShape = zodSchema._def.shape();
 
     const keysRequiredByParent = extendedFrom
@@ -1052,10 +1079,13 @@ export class OpenAPIGenerator {
     const keysRequiredByChild = this.requiredKeysOf(zodSchema);
 
     const propsOfParent = parentShape
-      ? mapValues(parentShape, _ => this.generateInnerSchema(_))
+      ? // TODO: Would I need the same here? Probably. What would happen - add
+        // Temporary answer. Right now this works only because we are generating the whole schema of the parent above.
+        mapValues(parentShape, _ => this.generateInnerSchema(_))
       : {};
+
     const propsOfChild = mapValues(childShape, _ =>
-      this.generateInnerSchema(_)
+      this.generateInnerSchemaWithReference(_)
     );
 
     const properties = Object.fromEntries(
