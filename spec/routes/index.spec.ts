@@ -1,8 +1,11 @@
-import { z, ZodSchema } from 'zod';
-import { OperationObject, PathItemObject } from 'openapi3-ts';
+import { z } from 'zod';
 import { OpenAPIGenerator } from '../../src/openapi-generator';
-import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
-import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
+import { OpenAPIRegistry } from '../../src/openapi-registry';
+import { createTestRoute, testDocConfig } from '../lib/helpers';
+
+/**
+ * TODO: Tests with new approach
+ */
 
 const routeTests = ({
   registerFunction,

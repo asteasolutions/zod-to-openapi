@@ -34,13 +34,22 @@ export function expectSchema(
   expect(components?.['schemas']).toEqual(openAPISchemas);
 }
 
+export const registrationTypes = ['registry', 'openapi'] as const;
+
+type RegistrationType = typeof registrationTypes[number];
+
 export function registerSchema<T extends ZodSchema<any>>(
   refId: string,
-  zodSchema: T
+  zodSchema: T,
+  registrationType: RegistrationType
 ): T {
-  const registry = new OpenAPIRegistry();
+  if (registrationType === 'registry') {
+    const registry = new OpenAPIRegistry();
 
-  return registry.register(refId, zodSchema);
+    return registry.register(refId, zodSchema);
+  }
+
+  return zodSchema.refId(refId);
 }
 
 export function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {

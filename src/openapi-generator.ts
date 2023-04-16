@@ -79,7 +79,7 @@ export class OpenAPIGenerator {
   }[] = [];
 
   constructor(
-    private definitions: OpenAPIDefinitions[],
+    private definitions: (OpenAPIDefinitions | ZodSchema)[],
     private openAPIVersion: OpenApiVersion
   ) {
     this.sortDefinitions();
@@ -140,6 +140,15 @@ export class OpenAPIGenerator {
     ];
 
     this.definitions.sort((left, right) => {
+      // TODO: Revisit
+      if (!('type' in left)) {
+        return 0;
+      }
+
+      if (!('type' in right)) {
+        return 0;
+      }
+
       const leftIndex = generationOrder.findIndex(type => type === left.type);
       const rightIndex = generationOrder.findIndex(type => type === right.type);
 
@@ -147,7 +156,12 @@ export class OpenAPIGenerator {
     });
   }
 
-  private generateSingle(definition: OpenAPIDefinitions): void {
+  private generateSingle(definition: OpenAPIDefinitions | ZodSchema): void {
+    if (!('type' in definition)) {
+      this.generateSchemaDefinition(definition);
+      return;
+    }
+
     switch (definition.type) {
       case 'parameter':
         this.generateParameterDefinition(definition.schema);

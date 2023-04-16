@@ -33,6 +33,8 @@ declare module 'zod' {
       metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
     ): T;
 
+    refId<T extends ZodSchema<any>>(this: T, refId: string): T;
+
     /**
      * This method should NOT be used outside of @astesolution/zod-to-openapi code!
      * Any usage of it can lead to unexpected consequences when generating the
@@ -117,6 +119,10 @@ export function extendZodWithOpenApi(zod: typeof z) {
     }
 
     return result;
+  };
+
+  zod.ZodSchema.prototype.refId = function (refId) {
+    return this.internal_openapi({ refId });
   };
 
   const zodOptional = zod.ZodSchema.prototype.optional as any;

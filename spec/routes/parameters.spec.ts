@@ -4,6 +4,10 @@ import { OpenAPIGenerator, RouteConfig } from '../../src';
 import { MissingParameterDataError } from '../../src/errors';
 import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
 
+/**
+ * TODO: Tests with new approach
+ */
+
 describe('parameters', () => {
   it('generates a query parameter for route', () => {
     const routeParameters = generateParamsForRoute({
@@ -78,7 +82,11 @@ describe('parameters', () => {
   });
 
   it('generates a reference header parameter for route', () => {
-    const TestHeader = registerSchema('TestHeader', z.string()).openapi({
+    const TestHeader = registerSchema(
+      'TestHeader',
+      z.string(),
+      'registry'
+    ).openapi({
       param: { name: 'test', in: 'header' },
     });
 
@@ -97,7 +105,11 @@ describe('parameters', () => {
   });
 
   it('generates a reference query parameter for route', () => {
-    const TestQuery = registerSchema('TestQuery', z.string()).openapi({
+    const TestQuery = registerSchema(
+      'TestQuery',
+      z.string(),
+      'registry'
+    ).openapi({
       param: { name: 'test', in: 'query' },
     });
 
@@ -116,7 +128,11 @@ describe('parameters', () => {
   });
 
   it('generates a reference path parameter for route', () => {
-    const TestParam = registerSchema('TestParam', z.string()).openapi({
+    const TestParam = registerSchema(
+      'TestParam',
+      z.string(),
+      'registry'
+    ).openapi({
       param: { name: 'test', in: 'path' },
     });
 
@@ -202,7 +218,11 @@ describe('parameters', () => {
     });
 
     it('throws an error in case of location mismatch with reference', () => {
-      const TestHeader = registerSchema('TestHeader', z.string()).openapi({
+      const TestHeader = registerSchema(
+        'TestHeader',
+        z.string(),
+        'registry'
+      ).openapi({
         param: { name: 'test', in: 'header' },
       });
 
@@ -217,7 +237,11 @@ describe('parameters', () => {
     });
 
     it('throws an error in case of name mismatch with reference', () => {
-      const TestQuery = registerSchema('TestQuery', z.string()).openapi({
+      const TestQuery = registerSchema(
+        'TestQuery',
+        z.string(),
+        'registry'
+      ).openapi({
         param: { name: 'test', in: 'query' },
       });
 
@@ -248,7 +272,11 @@ describe('parameters', () => {
     });
 
     it('throws an error in case of missing location when registering a parameter', () => {
-      const TestQuery = registerSchema('TestQuery', z.string()).openapi({
+      const TestQuery = registerSchema(
+        'TestQuery',
+        z.string(),
+        'registry'
+      ).openapi({
         param: { name: 'test' },
       });
 
