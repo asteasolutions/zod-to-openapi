@@ -1046,48 +1046,50 @@ export class OpenAPIGenerator {
   ): SchemaObject {
     const extendedFrom = this.getInternalMetadata(zodSchema)?.extendedFrom;
 
-    const parent = extendedFrom?.schema;
-
-    if (parent) {
-      this.generateSchemaWithRef(parent);
-    }
-
-    const parentShape = parent?._def.shape();
-
-    const childShape = zodSchema._def.shape();
-
-    const keysRequiredByParent = extendedFrom
-      ? this.requiredKeysOf(extendedFrom.schema)
-      : [];
-
-    const keysRequiredByChild = this.requiredKeysOf(zodSchema);
-
-    const propsOfParent = parentShape
-      ? // TODO: Would I need the same here? Probably. What would happen - add
-        // Temporary answer. Right now this works only because we are generating the whole schema of the parent above.
-        mapValues(parentShape, _ => this.generateSchemaWithRef(_))
-      : {};
-
-    const propsOfChild = mapValues(childShape, _ =>
+    const required = this.requiredKeysOf(zodSchema);
+    const properties = mapValues(zodSchema._def.shape(), _ =>
       this.generateSchemaWithRef(_)
-    );
-
-    const properties = Object.fromEntries(
-      Object.entries(propsOfChild).filter(([key, type]) => {
-        return !objectEquals(propsOfParent[key], type);
-      })
-    );
-
-    const additionallyRequired = keysRequiredByChild.filter(
-      prop => !keysRequiredByParent.includes(prop)
     );
 
     const unknownKeysOption = zodSchema._def.unknownKeys;
 
+    if (!extendedFrom) {
+      return {
+        ...this.mapNullableType('object', isNullable),
+        default: defaultValue,
+        properties,
+
+        ...(required.length > 0 ? { required } : {}),
+
+        ...(unknownKeysOption === 'strict'
+          ? { additionalProperties: false }
+          : {}),
+      };
+    }
+
+    const parent = extendedFrom.schema;
+    // We want to generate the parent schema so that it can be referenced down the line
+    this.generateSchema(parent);
+
+    const keysRequiredByParent = this.requiredKeysOf(parent);
+    const propsOfParent = mapValues(parent?._def.shape(), _ =>
+      this.generateSchemaWithRef(_)
+    );
+
+    const additionalProperties = Object.fromEntries(
+      Object.entries(properties).filter(([key, type]) => {
+        return !objectEquals(propsOfParent[key], type);
+      })
+    );
+
+    const additionallyRequired = required.filter(
+      prop => !keysRequiredByParent.includes(prop)
+    );
+
     const objectData = {
       ...this.mapNullableType('object', isNullable),
       default: defaultValue,
-      properties,
+      properties: additionalProperties,
 
       ...(additionallyRequired.length > 0
         ? { required: additionallyRequired }
@@ -1098,16 +1100,12 @@ export class OpenAPIGenerator {
         : {}),
     };
 
-    if (extendedFrom) {
-      return {
-        allOf: [
-          { $ref: `#/components/schemas/${extendedFrom.refId}` },
-          objectData,
-        ],
-      };
-    }
-
-    return objectData;
+    return {
+      allOf: [
+        { $ref: `#/components/schemas/${extendedFrom.refId}` },
+        objectData,
+      ],
+    };
   }
 
   private flattenUnionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {

@@ -460,9 +460,7 @@ describe('Automatic registration', () => {
       // Additional note: It is okay for a parameter schema to reference a components/schemas/{Name} => we can just put everything there and
       // registry.registerParameter would then be just an alias that makes the parameters. And that sound okay
 
-      // TODO: Check the only leftover usage of `generateInnerSchema` for ZodEffects
-
-      // TODO: Refactor the code by merging the branch with the removal of generateInnerSchema for generateSimpleSchema - rename stuff
+      // TODO: Check the only leftover usage of `generateSimpleSchema` for ZodEffects
 
       // TODO: Revisit the `.refId` implementation. A new `.openapi` overload can be utilized instead
 
