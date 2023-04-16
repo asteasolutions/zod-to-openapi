@@ -42,9 +42,22 @@ export function expectSchema(
   expect(components?.['schemas']).toEqual(openAPISchemas);
 }
 
-export const registrationTypes = ['registry', 'openapi'] as const;
+const registrationTypes = ['registry', 'openapi'] as const;
 
 type RegistrationType = typeof registrationTypes[number];
+
+export function registrationTypeDescribe(
+  name: string,
+  tests: (registrationType: RegistrationType) => void
+) {
+  describe(name, () => {
+    registrationTypes.forEach(registrationType => {
+      describe(`using ${registrationType} for registration`, () => {
+        tests(registrationType);
+      });
+    });
+  });
+}
 
 export function registerSchema<T extends ZodSchema<any>>(
   refId: string,

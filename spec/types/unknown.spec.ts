@@ -2,10 +2,10 @@ import { z } from 'zod';
 import {
   expectSchema,
   registerSchema,
-  registrationTypes,
+  registrationTypeDescribe,
 } from '../lib/helpers';
 
-registrationTypes.forEach(registrationType => {
+registrationTypeDescribe('unknown', registrationType => {
   it('supports unknown', () => {
     expectSchema(
       [

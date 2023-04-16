@@ -464,8 +464,6 @@ describe('Automatic registration', () => {
 
       // TODO: Refactor the code by merging the branch with the removal of generateInnerSchema for generateSimpleSchema - rename stuff
 
-      // TODO: Make sure that tests that use the two registration methods have proper names that can be used to distinguish them
-
       // TODO: Revisit the `.refId` implementation. A new `.openapi` overload can be utilized instead
 
       // TODO: Update `README.md` and possibly new `.md` files with explanations can be provided

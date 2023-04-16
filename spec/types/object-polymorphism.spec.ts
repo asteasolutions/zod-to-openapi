@@ -2,334 +2,332 @@ import { z } from 'zod';
 import {
   expectSchema,
   registerSchema,
-  registrationTypes,
+  registrationTypeDescribe,
 } from '../lib/helpers';
 
-registrationTypes.forEach(registrationType => {
-  describe('object polymorphism', () => {
-    it('can use allOf for extended schemas', () => {
-      const BaseSchema = registerSchema(
-        'Base',
-        z.object({ id: z.string() }),
-        registrationType
-      );
+registrationTypeDescribe('object polymorphism', registrationType => {
+  it('can use allOf for extended schemas', () => {
+    const BaseSchema = registerSchema(
+      'Base',
+      z.object({ id: z.string() }),
+      registrationType
+    );
 
-      const ExtendedSchema = registerSchema(
-        'Extended',
-        BaseSchema.extend({ bonus: z.number() }),
-        registrationType
-      );
+    const ExtendedSchema = registerSchema(
+      'Extended',
+      BaseSchema.extend({ bonus: z.number() }),
+      registrationType
+    );
 
-      expectSchema([BaseSchema, ExtendedSchema], {
-        Base: {
-          type: 'object',
-          required: ['id'],
-          properties: {
-            id: { type: 'string' },
-          },
+    expectSchema([BaseSchema, ExtendedSchema], {
+      Base: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string' },
         },
-        Extended: {
-          allOf: [
-            { $ref: '#/components/schemas/Base' },
-            {
-              type: 'object',
-              required: ['bonus'],
-              properties: {
-                bonus: { type: 'number' },
+      },
+      Extended: {
+        allOf: [
+          { $ref: '#/components/schemas/Base' },
+          {
+            type: 'object',
+            required: ['bonus'],
+            properties: {
+              bonus: { type: 'number' },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it('can chain-extend objects correctly', () => {
+    const BaseSchema = registerSchema(
+      'Base',
+      z.object({ id: z.string() }),
+      registrationType
+    );
+
+    const A = registerSchema(
+      'A',
+      BaseSchema.extend({
+        bonus: z.number(),
+      }),
+      registrationType
+    );
+
+    const B = registerSchema(
+      'B',
+      A.extend({
+        points: z.number(),
+      }),
+      registrationType
+    );
+
+    expectSchema([BaseSchema, A, B], {
+      Base: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string' },
+        },
+      },
+      A: {
+        allOf: [
+          { $ref: '#/components/schemas/Base' },
+          {
+            type: 'object',
+            required: ['bonus'],
+            properties: {
+              bonus: {
+                type: 'number',
               },
             },
-          ],
+          },
+        ],
+      },
+      B: {
+        allOf: [
+          { $ref: '#/components/schemas/A' },
+          {
+            type: 'object',
+            required: ['points'],
+            properties: {
+              points: {
+                type: 'number',
+              },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it('can chain-extend objects correctly without intermediate link', () => {
+    const BaseSchema = registerSchema(
+      'Base',
+      z.object({ id: z.string() }),
+      registrationType
+    );
+
+    const A = BaseSchema.extend({ bonus: z.number() });
+
+    const B = registerSchema(
+      'B',
+      A.extend({
+        points: z.number(),
+      }),
+      registrationType
+    );
+
+    expectSchema([BaseSchema, B], {
+      Base: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string' },
         },
-      });
+      },
+      B: {
+        allOf: [
+          { $ref: '#/components/schemas/Base' },
+          {
+            type: 'object',
+            required: ['bonus', 'points'],
+            properties: {
+              bonus: { type: 'number' },
+              points: { type: 'number' },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it('can apply nullable', () => {
+    const BaseSchema = registerSchema(
+      'Base',
+      z.object({ id: z.ostring() }),
+      registrationType
+    );
+
+    const ExtendedSchema = registerSchema(
+      'Extended',
+      BaseSchema.extend({
+        bonus: z.onumber(),
+      }).nullable(),
+      registrationType
+    );
+
+    expectSchema([BaseSchema, ExtendedSchema], {
+      Base: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+      },
+      Extended: {
+        allOf: [
+          { $ref: '#/components/schemas/Base' },
+          {
+            type: 'object',
+            properties: {
+              bonus: { type: 'number' },
+            },
+            nullable: true,
+          },
+        ],
+      },
+    });
+  });
+
+  it('can override properties', () => {
+    const AnimalSchema = registerSchema(
+      'Animal',
+      z.object({
+        name: z.ostring(),
+        type: z.enum(['dog', 'cat']).optional(),
+      }),
+      registrationType
+    ).openapi({
+      discriminator: {
+        propertyName: 'type',
+      },
     });
 
-    it('can chain-extend objects correctly', () => {
-      const BaseSchema = registerSchema(
-        'Base',
-        z.object({ id: z.string() }),
-        registrationType
-      );
-
-      const A = registerSchema(
-        'A',
-        BaseSchema.extend({
-          bonus: z.number(),
-        }),
-        registrationType
-      );
-
-      const B = registerSchema(
-        'B',
-        A.extend({
-          points: z.number(),
-        }),
-        registrationType
-      );
-
-      expectSchema([BaseSchema, A, B], {
-        Base: {
-          type: 'object',
-          required: ['id'],
-          properties: {
-            id: { type: 'string' },
-          },
-        },
-        A: {
-          allOf: [
-            { $ref: '#/components/schemas/Base' },
-            {
-              type: 'object',
-              required: ['bonus'],
-              properties: {
-                bonus: {
-                  type: 'number',
-                },
-              },
-            },
-          ],
-        },
-        B: {
-          allOf: [
-            { $ref: '#/components/schemas/A' },
-            {
-              type: 'object',
-              required: ['points'],
-              properties: {
-                points: {
-                  type: 'number',
-                },
-              },
-            },
-          ],
-        },
-      });
-    });
-
-    it('can chain-extend objects correctly without intermediate link', () => {
-      const BaseSchema = registerSchema(
-        'Base',
-        z.object({ id: z.string() }),
-        registrationType
-      );
-
-      const A = BaseSchema.extend({ bonus: z.number() });
-
-      const B = registerSchema(
-        'B',
-        A.extend({
-          points: z.number(),
-        }),
-        registrationType
-      );
-
-      expectSchema([BaseSchema, B], {
-        Base: {
-          type: 'object',
-          required: ['id'],
-          properties: {
-            id: { type: 'string' },
-          },
-        },
-        B: {
-          allOf: [
-            { $ref: '#/components/schemas/Base' },
-            {
-              type: 'object',
-              required: ['bonus', 'points'],
-              properties: {
-                bonus: { type: 'number' },
-                points: { type: 'number' },
-              },
-            },
-          ],
-        },
-      });
-    });
-
-    it('can apply nullable', () => {
-      const BaseSchema = registerSchema(
-        'Base',
-        z.object({ id: z.ostring() }),
-        registrationType
-      );
-
-      const ExtendedSchema = registerSchema(
-        'Extended',
-        BaseSchema.extend({
-          bonus: z.onumber(),
-        }).nullable(),
-        registrationType
-      );
-
-      expectSchema([BaseSchema, ExtendedSchema], {
-        Base: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-        },
-        Extended: {
-          allOf: [
-            { $ref: '#/components/schemas/Base' },
-            {
-              type: 'object',
-              properties: {
-                bonus: { type: 'number' },
-              },
-              nullable: true,
-            },
-          ],
-        },
-      });
-    });
-
-    it('can override properties', () => {
-      const AnimalSchema = registerSchema(
-        'Animal',
-        z.object({
-          name: z.ostring(),
-          type: z.enum(['dog', 'cat']).optional(),
-        }),
-        registrationType
-      ).openapi({
+    const DogSchema = registerSchema(
+      'Dog',
+      AnimalSchema.extend({
+        type: z.string().openapi({ example: 'dog' }),
+      }),
+      registrationType
+    )
+      .openapi({
         discriminator: {
           propertyName: 'type',
         },
-      });
+      })
+      .optional();
 
-      const DogSchema = registerSchema(
-        'Dog',
-        AnimalSchema.extend({
-          type: z.string().openapi({ example: 'dog' }),
-        }),
-        registrationType
-      )
-        .openapi({
-          discriminator: {
-            propertyName: 'type',
-          },
-        })
-        .optional();
-
-      expectSchema([AnimalSchema, DogSchema], {
-        Animal: {
-          discriminator: {
-            propertyName: 'type',
-          },
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            type: { type: 'string', enum: ['dog', 'cat'] },
-          },
+    expectSchema([AnimalSchema, DogSchema], {
+      Animal: {
+        discriminator: {
+          propertyName: 'type',
         },
-        Dog: {
-          discriminator: {
-            propertyName: 'type',
-          },
-          allOf: [
-            { $ref: '#/components/schemas/Animal' },
-            {
-              type: 'object',
-              properties: {
-                type: { type: 'string', example: 'dog' },
-              },
-              required: ['type'],
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          type: { type: 'string', enum: ['dog', 'cat'] },
+        },
+      },
+      Dog: {
+        discriminator: {
+          propertyName: 'type',
+        },
+        allOf: [
+          { $ref: '#/components/schemas/Animal' },
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', example: 'dog' },
             },
-          ],
-        },
-      });
+            required: ['type'],
+          },
+        ],
+      },
     });
+  });
 
-    it('treats objects created by .omit as a new object', () => {
-      const BaseSchema = registerSchema(
-        'Base',
-        z.object({
-          name: z.string(),
-          type: z.enum(['dog', 'cat']).optional(),
-        }),
-        registrationType
-      );
+  it('treats objects created by .omit as a new object', () => {
+    const BaseSchema = registerSchema(
+      'Base',
+      z.object({
+        name: z.string(),
+        type: z.enum(['dog', 'cat']).optional(),
+      }),
+      registrationType
+    );
 
-      const OmittedSchema = BaseSchema.omit({ type: true });
+    const OmittedSchema = BaseSchema.omit({ type: true });
 
-      const OtherSchema = registerSchema(
-        'Other',
-        z.object({ omit: OmittedSchema }),
-        registrationType
-      );
+    const OtherSchema = registerSchema(
+      'Other',
+      z.object({ omit: OmittedSchema }),
+      registrationType
+    );
 
-      expectSchema([BaseSchema, OtherSchema], {
-        Base: {
-          properties: {
-            name: { type: 'string' },
-            type: {
-              enum: ['dog', 'cat'],
-              type: 'string',
-            },
+    expectSchema([BaseSchema, OtherSchema], {
+      Base: {
+        properties: {
+          name: { type: 'string' },
+          type: {
+            enum: ['dog', 'cat'],
+            type: 'string',
           },
-          required: ['name'],
-          type: 'object',
         },
-        Other: {
-          properties: {
-            omit: {
-              properties: {
-                name: { type: 'string' },
-              },
-              required: ['name'],
-              type: 'object',
+        required: ['name'],
+        type: 'object',
+      },
+      Other: {
+        properties: {
+          omit: {
+            properties: {
+              name: { type: 'string' },
             },
+            required: ['name'],
+            type: 'object',
           },
-          required: ['omit'],
-          type: 'object',
         },
-      });
+        required: ['omit'],
+        type: 'object',
+      },
     });
+  });
 
-    it('treats objects created by .pick as a new object', () => {
-      const BaseSchema = registerSchema(
-        'Base',
-        z.object({
-          name: z.string(),
-          type: z.enum(['dog', 'cat']).optional(),
-        }),
-        registrationType
-      );
+  it('treats objects created by .pick as a new object', () => {
+    const BaseSchema = registerSchema(
+      'Base',
+      z.object({
+        name: z.string(),
+        type: z.enum(['dog', 'cat']).optional(),
+      }),
+      registrationType
+    );
 
-      const PickedSchema = BaseSchema.pick({ name: true });
+    const PickedSchema = BaseSchema.pick({ name: true });
 
-      const OtherSchema = registerSchema(
-        'Other',
-        z.object({ pick: PickedSchema }),
-        registrationType
-      );
+    const OtherSchema = registerSchema(
+      'Other',
+      z.object({ pick: PickedSchema }),
+      registrationType
+    );
 
-      expectSchema([BaseSchema, OtherSchema], {
-        Base: {
-          properties: {
-            name: { type: 'string' },
-            type: {
-              enum: ['dog', 'cat'],
-              type: 'string',
-            },
+    expectSchema([BaseSchema, OtherSchema], {
+      Base: {
+        properties: {
+          name: { type: 'string' },
+          type: {
+            enum: ['dog', 'cat'],
+            type: 'string',
           },
-          required: ['name'],
-          type: 'object',
         },
-        Other: {
-          properties: {
-            pick: {
-              properties: {
-                name: { type: 'string' },
-              },
-              required: ['name'],
-              type: 'object',
+        required: ['name'],
+        type: 'object',
+      },
+      Other: {
+        properties: {
+          pick: {
+            properties: {
+              name: { type: 'string' },
             },
+            required: ['name'],
+            type: 'object',
           },
-          required: ['pick'],
-          type: 'object',
         },
-      });
+        required: ['pick'],
+        type: 'object',
+      },
     });
   });
 });
