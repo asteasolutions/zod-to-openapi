@@ -35,7 +35,7 @@ describe('Automatic registration', () => {
     });
   });
 
-  it('can automatically register parent properties', () => {
+  it('can automatically register extended parent properties', () => {
     const schema = z.object({ id: z.number().refId('NumberId') });
 
     const extended = schema
@@ -386,7 +386,146 @@ describe('Automatic registration', () => {
         });
       });
 
-      // TODO: Add tests for parameters (query and params) and headers.
+      it('can automatically register request query parameters', () => {
+        const Person = z
+          .object({
+            name: z.string(),
+          })
+          .refId('Person');
+
+        const route = createTestRoute({
+          request: {
+            query: z.object({
+              person: Person,
+            }),
+          },
+        });
+
+        const registry = new OpenAPIRegistry();
+
+        registry[registerFunction](route);
+
+        const document = new OpenAPIGenerator(
+          registry.definitions,
+          '3.0.0'
+        ).generateDocument(testDocConfig);
+
+        console.log(JSON.stringify(document, null, 4));
+
+        expect(document.components?.schemas).toEqual({
+          Person: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+            },
+            required: ['name'],
+          },
+        });
+
+        // TODO: Can use `generateParamsForRoute`
+        const { parameters } = document[rootDocPath]?.['/'].get;
+
+        expect(parameters).toEqual([
+          {
+            in: 'query',
+            name: 'person',
+            required: true,
+            schema: {
+              $ref: '#/components/schemas/Person',
+            },
+          },
+        ]);
+      });
+
+      it('can automatically register request path parameters', () => {
+        const UserId = z.string().refId('UserId').length(6);
+
+        const route = createTestRoute({
+          request: {
+            params: z.object({
+              id: UserId,
+            }),
+          },
+        });
+
+        const registry = new OpenAPIRegistry();
+
+        registry[registerFunction](route);
+
+        const document = new OpenAPIGenerator(
+          registry.definitions,
+          '3.0.0'
+        ).generateDocument(testDocConfig);
+
+        console.log(JSON.stringify(document, null, 4));
+
+        expect(document.components?.schemas).toEqual({
+          UserId: {
+            type: 'string',
+            minLength: 6,
+            maxLength: 6,
+          },
+        });
+
+        // TODO: Can use `generateParamsForRoute`
+        const { parameters } = document[rootDocPath]?.['/'].get;
+
+        expect(parameters).toEqual([
+          {
+            in: 'path',
+            name: 'id',
+            required: true,
+            schema: {
+              $ref: '#/components/schemas/UserId',
+            },
+          },
+        ]);
+      });
+
+      it('can automatically register headers', () => {
+        const SessionToken = z.string().refId('SessionToken').length(6);
+
+        const route = createTestRoute({
+          request: {
+            headers: z.object({
+              'x-session': SessionToken,
+            }),
+          },
+        });
+
+        const registry = new OpenAPIRegistry();
+
+        registry[registerFunction](route);
+
+        const document = new OpenAPIGenerator(
+          registry.definitions,
+          '3.0.0'
+        ).generateDocument(testDocConfig);
+
+        console.log(JSON.stringify(document, null, 4));
+
+        expect(document.components?.schemas).toEqual({
+          SessionToken: {
+            type: 'string',
+            minLength: 6,
+            maxLength: 6,
+          },
+        });
+
+        // TODO: Can use `generateParamsForRoute`
+        const { parameters } = document[rootDocPath]?.['/'].get;
+
+        expect(parameters).toEqual([
+          {
+            in: 'header',
+            name: 'x-session',
+            required: true,
+            schema: {
+              $ref: '#/components/schemas/SessionToken',
+            },
+          },
+        ]);
+      });
 
       // TODO: Check the only leftover usage of `generateInnerSchema` for ZodEffects
 

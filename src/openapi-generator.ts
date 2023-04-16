@@ -349,7 +349,7 @@ export class OpenAPIGenerator {
     const required =
       !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
 
-    const schema = this.generateSimpleSchema(zodSchema);
+    const schema = this.generateInnerSchemaWithReference(zodSchema);
 
     return {
       in: paramLocation,
