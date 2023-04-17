@@ -819,7 +819,9 @@ export class OpenAPIGenerator {
         zodSchema._def.effect.type === 'preprocess')
     ) {
       const innerSchema = zodSchema._def.schema as ZodSchema<any>;
-      return this.generateSimpleSchema(innerSchema);
+      // Here we want to register any underlying schemas, however we do not want to
+      // reference it, hence why `generateSchema` is used instead of `generateSchemaWithRef`
+      return this.generateSchema(innerSchema);
     }
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
@@ -1142,6 +1144,7 @@ export class OpenAPIGenerator {
       return this.unwrapChained(schema._def.innerType);
     }
 
+    // TODO: preprocess should be passed here as well
     if (
       isZodType(schema, 'ZodEffects') &&
       schema._def.effect.type === 'refinement'

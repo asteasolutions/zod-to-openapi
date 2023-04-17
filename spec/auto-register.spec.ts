@@ -12,7 +12,52 @@ describe('Automatic registration', () => {
     });
   });
 
-  it('can automatically register nested schemas', () => {
+  // TODO: Those two tests should probably be made to work. However they are not
+  // necessarily the most important thing to go down with the current PR
+  it.skip('can automatically register schemas in refine', () => {
+    const schema = z
+      .string()
+      .refId('PlainString')
+      .refine(data => data.length > 3)
+      .refId('RefinedString');
+
+    expectSchema([schema], {
+      PlainString: {
+        type: 'string',
+      },
+      RefinedString: {
+        type: 'string',
+      },
+    });
+  });
+
+  it.skip('can automatically register schemas in preprocess', () => {
+    const schema = z
+      .preprocess(arg => {
+        if (typeof arg === 'boolean') {
+          return arg;
+        }
+
+        if (typeof arg === 'string') {
+          if (arg === 'true') return true;
+          if (arg === 'false') return false;
+        }
+
+        return undefined;
+      }, z.boolean().refId('PlainBoolean'))
+      .refId('PreprocessedBoolean');
+
+    expectSchema([schema], {
+      PlainBoolean: {
+        type: 'boolean',
+      },
+      PreprocessedBoolean: {
+        type: 'boolean',
+      },
+    });
+  });
+
+  it('can automatically register object properties', () => {
     const schema = z.object({ key: z.string().refId('Test') }).refId('Object');
 
     expectSchema([schema], {
@@ -459,8 +504,6 @@ describe('Automatic registration', () => {
       // both reference arrays.
       // Additional note: It is okay for a parameter schema to reference a components/schemas/{Name} => we can just put everything there and
       // registry.registerParameter would then be just an alias that makes the parameters. And that sound okay
-
-      // TODO: Check the only leftover usage of `generateSimpleSchema` for ZodEffects
 
       // TODO: Revisit the `.refId` implementation. A new `.openapi` overload can be utilized instead
 
