@@ -3,7 +3,7 @@ import { expectSchema, generateDataForRoute } from './lib/helpers';
 
 describe('Automatic registration', () => {
   it('can automatically register schemas', () => {
-    const schema = z.string().refId('Test');
+    const schema = z.string().openapi('Test');
 
     expectSchema([schema], {
       Test: {
@@ -17,9 +17,9 @@ describe('Automatic registration', () => {
   it.skip('can automatically register schemas in refine', () => {
     const schema = z
       .string()
-      .refId('PlainString')
+      .openapi('PlainString')
       .refine(data => data.length > 3)
-      .refId('RefinedString');
+      .openapi('RefinedString');
 
     expectSchema([schema], {
       PlainString: {
@@ -44,8 +44,8 @@ describe('Automatic registration', () => {
         }
 
         return undefined;
-      }, z.boolean().refId('PlainBoolean'))
-      .refId('PreprocessedBoolean');
+      }, z.boolean().openapi('PlainBoolean'))
+      .openapi('PreprocessedBoolean');
 
     expectSchema([schema], {
       PlainBoolean: {
@@ -58,7 +58,9 @@ describe('Automatic registration', () => {
   });
 
   it('can automatically register object properties', () => {
-    const schema = z.object({ key: z.string().refId('Test') }).refId('Object');
+    const schema = z
+      .object({ key: z.string().openapi('Test') })
+      .openapi('Object');
 
     expectSchema([schema], {
       Test: {
@@ -78,13 +80,13 @@ describe('Automatic registration', () => {
   });
 
   it('can automatically register extended parent properties', () => {
-    const schema = z.object({ id: z.number().refId('NumberId') });
+    const schema = z.object({ id: z.number().openapi('NumberId') });
 
     const extended = schema
       .extend({
-        name: z.string().refId('Name'),
+        name: z.string().openapi('Name'),
       })
-      .refId('ExtendedObject');
+      .openapi('ExtendedObject');
 
     expectSchema([extended], {
       Name: {
@@ -112,14 +114,14 @@ describe('Automatic registration', () => {
 
   it('can automatically register extended schemas', () => {
     const schema = z
-      .object({ id: z.string().refId('StringId') })
-      .refId('Object');
+      .object({ id: z.string().openapi('StringId') })
+      .openapi('Object');
 
     const extended = schema
       .extend({
-        id: z.number().refId('NumberId'),
+        id: z.number().openapi('NumberId'),
       })
-      .refId('ExtendedObject');
+      .openapi('ExtendedObject');
 
     expectSchema([extended], {
       StringId: {
@@ -155,7 +157,7 @@ describe('Automatic registration', () => {
   });
 
   it('can automatically register array items', () => {
-    const schema = z.array(z.string().refId('StringId')).refId('Array');
+    const schema = z.array(z.string().openapi('StringId')).openapi('Array');
 
     expectSchema([schema], {
       StringId: {
@@ -173,8 +175,8 @@ describe('Automatic registration', () => {
 
   it('can automatically register tuple items', () => {
     const schema = z
-      .tuple([z.string().refId('StringId'), z.number().refId('NumberId')])
-      .refId('Tuple');
+      .tuple([z.string().openapi('StringId'), z.number().openapi('NumberId')])
+      .openapi('Tuple');
 
     expectSchema([schema], {
       StringId: {
@@ -202,8 +204,8 @@ describe('Automatic registration', () => {
 
   it('can automatically register union items', () => {
     const schema = z
-      .union([z.string().refId('StringId'), z.number().refId('NumberId')])
-      .refId('Union');
+      .union([z.string().openapi('StringId'), z.number().openapi('NumberId')])
+      .openapi('Union');
 
     expectSchema([schema], {
       StringId: {
@@ -226,10 +228,10 @@ describe('Automatic registration', () => {
   it('can automatically register discriminated union items', () => {
     const schema = z
       .discriminatedUnion('type', [
-        z.object({ type: z.literal('dog').refId('DogType') }).refId('Dog'),
-        z.object({ type: z.literal('cat').refId('CatType') }),
+        z.object({ type: z.literal('dog').openapi('DogType') }).openapi('Dog'),
+        z.object({ type: z.literal('cat').openapi('CatType') }),
       ])
-      .refId('DiscriminatedUnion');
+      .openapi('DiscriminatedUnion');
 
     expectSchema([schema], {
       DogType: {
@@ -266,7 +268,7 @@ describe('Automatic registration', () => {
   });
 
   it('can automatically register record items', () => {
-    const schema = z.record(z.number().refId('NumberId')).refId('Record');
+    const schema = z.record(z.number().openapi('NumberId')).openapi('Record');
 
     expectSchema([schema], {
       NumberId: {
@@ -287,13 +289,13 @@ describe('Automatic registration', () => {
       .object({
         name: z.string(),
       })
-      .refId('Person');
+      .openapi('Person');
 
     const Employee = z.object({
       role: z.string(),
     });
 
-    const schema = z.intersection(Person, Employee).refId('Intersection');
+    const schema = z.intersection(Person, Employee).openapi('Intersection');
 
     expectSchema([schema], {
       Person: {
@@ -337,7 +339,7 @@ describe('Automatic registration', () => {
           .object({
             name: z.string(),
           })
-          .refId('Person');
+          .openapi('Person');
 
         const { documentSchemas, requestBody } = generateDataForRoute({
           request: {
@@ -369,7 +371,7 @@ describe('Automatic registration', () => {
           .object({
             name: z.string(),
           })
-          .refId('Person');
+          .openapi('Person');
 
         const { documentSchemas, responses } = generateDataForRoute({
           responses: {
@@ -404,7 +406,7 @@ describe('Automatic registration', () => {
       });
 
       it('can automatically register request query parameters', () => {
-        const Person = z.object({ name: z.string() }).refId('Person');
+        const Person = z.object({ name: z.string() }).openapi('Person');
 
         const { documentSchemas, parameters } = generateDataForRoute({
           request: {
@@ -437,7 +439,7 @@ describe('Automatic registration', () => {
       });
 
       it('can automatically register request path parameters', () => {
-        const UserId = z.string().refId('UserId').length(6);
+        const UserId = z.string().openapi('UserId').length(6);
 
         const { documentSchemas, parameters } = generateDataForRoute({
           request: {
@@ -468,7 +470,7 @@ describe('Automatic registration', () => {
       });
 
       it('can automatically register headers', () => {
-        const SessionToken = z.string().refId('SessionToken').length(6);
+        const SessionToken = z.string().openapi('SessionToken').length(6);
 
         const { documentSchemas, parameters } = generateDataForRoute({
           request: {
@@ -497,17 +499,6 @@ describe('Automatic registration', () => {
           },
         ]);
       });
-
-      // TODO: Route parameters should be registered under `parameters` and not `schemas`
-      // TODO: What happens if a schemas is being used once as a parameter and once as a schema. In that sense I think it
-      // might be more reasonable to always default to "schemas". However when we check for data (references) we might need to check
-      // both reference arrays.
-      // Additional note: It is okay for a parameter schema to reference a components/schemas/{Name} => we can just put everything there and
-      // registry.registerParameter would then be just an alias that makes the parameters. And that sound okay
-
-      // TODO: Revisit the `.refId` implementation. A new `.openapi` overload can be utilized instead
-
-      // TODO: Update `README.md` and possibly new `.md` files with explanations can be provided
     }
   );
 });

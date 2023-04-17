@@ -70,7 +70,7 @@ export function registerSchema<T extends ZodSchema<any>>(
     return registry.register(refId, zodSchema);
   }
 
-  return zodSchema.refId(refId);
+  return zodSchema.openapi(refId);
 }
 
 export function registerParameter<T extends ZodSchema<any>>(

@@ -33,18 +33,10 @@ declare module 'zod' {
       metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
     ): T;
 
-    refId<T extends ZodSchema<any>>(this: T, refId: string): T;
-
-    /**
-     * This method should NOT be used outside of @astesolution/zod-to-openapi code!
-     * Any usage of it can lead to unexpected consequences when generating the
-     * OpenApi schemas!
-     *
-     * @deprecated
-     */
-    internal_openapi<T extends ZodSchema<any>>(
+    openapi<T extends ZodSchema<any>>(
       this: T,
-      metadata: Partial<ZodOpenAPIInternalMetadata>
+      refId: string,
+      metadata?: Partial<ZodOpenAPIMetadata<z.infer<T>>>
     ): T;
   }
 }
@@ -57,45 +49,41 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return;
   }
 
-  zod.ZodSchema.prototype.openapi = function (openapi) {
+  zod.ZodSchema.prototype.openapi = function (
+    refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
+    metadata?: Partial<ZodOpenAPIMetadata<any>>
+  ) {
+    const openapi = typeof refOrOpenapi !== 'string' ? refOrOpenapi : metadata;
+
     const { param, ...restOfOpenApi } = openapi ?? {};
 
+    const _internal = {
+      ...this._def.openapi?._internal,
+      ...(typeof refOrOpenapi === 'string'
+        ? { refId: refOrOpenapi }
+        : undefined),
+    };
+
+    const resultMetadata = {
+      ...this._def.openapi?.metadata,
+      ...restOfOpenApi,
+      ...(this._def.openapi?.metadata?.param || param
+        ? {
+            param: {
+              ...this._def.openapi?.metadata?.param,
+              ...param,
+            },
+          }
+        : undefined),
+    };
+
     const result = new (this as any).constructor({
       ...this._def,
       openapi: {
-        _internal: this._def.openapi?._internal,
-        metadata: {
-          ...this._def.openapi?.metadata,
-          ...restOfOpenApi,
-          param:
-            this._def.openapi?.metadata?.param || param
-              ? {
-                  ...this._def.openapi?.metadata?.param,
-                  ...param,
-                }
-              : undefined,
-        },
-      },
-    });
-
-    /**
-     * We want to preserve the behavior created by `internal_openapi`
-     * for extended objects. Applying metadata does not change
-     * the parent's `refId` to be used for `extendedFrom`
-     */
-    if (isZodType(this, 'ZodObject')) {
-      result.extend = this.extend;
-    }
-
-    return result;
-  };
-
-  zod.ZodSchema.prototype.internal_openapi = function (openapi) {
-    const result = new (this as any).constructor({
-      ...this._def,
-      openapi: {
-        _internal: { ...this._def.openapi?._internal, ...openapi },
-        metadata: this._def.openapi?.metadata,
+        ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
+        ...(Object.keys(resultMetadata).length > 0
+          ? { metadata: resultMetadata }
+          : undefined),
       },
     });
 
@@ -111,7 +99,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
               ? { refId: this._def.openapi?._internal?.refId, schema: this }
               : this._def.openapi?._internal.extendedFrom,
           },
-          metadata: {},
+          metadata: extendedResult._def.openapi?.metadata,
         };
 
         return extendedResult;
@@ -119,10 +107,6 @@ export function extendZodWithOpenApi(zod: typeof z) {
     }
 
     return result;
-  };
-
-  zod.ZodSchema.prototype.refId = function (refId) {
-    return this.internal_openapi({ refId });
   };
 
   const zodOptional = zod.ZodSchema.prototype.optional as any;
