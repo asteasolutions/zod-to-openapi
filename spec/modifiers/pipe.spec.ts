@@ -2,10 +2,6 @@ import { z } from 'zod';
 import { expectSchema, registerSchema } from '../lib/helpers';
 
 describe('pipe', () => {
-  z.string()
-    .transform(val => val.length)
-    .pipe(z.number().min(5));
-
   it('can generate schema for pipes', () => {
     expectSchema(
       [
