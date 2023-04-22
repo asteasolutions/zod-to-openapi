@@ -3,10 +3,6 @@ import { OpenAPIGenerator } from '../../src/openapi-generator';
 import { OpenAPIRegistry } from '../../src/openapi-registry';
 import { createTestRoute, testDocConfig } from '../lib/helpers';
 
-/**
- * TODO: Tests with new approach
- */
-
 const routeTests = ({
   registerFunction,
   rootDocPath,

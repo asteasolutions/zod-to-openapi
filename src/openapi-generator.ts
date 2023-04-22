@@ -140,13 +140,16 @@ export class OpenAPIGenerator {
     ];
 
     this.definitions.sort((left, right) => {
-      // TODO: Revisit
+      // No type means "plain zod schema" => it comes as highest priority based on the array above
       if (!('type' in left)) {
-        return 0;
+        if (!('type' in right)) {
+          return 0;
+        }
+        return -1;
       }
 
       if (!('type' in right)) {
-        return 0;
+        return 1;
       }
 
       const leftIndex = generationOrder.findIndex(type => type === left.type);
