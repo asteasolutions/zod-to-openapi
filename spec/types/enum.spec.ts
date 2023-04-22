@@ -1,16 +1,11 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('enum', registrationType => {
+describe('enum', () => {
   it('supports enums', () => {
     const schema = registerSchema(
       'Enum',
-      z.enum(['option1', 'option2']),
-      registrationType
+      z.enum(['option1', 'option2'])
     ).openapi({ description: 'All possible options' });
 
     expectSchema([schema], {

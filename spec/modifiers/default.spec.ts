@@ -1,20 +1,10 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('default', registrationType => {
+describe('default', () => {
   it('supports defaults', () => {
     expectSchema(
-      [
-        registerSchema(
-          'StringWithDefault',
-          z.string().default('test'),
-          registrationType
-        ),
-      ],
+      [registerSchema('StringWithDefault', z.string().default('test'))],
       {
         StringWithDefault: {
           type: 'string',
@@ -29,8 +19,7 @@ registrationTypeDescribe('default', registrationType => {
       [
         registerSchema(
           'StringWithDefault',
-          z.string().default('test').default('override'),
-          registrationType
+          z.string().default('test').default('override')
         ),
       ],
       {
@@ -44,13 +33,7 @@ registrationTypeDescribe('default', registrationType => {
 
   it('supports falsy defaults', () => {
     expectSchema(
-      [
-        registerSchema(
-          'BooleanWithDefault',
-          z.boolean().default(false),
-          registrationType
-        ),
-      ],
+      [registerSchema('BooleanWithDefault', z.boolean().default(false))],
       {
         BooleanWithDefault: {
           type: 'boolean',
@@ -67,8 +50,7 @@ registrationTypeDescribe('default', registrationType => {
           'ObjectWithDefault',
           z.object({
             test: z.ostring().default('test'),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -92,8 +74,7 @@ registrationTypeDescribe('default', registrationType => {
           'ObjectWithDefault',
           z.object({
             test: z.string().default('test'),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -121,8 +102,7 @@ registrationTypeDescribe('default', registrationType => {
               .onumber()
               .default(42)
               .refine(num => num && num % 2 === 0),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -149,8 +129,7 @@ registrationTypeDescribe('default', registrationType => {
               .number()
               .default(42)
               .refine(num => num && num % 2 === 0),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -173,8 +152,7 @@ registrationTypeDescribe('default', registrationType => {
       [
         registerSchema(
           'EnumWithDefault',
-          z.enum(['a', 'b']).default('a'),
-          registrationType
+          z.enum(['a', 'b']).default('a')
         ).openapi({ default: 'b', examples: ['b'] }),
       ],
       {

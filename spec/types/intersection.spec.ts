@@ -1,11 +1,7 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('intersection', registrationType => {
+describe('intersection', () => {
   it('supports intersection types', () => {
     const Person = z.object({
       name: z.string(),
@@ -15,31 +11,22 @@ registrationTypeDescribe('intersection', registrationType => {
       role: z.string(),
     });
 
-    expectSchema(
-      [
-        registerSchema(
-          'Test',
-          z.intersection(Person, Employee),
-          registrationType
-        ),
-      ],
-      {
-        Test: {
-          allOf: [
-            {
-              type: 'object',
-              properties: { name: { type: 'string' } },
-              required: ['name'],
-            },
-            {
-              type: 'object',
-              properties: { role: { type: 'string' } },
-              required: ['role'],
-            },
-          ],
-        },
-      }
-    );
+    expectSchema([registerSchema('Test', z.intersection(Person, Employee))], {
+      Test: {
+        allOf: [
+          {
+            type: 'object',
+            properties: { name: { type: 'string' } },
+            required: ['name'],
+          },
+          {
+            type: 'object',
+            properties: { role: { type: 'string' } },
+            required: ['role'],
+          },
+        ],
+      },
+    });
   });
 
   it('supports nullable intersection types', () => {
@@ -52,13 +39,7 @@ registrationTypeDescribe('intersection', registrationType => {
     });
 
     expectSchema(
-      [
-        registerSchema(
-          'Test',
-          z.intersection(Person, Employee).nullable(),
-          registrationType
-        ),
-      ],
+      [registerSchema('Test', z.intersection(Person, Employee).nullable())],
       {
         Test: {
           anyOf: [
@@ -98,8 +79,7 @@ registrationTypeDescribe('intersection', registrationType => {
           'Test',
           z
             .intersection(Person, Employee)
-            .default({ name: 'hello', role: 'world' }),
-          registrationType
+            .default({ name: 'hello', role: 'world' })
         ),
       ],
       {
@@ -141,8 +121,7 @@ registrationTypeDescribe('intersection', registrationType => {
           z
             .intersection(Person, Employee)
             .nullable()
-            .default({ name: 'hello', role: 'world' }),
-          registrationType
+            .default({ name: 'hello', role: 'world' })
         ),
       ],
       {

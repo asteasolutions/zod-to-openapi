@@ -1,20 +1,10 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('branded', registrationType => {
+describe('branded', () => {
   it('generates OpenAPI schema for branded type', () => {
     expectSchema(
-      [
-        registerSchema(
-          'SimpleStringBranded',
-          z.string().brand<'color'>(),
-          registrationType
-        ),
-      ],
+      [registerSchema('SimpleStringBranded', z.string().brand<'color'>())],
       {
         SimpleStringBranded: { type: 'string' },
       }

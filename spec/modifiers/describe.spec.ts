@@ -1,16 +1,11 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('describe', registrationType => {
+describe('describe', () => {
   it('generates OpenAPI schema with description when the .describe method is used', () => {
     const schema = registerSchema(
       'SimpleString',
-      z.string().describe('This is a test string'),
-      registrationType
+      z.string().describe('This is a test string')
     );
 
     expectSchema([schema], {
@@ -21,8 +16,7 @@ registrationTypeDescribe('describe', registrationType => {
   it('can get description from a schema made optional', () => {
     const schema = registerSchema(
       'SimpleString',
-      z.string().describe('This is a test string').optional(),
-      registrationType
+      z.string().describe('This is a test string').optional()
     );
 
     expectSchema([schema], {
@@ -33,8 +27,7 @@ registrationTypeDescribe('describe', registrationType => {
   it('can get description from an optional schema', () => {
     const schema = registerSchema(
       'SimpleString',
-      z.string().optional().describe('This is a test string'),
-      registrationType
+      z.string().optional().describe('This is a test string')
     );
 
     expectSchema([schema], {
@@ -48,8 +41,7 @@ registrationTypeDescribe('describe', registrationType => {
       z
         .string()
         .describe('This is a test string')
-        .openapi({ description: 'Alternative description' }),
-      registrationType
+        .openapi({ description: 'Alternative description' })
     );
 
     expectSchema([schema], {
@@ -68,8 +60,7 @@ registrationTypeDescribe('describe', registrationType => {
           type: z.string().describe('Just a type'),
           title: z.string().describe('Just a title').optional(),
         })
-        .describe('Whole object'),
-      registrationType
+        .describe('Whole object')
     );
 
     expectSchema([schema], {

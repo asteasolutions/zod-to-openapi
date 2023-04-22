@@ -1,22 +1,13 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('object polymorphism', registrationType => {
+describe('object polymorphism', () => {
   it('can use allOf for extended schemas', () => {
-    const BaseSchema = registerSchema(
-      'Base',
-      z.object({ id: z.string() }),
-      registrationType
-    );
+    const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
 
     const ExtendedSchema = registerSchema(
       'Extended',
-      BaseSchema.extend({ bonus: z.number() }),
-      registrationType
+      BaseSchema.extend({ bonus: z.number() })
     );
 
     expectSchema([BaseSchema, ExtendedSchema], {
@@ -43,26 +34,20 @@ registrationTypeDescribe('object polymorphism', registrationType => {
   });
 
   it('can chain-extend objects correctly', () => {
-    const BaseSchema = registerSchema(
-      'Base',
-      z.object({ id: z.string() }),
-      registrationType
-    );
+    const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
 
     const A = registerSchema(
       'A',
       BaseSchema.extend({
         bonus: z.number(),
-      }),
-      registrationType
+      })
     );
 
     const B = registerSchema(
       'B',
       A.extend({
         points: z.number(),
-      }),
-      registrationType
+      })
     );
 
     expectSchema([BaseSchema, A, B], {
@@ -105,11 +90,7 @@ registrationTypeDescribe('object polymorphism', registrationType => {
   });
 
   it('can chain-extend objects correctly without intermediate link', () => {
-    const BaseSchema = registerSchema(
-      'Base',
-      z.object({ id: z.string() }),
-      registrationType
-    );
+    const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
 
     const A = BaseSchema.extend({ bonus: z.number() });
 
@@ -117,8 +98,7 @@ registrationTypeDescribe('object polymorphism', registrationType => {
       'B',
       A.extend({
         points: z.number(),
-      }),
-      registrationType
+      })
     );
 
     expectSchema([BaseSchema, B], {
@@ -146,18 +126,13 @@ registrationTypeDescribe('object polymorphism', registrationType => {
   });
 
   it('can apply nullable', () => {
-    const BaseSchema = registerSchema(
-      'Base',
-      z.object({ id: z.ostring() }),
-      registrationType
-    );
+    const BaseSchema = registerSchema('Base', z.object({ id: z.ostring() }));
 
     const ExtendedSchema = registerSchema(
       'Extended',
       BaseSchema.extend({
         bonus: z.onumber(),
-      }).nullable(),
-      registrationType
+      }).nullable()
     );
 
     expectSchema([BaseSchema, ExtendedSchema], {
@@ -188,8 +163,7 @@ registrationTypeDescribe('object polymorphism', registrationType => {
       z.object({
         name: z.ostring(),
         type: z.enum(['dog', 'cat']).optional(),
-      }),
-      registrationType
+      })
     ).openapi({
       discriminator: {
         propertyName: 'type',
@@ -200,8 +174,7 @@ registrationTypeDescribe('object polymorphism', registrationType => {
       'Dog',
       AnimalSchema.extend({
         type: z.string().openapi({ example: 'dog' }),
-      }),
-      registrationType
+      })
     )
       .openapi({
         discriminator: {
@@ -245,16 +218,14 @@ registrationTypeDescribe('object polymorphism', registrationType => {
       z.object({
         name: z.string(),
         type: z.enum(['dog', 'cat']).optional(),
-      }),
-      registrationType
+      })
     );
 
     const OmittedSchema = BaseSchema.omit({ type: true });
 
     const OtherSchema = registerSchema(
       'Other',
-      z.object({ omit: OmittedSchema }),
-      registrationType
+      z.object({ omit: OmittedSchema })
     );
 
     expectSchema([BaseSchema, OtherSchema], {
@@ -291,16 +262,14 @@ registrationTypeDescribe('object polymorphism', registrationType => {
       z.object({
         name: z.string(),
         type: z.enum(['dog', 'cat']).optional(),
-      }),
-      registrationType
+      })
     );
 
     const PickedSchema = BaseSchema.pick({ name: true });
 
     const OtherSchema = registerSchema(
       'Other',
-      z.object({ pick: PickedSchema }),
-      registrationType
+      z.object({ pick: PickedSchema })
     );
 
     expectSchema([BaseSchema, OtherSchema], {

@@ -1,15 +1,11 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('unknown', registrationType => {
+describe('unknown', () => {
   it('supports unknown', () => {
     expectSchema(
       [
-        registerSchema('Unknown', z.unknown(), registrationType).openapi({
+        registerSchema('Unknown', z.unknown()).openapi({
           description: 'Something unknown',
         }),
       ],

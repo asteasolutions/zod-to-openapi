@@ -1,12 +1,7 @@
 import { z } from 'zod';
-import {
-  createSchemas,
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { createSchemas, expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('native enum', registrationType => {
+describe('native enum', () => {
   it('supports native enums', () => {
     enum NativeEnum {
       OPTION = 'Option',
@@ -18,8 +13,7 @@ registrationTypeDescribe('native enum', registrationType => {
       'NativeEnum',
       z.nativeEnum(NativeEnum).openapi({
         description: 'A native enum in zod',
-      }),
-      registrationType
+      })
     );
 
     expectSchema([nativeEnumSchema], {
@@ -42,8 +36,7 @@ registrationTypeDescribe('native enum', registrationType => {
       'NativeEnum',
       z.nativeEnum(NativeEnum).openapi({
         description: 'A native numbers enum in zod',
-      }),
-      registrationType
+      })
     );
 
     expectSchema([nativeEnumSchema], {
@@ -65,8 +58,7 @@ registrationTypeDescribe('native enum', registrationType => {
       'NativeEnum',
       z.nativeEnum(NativeEnum).openapi({
         description: 'A native mixed enum in zod',
-      }),
-      registrationType
+      })
     );
 
     expect(() => {
@@ -85,8 +77,7 @@ registrationTypeDescribe('native enum', registrationType => {
       z.nativeEnum(NativeEnum).openapi({
         description: 'A native mixed enum in zod',
         type: 'string',
-      }),
-      registrationType
+      })
     );
 
     expectSchema([nativeEnumSchema], {

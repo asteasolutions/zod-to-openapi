@@ -1,11 +1,7 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from './lib/helpers';
+import { expectSchema, registerSchema } from './lib/helpers';
 
-registrationTypeDescribe('metadata overrides', registrationType => {
+describe('metadata overrides', () => {
   it.todo(
     'throws error for openapi data to be provided for unrecognized literal types'
   );
@@ -15,11 +11,7 @@ registrationTypeDescribe('metadata overrides', registrationType => {
   );
 
   it('does not infer the type if one is provided using .openapi', () => {
-    const schema = registerSchema(
-      'StringAsNumber',
-      z.string(),
-      registrationType
-    ).openapi({
+    const schema = registerSchema('StringAsNumber', z.string()).openapi({
       type: 'number',
     });
     expectSchema([schema], {
@@ -28,7 +20,7 @@ registrationTypeDescribe('metadata overrides', registrationType => {
   });
 
   it('can remove .openapi properties', () => {
-    const schema = registerSchema('Test', z.string(), registrationType)
+    const schema = registerSchema('Test', z.string())
       .openapi({ description: 'test', deprecated: true })
       .openapi({ description: undefined, deprecated: undefined });
 
@@ -40,7 +32,7 @@ registrationTypeDescribe('metadata overrides', registrationType => {
   it('generates schemas with metadata', () => {
     expectSchema(
       [
-        registerSchema('SimpleString', z.string(), registrationType).openapi({
+        registerSchema('SimpleString', z.string()).openapi({
           description: 'test',
         }),
       ],
@@ -49,14 +41,13 @@ registrationTypeDescribe('metadata overrides', registrationType => {
   });
 
   it('supports .openapi for registered schemas', () => {
-    const StringSchema = registerSchema('String', z.string(), registrationType);
+    const StringSchema = registerSchema('String', z.string());
 
     const TestSchema = registerSchema(
       'Test',
       z.object({
         key: StringSchema.openapi({ example: 'test', deprecated: true }),
-      }),
-      registrationType
+      })
     );
 
     expectSchema([StringSchema, TestSchema], {
@@ -79,11 +70,7 @@ registrationTypeDescribe('metadata overrides', registrationType => {
   });
 
   it('only adds overrides for new metadata properties', () => {
-    const StringSchema = registerSchema(
-      'String',
-      z.string(),
-      registrationType
-    ).openapi({
+    const StringSchema = registerSchema('String', z.string()).openapi({
       description: 'old field',
       title: 'same title',
       examples: ['same array'],
@@ -99,8 +86,7 @@ registrationTypeDescribe('metadata overrides', registrationType => {
           example: 'new field',
           discriminator: { propertyName: 'sameProperty' },
         }),
-      }),
-      registrationType
+      })
     );
 
     expectSchema([StringSchema, TestSchema], {
@@ -131,16 +117,14 @@ registrationTypeDescribe('metadata overrides', registrationType => {
       'String',
       z.string().openapi({
         example: 'existing field',
-      }),
-      registrationType
+      })
     );
 
     const TestSchema = registerSchema(
       'Test',
       z.object({
         key: StringSchema.nullable().openapi({ type: 'boolean' }),
-      }),
-      registrationType
+      })
     );
 
     expectSchema([StringSchema, TestSchema], {
@@ -173,15 +157,10 @@ registrationTypeDescribe('metadata overrides', registrationType => {
         .transform(obj => obj as { [key: string]: never })
         .openapi({
           type: 'object',
-        }),
-      registrationType
+        })
     );
 
-    const TestSchema = registerSchema(
-      'Test',
-      z.object({ key: EmptySchema }),
-      registrationType
-    );
+    const TestSchema = registerSchema('Test', z.object({ key: EmptySchema }));
 
     expectSchema([EmptySchema, TestSchema], {
       Empty: {
@@ -207,16 +186,14 @@ registrationTypeDescribe('metadata overrides', registrationType => {
         .transform(obj => obj as { [key: string]: never })
         .openapi({
           type: 'object',
-        }),
-      registrationType
+        })
     );
 
     const UnionTestSchema = registerSchema(
       'UnionTest',
       z.union([z.string(), EmptySchema]).openapi({
         description: 'Union with empty object',
-      }),
-      registrationType
+      })
     );
 
     expectSchema([EmptySchema, UnionTestSchema], {

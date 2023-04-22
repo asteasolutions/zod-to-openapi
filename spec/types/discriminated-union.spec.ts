@@ -1,23 +1,13 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('discriminated union', registrationType => {
+describe('discriminated union', () => {
   it('supports basic discriminated unions', () => {
     const Text = z.object({ type: z.literal('text'), text: z.string() });
     const Image = z.object({ type: z.literal('image'), src: z.string() });
 
     expectSchema(
-      [
-        registerSchema(
-          'Test',
-          z.discriminatedUnion('type', [Text, Image]),
-          registrationType
-        ),
-      ],
+      [registerSchema('Test', z.discriminatedUnion('type', [Text, Image]))],
       {
         Test: {
           oneOf: [
@@ -46,24 +36,18 @@ registrationTypeDescribe('discriminated union', registrationType => {
   it('creates a discriminator mapping when all objects in the discriminated union contain a registered schema', () => {
     const Text = registerSchema(
       'obj1',
-      z.object({ type: z.literal('text'), text: z.string() }),
-      registrationType
+      z.object({ type: z.literal('text'), text: z.string() })
     );
     const Image = registerSchema(
       'obj2',
-      z.object({ type: z.literal('image'), src: z.string() }),
-      registrationType
+      z.object({ type: z.literal('image'), src: z.string() })
     );
 
     expectSchema(
       [
         Text,
         Image,
-        registerSchema(
-          'Test',
-          z.discriminatedUnion('type', [Text, Image]),
-          registrationType
-        ),
+        registerSchema('Test', z.discriminatedUnion('type', [Text, Image])),
       ],
       {
         Test: {
@@ -102,24 +86,18 @@ registrationTypeDescribe('discriminated union', registrationType => {
   it('creates a discriminator mapping when a registered object uses a zodEnum as the discriminator', () => {
     const Text = registerSchema(
       'obj1',
-      z.object({ type: z.enum(['text', 'other']), text: z.string() }),
-      registrationType
+      z.object({ type: z.enum(['text', 'other']), text: z.string() })
     );
     const Image = registerSchema(
       'obj2',
-      z.object({ type: z.literal('image'), src: z.string() }),
-      registrationType
+      z.object({ type: z.literal('image'), src: z.string() })
     );
 
     expectSchema(
       [
         Text,
         Image,
-        registerSchema(
-          'Test',
-          z.discriminatedUnion('type', [Text, Image]),
-          registrationType
-        ),
+        registerSchema('Test', z.discriminatedUnion('type', [Text, Image])),
       ],
       {
         Test: {
@@ -159,13 +137,11 @@ registrationTypeDescribe('discriminated union', registrationType => {
   it('does not create a discriminator mapping when the discrimnated union is nullable', () => {
     const Text = registerSchema(
       'obj1',
-      z.object({ type: z.literal('text'), text: z.string() }),
-      registrationType
+      z.object({ type: z.literal('text'), text: z.string() })
     );
     const Image = registerSchema(
       'obj2',
-      z.object({ type: z.literal('image'), src: z.string() }),
-      registrationType
+      z.object({ type: z.literal('image'), src: z.string() })
     );
 
     expectSchema(
@@ -174,8 +150,7 @@ registrationTypeDescribe('discriminated union', registrationType => {
         Image,
         registerSchema(
           'Test',
-          z.discriminatedUnion('type', [Text, Image]).nullable(),
-          registrationType
+          z.discriminatedUnion('type', [Text, Image]).nullable()
         ),
       ],
       {
@@ -209,8 +184,7 @@ registrationTypeDescribe('discriminated union', registrationType => {
   it('does not create a discriminator mapping when only some objects in the discriminated union contain a registered schema', () => {
     const Text = registerSchema(
       'obj1',
-      z.object({ type: z.literal('text'), text: z.string() }),
-      registrationType
+      z.object({ type: z.literal('text'), text: z.string() })
     );
     const Image = z.object({ type: z.literal('image'), src: z.string() });
 
@@ -218,11 +192,7 @@ registrationTypeDescribe('discriminated union', registrationType => {
       [
         Text,
         Image,
-        registerSchema(
-          'Test',
-          z.discriminatedUnion('type', [Text, Image]),
-          registrationType
-        ),
+        registerSchema('Test', z.discriminatedUnion('type', [Text, Image])),
       ],
       {
         Test: {

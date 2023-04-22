@@ -1,18 +1,13 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('refine', registrationType => {
+describe('refine', () => {
   it('supports refined schemas', () => {
     expectSchema(
       [
         registerSchema(
           'RefinedString',
-          z.number().refine(num => num % 2 === 0),
-          registrationType
+          z.number().refine(num => num % 2 === 0)
         ),
       ],
       {
@@ -30,8 +25,7 @@ registrationTypeDescribe('refine', registrationType => {
           'ObjectWithRefinedString',
           z.object({
             test: z.number().refine(num => num && num % 2 === 0),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -55,8 +49,7 @@ registrationTypeDescribe('refine', registrationType => {
           'ObjectWithRefinedString',
           z.object({
             test: z.onumber().refine(num => num && num % 2 === 0),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -82,8 +75,7 @@ registrationTypeDescribe('refine', registrationType => {
               .onumber()
               .refine(num => num && num % 2 === 0)
               .default(42),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -110,8 +102,7 @@ registrationTypeDescribe('refine', registrationType => {
               .number()
               .refine(num => num && num % 2 === 0)
               .default(42),
-          }),
-          registrationType
+          })
         ),
       ],
       {
@@ -142,8 +133,7 @@ registrationTypeDescribe('refine', registrationType => {
               .openapi({
                 type: 'string',
               }),
-          }),
-          registrationType
+          })
         ),
       ],
       {

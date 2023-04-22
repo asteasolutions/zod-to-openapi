@@ -753,8 +753,6 @@ export class OpenAPIGenerator {
     const defaultValue = this.getDefaultValue(zodSchema);
     const isNullableSchema = zodSchema.isNullable();
 
-    console.log({ metadata });
-
     if (metadata?.metadata?.type) {
       return this.mapNullableType(metadata.metadata.type, isNullableSchema);
     }

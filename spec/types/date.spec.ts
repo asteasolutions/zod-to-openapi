@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('date', registrationType => {
+describe('date', () => {
   it('supports ZodDate and sets the type to `string`', () => {
-    const schema = registerSchema('Date', z.date(), registrationType);
+    const schema = registerSchema('Date', z.date());
     expectSchema([schema], {
       Date: {
         type: 'string',
@@ -17,7 +13,7 @@ registrationTypeDescribe('date', registrationType => {
 
   it('uses `string` as the example type when the schema infers to `Date`', () => {
     const example = new Date().toISOString();
-    const schema = registerSchema('Date', z.date(), registrationType).openapi({
+    const schema = registerSchema('Date', z.date()).openapi({
       example,
     });
     expectSchema([schema], {

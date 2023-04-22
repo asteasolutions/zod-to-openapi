@@ -1,11 +1,7 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('preprocess', registrationType => {
+describe('preprocess', () => {
   it('supports preprocessed string -> boolean schema', () => {
     expectSchema(
       [
@@ -22,8 +18,7 @@ registrationTypeDescribe('preprocess', registrationType => {
             }
 
             return undefined;
-          }, z.boolean()),
-          registrationType
+          }, z.boolean())
         ),
       ],
       {
@@ -49,8 +44,7 @@ registrationTypeDescribe('preprocess', registrationType => {
             }
 
             return undefined;
-          }, z.number()),
-          registrationType
+          }, z.number())
         ),
       ],
       {

@@ -1,33 +1,19 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('nullable', registrationType => {
+describe('nullable', () => {
   it('supports nullable', () => {
-    expectSchema(
-      [
-        registerSchema(
-          'NullableString',
-          z.string(),
-          registrationType
-        ).nullable(),
-      ],
-      {
-        NullableString: { type: 'string', nullable: true },
-      }
-    );
+    expectSchema([registerSchema('NullableString', z.string()).nullable()], {
+      NullableString: { type: 'string', nullable: true },
+    });
   });
 
   it('supports nullable for registered schemas', () => {
-    const StringSchema = registerSchema('String', z.string(), registrationType);
+    const StringSchema = registerSchema('String', z.string());
 
     const TestSchema = registerSchema(
       'Test',
-      z.object({ key: StringSchema.nullable() }),
-      registrationType
+      z.object({ key: StringSchema.nullable() })
     );
 
     expectSchema([StringSchema, TestSchema], {
@@ -50,16 +36,11 @@ registrationTypeDescribe('nullable', registrationType => {
   });
 
   it('should not apply nullable if the schema is already nullable', () => {
-    const StringSchema = registerSchema(
-      'String',
-      z.string(),
-      registrationType
-    ).nullable();
+    const StringSchema = registerSchema('String', z.string()).nullable();
 
     const TestSchema = registerSchema(
       'Test',
-      z.object({ key: StringSchema.nullable() }),
-      registrationType
+      z.object({ key: StringSchema.nullable() })
     );
 
     expectSchema([StringSchema, TestSchema], {
@@ -79,13 +60,7 @@ registrationTypeDescribe('nullable', registrationType => {
 
   it('supports nullable in open api 3.1.0', () => {
     expectSchema(
-      [
-        registerSchema(
-          'NullableString',
-          z.string().nullable(),
-          registrationType
-        ),
-      ],
+      [registerSchema('NullableString', z.string().nullable())],
       {
         NullableString: { type: ['string', 'null'] },
       },
@@ -94,12 +69,11 @@ registrationTypeDescribe('nullable', registrationType => {
   });
 
   it('supports nullable for registered schemas in open api 3.1.0', () => {
-    const StringSchema = registerSchema('String', z.string(), registrationType);
+    const StringSchema = registerSchema('String', z.string());
 
     const TestSchema = registerSchema(
       'Test',
-      z.object({ key: StringSchema.nullable() }),
-      registrationType
+      z.object({ key: StringSchema.nullable() })
     );
 
     expectSchema(
@@ -126,16 +100,11 @@ registrationTypeDescribe('nullable', registrationType => {
   });
 
   it('should not apply nullable if the schema is already nullable in open api 3.1.0', () => {
-    const StringSchema = registerSchema(
-      'String',
-      z.string().nullable(),
-      registrationType
-    );
+    const StringSchema = registerSchema('String', z.string().nullable());
 
     const TestSchema = registerSchema(
       'Test',
-      z.object({ key: StringSchema.nullable() }),
-      registrationType
+      z.object({ key: StringSchema.nullable() })
     );
 
     expectSchema(
@@ -164,14 +133,12 @@ registrationTypeDescribe('nullable', registrationType => {
         .transform(obj => obj as { [key: string]: never })
         .openapi({
           type: 'object',
-        }),
-      registrationType
+        })
     );
 
     const TestSchema = registerSchema(
       'Test',
-      z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) }),
-      registrationType
+      z.object({ key: EmptySchema.nullable().openapi({ deprecated: true }) })
     );
 
     expectSchema([EmptySchema, TestSchema], {
@@ -206,8 +173,7 @@ registrationTypeDescribe('nullable', registrationType => {
         .transform(obj => obj as { [key: string]: never })
         .openapi({
           type: 'object',
-        }),
-      registrationType
+        })
     );
 
     const TestSchema = registerSchema(
@@ -216,8 +182,7 @@ registrationTypeDescribe('nullable', registrationType => {
         key: EmptySchema.nullable().openapi({
           deprecated: true,
         }),
-      }),
-      registrationType
+      })
     );
 
     expectSchema(
@@ -257,8 +222,7 @@ registrationTypeDescribe('nullable', registrationType => {
         .transform(obj => obj as { [key: string]: never })
         .openapi({
           type: 'object',
-        }),
-      registrationType
+        })
     );
 
     expectSchema([EmptySchema], {

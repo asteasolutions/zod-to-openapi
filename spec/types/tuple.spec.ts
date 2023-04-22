@@ -1,20 +1,10 @@
 import { z } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('tuple', registrationType => {
+describe('tuple', () => {
   it('supports tuples', () => {
     expectSchema(
-      [
-        registerSchema(
-          'Test',
-          z.tuple([z.string(), z.number(), z.boolean()]),
-          registrationType
-        ),
-      ],
+      [registerSchema('Test', z.tuple([z.string(), z.number(), z.boolean()]))],
       {
         Test: {
           type: 'array',
@@ -33,36 +23,21 @@ registrationTypeDescribe('tuple', registrationType => {
   });
 
   it('supports tuples of the same single type', () => {
-    expectSchema(
-      [
-        registerSchema(
-          'Test',
-          z.tuple([z.string(), z.string()]),
-          registrationType
-        ),
-      ],
-      {
-        Test: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
-          minItems: 2,
-          maxItems: 2,
+    expectSchema([registerSchema('Test', z.tuple([z.string(), z.string()]))], {
+      Test: {
+        type: 'array',
+        items: {
+          type: 'string',
         },
-      }
-    );
+        minItems: 2,
+        maxItems: 2,
+      },
+    });
   });
 
   it('supports tuples of duplicate types', () => {
     expectSchema(
-      [
-        registerSchema(
-          'Test',
-          z.tuple([z.string(), z.number(), z.string()]),
-          registrationType
-        ),
-      ],
+      [registerSchema('Test', z.tuple([z.string(), z.number(), z.string()]))],
       {
         Test: {
           type: 'array',
@@ -77,12 +52,11 @@ registrationTypeDescribe('tuple', registrationType => {
   });
 
   it('supports tuples of referenced schemas', () => {
-    const stringSchema = registerSchema('String', z.string(), registrationType);
+    const stringSchema = registerSchema('String', z.string());
 
     const testSchema = registerSchema(
       'Test',
-      z.tuple([stringSchema, z.number(), z.string()]),
-      registrationType
+      z.tuple([stringSchema, z.number(), z.string()])
     );
 
     expectSchema([stringSchema, testSchema], {
@@ -107,13 +81,7 @@ registrationTypeDescribe('tuple', registrationType => {
   describe('nullable', () => {
     it('supports tuples with nullable in 3.0.0', () => {
       expectSchema(
-        [
-          registerSchema(
-            'Test',
-            z.tuple([z.string().nullable(), z.string()]),
-            registrationType
-          ),
-        ],
+        [registerSchema('Test', z.tuple([z.string().nullable(), z.string()]))],
         {
           Test: {
             type: 'array',
@@ -133,8 +101,7 @@ registrationTypeDescribe('tuple', registrationType => {
         [
           registerSchema(
             'Test',
-            z.tuple([z.string().nullable(), z.number().nullable()]),
-            registrationType
+            z.tuple([z.string().nullable(), z.number().nullable()])
           ),
         ],
         {
@@ -156,13 +123,7 @@ registrationTypeDescribe('tuple', registrationType => {
 
     it('supports nullable tuples in 3.0.0', () => {
       expectSchema(
-        [
-          registerSchema(
-            'Test',
-            z.tuple([z.string(), z.number()]).nullable(),
-            registrationType
-          ),
-        ],
+        [registerSchema('Test', z.tuple([z.string(), z.number()]).nullable())],
         {
           Test: {
             type: 'array',
@@ -180,13 +141,7 @@ registrationTypeDescribe('tuple', registrationType => {
 
     it('supports nullable tuples in 3.1.0', () => {
       expectSchema(
-        [
-          registerSchema(
-            'Test',
-            z.tuple([z.string(), z.number()]).nullable(),
-            registrationType
-          ),
-        ],
+        [registerSchema('Test', z.tuple([z.string(), z.number()]).nullable())],
         {
           Test: {
             type: ['array', 'null'],

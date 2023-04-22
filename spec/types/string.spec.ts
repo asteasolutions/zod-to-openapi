@@ -1,44 +1,22 @@
 import { z, ZodString } from 'zod';
-import {
-  expectSchema,
-  registerSchema,
-  registrationTypeDescribe,
-} from '../lib/helpers';
+import { expectSchema, registerSchema } from '../lib/helpers';
 
-registrationTypeDescribe('string', registrationType => {
+describe('string', () => {
   it('generates OpenAPI schema for simple types', () => {
-    expectSchema(
-      [registerSchema('SimpleString', z.string(), registrationType)],
-      {
-        SimpleString: { type: 'string' },
-      }
-    );
+    expectSchema([registerSchema('SimpleString', z.string())], {
+      SimpleString: { type: 'string' },
+    });
   });
 
   it('supports exact length on string', () => {
-    expectSchema(
-      [
-        registerSchema(
-          'minMaxLengthString',
-          z.string().length(5),
-          registrationType
-        ),
-      ],
-      {
-        minMaxLengthString: { type: 'string', minLength: 5, maxLength: 5 },
-      }
-    );
+    expectSchema([registerSchema('minMaxLengthString', z.string().length(5))], {
+      minMaxLengthString: { type: 'string', minLength: 5, maxLength: 5 },
+    });
   });
 
   it('supports minLength / maxLength on string', () => {
     expectSchema(
-      [
-        registerSchema(
-          'minMaxLengthString',
-          z.string().min(5).max(10),
-          registrationType
-        ),
-      ],
+      [registerSchema('minMaxLengthString', z.string().min(5).max(10))],
       {
         minMaxLengthString: { type: 'string', minLength: 5, maxLength: 10 },
       }
@@ -48,16 +26,8 @@ registrationTypeDescribe('string', registrationType => {
   it('supports the combination of min/max + length on string', () => {
     expectSchema(
       [
-        registerSchema(
-          'minAndLengthString',
-          z.string().length(5).min(6),
-          registrationType
-        ),
-        registerSchema(
-          'maxAndLengthString',
-          z.string().max(10).length(5),
-          registrationType
-        ),
+        registerSchema('minAndLengthString', z.string().length(5).min(6)),
+        registerSchema('maxAndLengthString', z.string().max(10).length(5)),
       ],
       {
         minAndLengthString: { type: 'string', minLength: 5, maxLength: 5 },
@@ -67,12 +37,9 @@ registrationTypeDescribe('string', registrationType => {
   });
 
   it('supports string literals', () => {
-    expectSchema(
-      [registerSchema('Literal', z.literal('John Doe'), registrationType)],
-      {
-        Literal: { type: 'string', enum: ['John Doe'] },
-      }
-    );
+    expectSchema([registerSchema('Literal', z.literal('John Doe'))], {
+      Literal: { type: 'string', enum: ['John Doe'] },
+    });
   });
 
   it.each`
@@ -84,7 +51,7 @@ registrationTypeDescribe('string', registrationType => {
   `(
     'maps a ZodString $format to $expected format',
     ({ zodString, expected }: { zodString: ZodString; expected: string }) => {
-      expectSchema([registerSchema('ZodString', zodString, registrationType)], {
+      expectSchema([registerSchema('ZodString', zodString)], {
         ZodString: { type: 'string', format: expected },
       });
     }
@@ -92,13 +59,7 @@ registrationTypeDescribe('string', registrationType => {
 
   it('maps a ZodString regex to a pattern', () => {
     expectSchema(
-      [
-        registerSchema(
-          'RegexString',
-          z.string().regex(/^hello world/),
-          registrationType
-        ),
-      ],
+      [registerSchema('RegexString', z.string().regex(/^hello world/))],
       {
         RegexString: { type: 'string', pattern: '^hello world' },
       }
