@@ -53,7 +53,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
     refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
     metadata?: Partial<ZodOpenAPIMetadata<any>>
   ) {
-    const openapi = typeof refOrOpenapi !== 'string' ? refOrOpenapi : metadata;
+    const openapi = typeof refOrOpenapi === 'string' ? metadata : refOrOpenapi;
 
     const { param, ...restOfOpenApi } = openapi ?? {};
 
