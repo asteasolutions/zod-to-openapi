@@ -994,6 +994,10 @@ export class OpenAPIGenerator {
       };
     }
 
+    if (isZodType(zodSchema, 'ZodPipeline')) {
+      return this.toOpenAPISchema(zodSchema._def.in, isNullable, defaultValue);
+    }
+
     const refId = this.getRefId(zodSchema);
 
     throw new UnknownZodTypeError({

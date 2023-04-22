@@ -15,6 +15,7 @@ type ZodTypes = {
   ZodNumber: z.ZodNumber;
   ZodObject: z.AnyZodObject;
   ZodOptional: z.ZodOptional<any>;
+  ZodPipeline: z.ZodPipeline<any, any>;
   ZodRecord: z.ZodRecord;
   ZodSchema: z.ZodSchema;
   ZodString: z.ZodString;

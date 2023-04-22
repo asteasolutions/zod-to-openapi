@@ -404,6 +404,7 @@ The list of all supported types as of now is:
   - including `z.number().int()` being inferred as `type: 'integer'`
 - `ZodObject`
 - `ZodOptional`
+- `ZodPipeline`
 - `ZodRecord`
 - `ZodString`
   - adding `format` for `.datetime()`, `.uuid()`, `.email()` and `.url()` and `pattern` for `.regex()` is also supported
