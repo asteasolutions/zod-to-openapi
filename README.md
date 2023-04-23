@@ -394,7 +394,7 @@ The list of all supported types as of now is:
 - `ZodDefault`
 - `ZodDiscriminatedUnion`
   - including `discriminator` mapping when all Zod objects in the union are registered with `.register()` or contain a `refId`.
-- `ZodEffects` - only for `.refine()`, `.preprocess()`
+- `ZodEffects`
 - `ZodEnum`
 - `ZodIntersection`
 - `ZodLiteral`
@@ -419,8 +419,6 @@ Extending an instance of `ZodObject` is also supported and results in an OpenApi
 In case you try to create an OpenAPI schema from a zod schema that is not one of the aforementioned types then you'd receive an `UnknownZodTypeError`.
 
 You can still register such schemas on your own by providing a `type` via the `.openapi` method. In case you think that the desired behavior can be achieved automatically do not hesitate to reach out to us by describing your case via Github Issues.
-
-**Note:** The `ZodEffects` schema from the `.transform` method is an example for a zod schema that cannot be automatically generated since the result of the transformation resides only as a type definition and is not an actual zod specific object.
 
 ## Technologies
 
