@@ -1,6 +1,5 @@
-import {
+import type {
   ReferenceObject,
-  SchemaObject,
   ParameterObject,
   RequestBodyObject,
   PathItemObject,
@@ -10,7 +9,11 @@ import {
   ResponseObject,
   ContentObject,
   DiscriminatorObject,
-} from 'openapi3-ts';
+  SchemaObject,
+} from 'openapi3-ts/oas30';
+
+import { PathsObject } from 'openapi3-ts/oas31';
+
 import type {
   AnyZodObject,
   ZodNumberDef,
@@ -692,18 +695,22 @@ export class OpenAPIGenerator {
       ...checks.map<SchemaObject>(check => {
         switch (check.kind) {
           case 'min':
-            return check.inclusive
-              ? { minimum: check.value }
-              : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-              ? { exclusiveMinimum: check.value }
-              : { minimum: check.value, exclusiveMinimum: true };
+            return (
+              check.inclusive
+                ? { minimum: check.value }
+                : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
+                ? { exclusiveMinimum: check.value }
+                : { minimum: check.value, exclusiveMinimum: true }
+            ) as any; // TODO: Fix in a separate PR
 
           case 'max':
-            return check.inclusive
-              ? { maximum: check.value }
-              : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-              ? { exclusiveMaximum: check.value }
-              : { maximum: check.value, exclusiveMaximum: true };
+            return (
+              check.inclusive
+                ? { maximum: check.value }
+                : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
+                ? { exclusiveMaximum: check.value }
+                : { maximum: check.value, exclusiveMaximum: true }
+            ) as any; // TODO: Fix in a separate PR
 
           default:
             return {};

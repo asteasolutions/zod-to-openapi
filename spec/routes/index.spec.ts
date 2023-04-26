@@ -1,5 +1,5 @@
 import { z, ZodSchema } from 'zod';
-import { OperationObject, PathItemObject } from 'openapi3-ts';
+import { OperationObject, PathItemObject } from 'openapi3-ts/oas30';
 import { OpenAPIGenerator } from '../../src/openapi-generator';
 import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
 import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
@@ -42,7 +42,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      ).generateDocument(testDocConfig) as any;
       const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['200'].description).toEqual('Simple response');
@@ -84,7 +84,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      ).generateDocument(testDocConfig) as any;
       const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['200'].content['application/json'].schema).toEqual({
@@ -125,7 +125,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      ).generateDocument(testDocConfig) as any;
       const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['200'].description).toEqual('Simple response');
@@ -153,7 +153,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      ).generateDocument(testDocConfig) as any;
       const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['204']).toEqual({ description: 'Success' });
@@ -189,7 +189,7 @@ const routeTests = ({
     const document = new OpenAPIGenerator(
       registry.definitions,
       '3.0.0'
-    ).generateDocument(testDocConfig);
+    ).generateDocument(testDocConfig) as any;
     const responses = document[rootDocPath]?.['/'].get.responses;
 
     expect(responses['400']).toEqual(
@@ -231,7 +231,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      ).generateDocument(testDocConfig) as any;
 
       const { requestBody } = document[rootDocPath]?.['/'].get;
 
@@ -268,7 +268,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      ).generateDocument(testDocConfig) as any;
 
       const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;
 
@@ -309,7 +309,7 @@ const routeTests = ({
       const document = new OpenAPIGenerator(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      ).generateDocument(testDocConfig) as any;
 
       const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;
 

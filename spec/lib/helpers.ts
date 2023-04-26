@@ -3,7 +3,7 @@ import {
   OpenAPIObjectConfig,
   OpenApiVersion,
 } from '../../src/openapi-generator';
-import type { SchemasObject } from 'openapi3-ts';
+import type { SchemasObject } from 'openapi3-ts/oas30';
 import type { ZodSchema } from 'zod';
 import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
 
