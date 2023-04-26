@@ -12,8 +12,6 @@ import type {
   SchemaObject,
 } from 'openapi3-ts/oas30';
 
-import { PathsObject } from 'openapi3-ts/oas31';
-
 import type {
   AnyZodObject,
   ZodNumberDef,
