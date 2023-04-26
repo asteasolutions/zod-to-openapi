@@ -16,7 +16,7 @@ import {
   ResponseObject,
   SchemaObject,
   SecuritySchemeObject,
-} from 'openapi3-ts';
+} from 'openapi3-ts/oas30';
 import type { AnyZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method =

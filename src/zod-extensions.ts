@@ -1,4 +1,4 @@
-import { ParameterObject, SchemaObject } from 'openapi3-ts';
+import { ParameterObject, SchemaObject } from 'openapi3-ts/oas30';
 import type { z, ZodObject, ZodRawShape } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 

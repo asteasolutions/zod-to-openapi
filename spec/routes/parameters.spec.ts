@@ -1,4 +1,4 @@
-import { OperationObject, PathItemObject } from 'openapi3-ts';
+import { OperationObject, PathItemObject } from 'openapi3-ts/oas30';
 import { z, ZodSchema } from 'zod';
 import { OpenAPIGenerator, RouteConfig } from '../../src';
 import { MissingParameterDataError } from '../../src/errors';
