@@ -1,8 +1,9 @@
 import { OperationObject, PathItemObject } from 'openapi3-ts/oas30';
 import { z, ZodSchema } from 'zod';
-import { OpenAPIGenerator, RouteConfig } from '../../src';
+import { RouteConfig } from '../../src';
 import { MissingParameterDataError } from '../../src/errors';
 import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
+import { OpenApiGeneratorV3 } from '../../src/v3.0/openapi-generator';
 
 describe('parameters', () => {
   it('generates a query parameter for route', () => {
@@ -275,7 +276,7 @@ describe('parameters', () => {
       route,
     };
 
-    const { paths } = new OpenAPIGenerator(
+    const { paths } = new OpenApiGeneratorV3(
       [...paramDefinitions, routeDefinition],
       '3.0.0'
     ).generateDocument(testDocConfig);

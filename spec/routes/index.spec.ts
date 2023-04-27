@@ -1,8 +1,7 @@
-import { z, ZodSchema } from 'zod';
-import { OperationObject, PathItemObject } from 'openapi3-ts/oas30';
-import { OpenAPIGenerator } from '../../src/openapi-generator';
-import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
-import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
+import { z } from 'zod';
+import { OpenAPIRegistry } from '../../src/openapi-registry';
+import { createTestRoute, testDocConfig } from '../lib/helpers';
+import { OpenApiGeneratorV3 } from '../../src/v3.0/openapi-generator';
 
 const routeTests = ({
   registerFunction,
@@ -39,7 +38,7 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = new OpenApiGeneratorV3(
         registry.definitions,
         '3.0.0'
       ).generateDocument(testDocConfig) as any;
@@ -81,7 +80,7 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = new OpenApiGeneratorV3(
         registry.definitions,
         '3.0.0'
       ).generateDocument(testDocConfig) as any;
@@ -122,7 +121,7 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = new OpenApiGeneratorV3(
         registry.definitions,
         '3.0.0'
       ).generateDocument(testDocConfig) as any;
@@ -150,7 +149,7 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = new OpenApiGeneratorV3(
         registry.definitions,
         '3.0.0'
       ).generateDocument(testDocConfig) as any;
@@ -186,7 +185,7 @@ const routeTests = ({
       },
     });
 
-    const document = new OpenAPIGenerator(
+    const document = new OpenApiGeneratorV3(
       registry.definitions,
       '3.0.0'
     ).generateDocument(testDocConfig) as any;
@@ -228,7 +227,7 @@ const routeTests = ({
 
       registry[registerFunction](route);
 
-      const document = new OpenAPIGenerator(
+      const document = new OpenApiGeneratorV3(
         registry.definitions,
         '3.0.0'
       ).generateDocument(testDocConfig) as any;
@@ -265,7 +264,7 @@ const routeTests = ({
 
       registry[registerFunction](route);
 
-      const document = new OpenAPIGenerator(
+      const document = new OpenApiGeneratorV3(
         registry.definitions,
         '3.0.0'
       ).generateDocument(testDocConfig) as any;
@@ -306,7 +305,7 @@ const routeTests = ({
 
       registry[registerFunction](route);
 
-      const document = new OpenAPIGenerator(
+      const document = new OpenApiGeneratorV3(
         registry.definitions,
         '3.0.0'
       ).generateDocument(testDocConfig) as any;

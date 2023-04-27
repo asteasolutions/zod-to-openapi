@@ -1,11 +1,9 @@
-import {
-  OpenAPIGenerator,
-  OpenAPIObjectConfig,
-  OpenApiVersion,
-} from '../../src/openapi-generator';
+import { OpenAPIObjectConfig, OpenApiVersion } from '../../src/types';
 import type { SchemasObject } from 'openapi3-ts/oas30';
 import type { ZodSchema } from 'zod';
 import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
+import { OpenApiGeneratorV3 } from '../../src/v3.0/openapi-generator';
+import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 
 export function createSchemas(
   zodSchemas: ZodSchema<any>[],
@@ -16,7 +14,10 @@ export function createSchemas(
     schema,
   }));
 
-  const { components } = new OpenAPIGenerator(
+  const OpenApiGenerator =
+    openApiVersion === '3.1.0' ? OpenApiGeneratorV31 : OpenApiGeneratorV3;
+
+  const { components } = new OpenApiGenerator(
     definitions,
     openApiVersion
   ).generateComponents();

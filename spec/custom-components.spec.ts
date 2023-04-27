@@ -1,10 +1,8 @@
-import {
-  OpenAPIGenerator,
-  OpenAPIObjectConfig,
-} from '../src/openapi-generator';
+import { OpenAPIObjectConfig } from '../src/types';
 import { OpenAPIRegistry } from '../src/openapi-registry';
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
+import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator';
 
 extendZodWithOpenApi(z);
 
@@ -52,7 +50,7 @@ describe('Custom components', () => {
       },
     });
 
-    const builder = new OpenAPIGenerator(registry.definitions, '3.0.0');
+    const builder = new OpenApiGeneratorV3(registry.definitions, '3.0.0');
     const document = builder.generateDocument(testDocConfig) as any;
 
     expect(document.paths['/units'].get.security).toEqual([{ bearerAuth: [] }]);
@@ -91,7 +89,7 @@ describe('Custom components', () => {
       },
     });
 
-    const builder = new OpenAPIGenerator(registry.definitions, '3.0.0');
+    const builder = new OpenApiGeneratorV3(registry.definitions, '3.0.0');
     const document = builder.generateDocument(testDocConfig) as any;
 
     expect(document.paths['/units'].get.responses['200'].headers).toEqual({

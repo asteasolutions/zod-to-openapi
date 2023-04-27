@@ -68,7 +68,7 @@ interface ParameterData {
   name?: string;
 }
 
-export class OpenAPIGenerator {
+export abstract class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
@@ -642,80 +642,19 @@ export class OpenAPIGenerator {
     };
   }
 
-  private openApiVersionSatisfies = (
-    inputVersion: OpenApiVersion,
-    comparison: OpenApiVersion
-  ): boolean =>
-    openApiVersions.indexOf(inputVersion) >=
-    openApiVersions.indexOf(comparison);
+  // TODO: Add JS documentation with type annotations of what is expected + a comment to
+  // check the implementations of the separate function implementations
+  protected abstract mapNullableOfArray(
+    _objects: any[],
+    _isNullable: boolean
+  ): any[];
 
-  private mapNullableOfArray(
-    objects: (SchemaObject | ReferenceObject)[],
-    isNullable: boolean
-  ): (SchemaObject | ReferenceObject)[] {
-    if (isNullable) {
-      if (this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')) {
-        return [...objects, { type: 'null' }];
-      }
-      return [...objects, { nullable: true }];
-    }
-    return objects;
-  }
+  protected abstract mapNullableType(
+    _type: NonNullable<SchemaObject['type']>,
+    _isNullable: boolean
+  ): any;
 
-  private mapNullableType(
-    type: NonNullable<SchemaObject['type']>,
-    isNullable: boolean
-  ): Pick<SchemaObject, 'type' | 'nullable'> {
-    // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
-    if (
-      isNullable &&
-      this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-    ) {
-      return {
-        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
-      };
-    }
-
-    return {
-      type,
-      nullable: isNullable ? true : undefined,
-    };
-  }
-
-  private getNumberChecks(
-    checks: ZodNumberDef['checks']
-  ): Pick<
-    SchemaObject,
-    'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
-  > {
-    return Object.assign(
-      {},
-      ...checks.map<SchemaObject>(check => {
-        switch (check.kind) {
-          case 'min':
-            return (
-              check.inclusive
-                ? { minimum: check.value }
-                : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-                ? { exclusiveMinimum: check.value }
-                : { minimum: check.value, exclusiveMinimum: true }
-            ) as any; // TODO: Fix in a separate PR
-
-          case 'max':
-            return (
-              check.inclusive
-                ? { maximum: check.value }
-                : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-                ? { exclusiveMaximum: check.value }
-                : { maximum: check.value, exclusiveMaximum: true }
-            ) as any; // TODO: Fix in a separate PR
-
-          default:
-            return {};
-        }
-      })
-    );
-  }
+  protected abstract getNumberChecks(_checks: ZodNumberDef['checks']): any;
 
   private constructReferencedOpenAPISchema<T>(
     zodSchema: ZodSchema<T>,
