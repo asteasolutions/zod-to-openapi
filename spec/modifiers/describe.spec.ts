@@ -45,7 +45,10 @@ describe('describe', () => {
     );
 
     expectSchema([schema], {
-      SimpleString: { type: 'string', description: 'Alternative description' },
+      SimpleString: {
+        type: 'string',
+        description: 'Alternative description',
+      },
     });
   });
 

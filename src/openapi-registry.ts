@@ -193,6 +193,6 @@ export class OpenAPIRegistry {
     refId: string,
     zodSchema: T
   ): T {
-    return zodSchema.internal_openapi({ refId });
+    return zodSchema.openapi(refId);
   }
 }

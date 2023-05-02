@@ -28,7 +28,11 @@ describe('number', () => {
 
   it('supports exclusive minimum in open api 3.0.0', () => {
     expectSchema([registerSchema('SimpleInteger', z.number().int().gt(0))], {
-      SimpleInteger: { type: 'integer', minimum: 0, exclusiveMinimum: true },
+      SimpleInteger: {
+        type: 'integer',
+        minimum: 0,
+        exclusiveMinimum: true,
+      },
     });
   });
 
@@ -40,7 +44,11 @@ describe('number', () => {
 
   it('supports exclusive maximum in open api 3.0.0', () => {
     expectSchema([registerSchema('SimpleInteger', z.number().int().lt(0))], {
-      SimpleInteger: { type: 'integer', maximum: 0, exclusiveMaximum: true },
+      SimpleInteger: {
+        type: 'integer',
+        maximum: 0,
+        exclusiveMaximum: true,
+      },
     });
   });
 

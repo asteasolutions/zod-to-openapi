@@ -13,7 +13,9 @@ describe('date', () => {
 
   it('uses `string` as the example type when the schema infers to `Date`', () => {
     const example = new Date().toISOString();
-    const schema = registerSchema('Date', z.date()).openapi({ example });
+    const schema = registerSchema('Date', z.date()).openapi({
+      example,
+    });
     expectSchema([schema], {
       Date: {
         type: 'string',

@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { OpenAPIGenerator } from '../../src/openapi-generator';
 import { OpenAPIRegistry } from '../../src/openapi-registry';
-import { createTestRoute, testDocConfig } from '../lib/helpers';
+import {
+  createTestRoute,
+  generateDataForRoute,
+  testDocConfig,
+} from '../lib/helpers';
 
 const routeTests = ({
   registerFunction,
@@ -201,6 +205,45 @@ const routeTests = ({
         },
       });
     });
+
+    it('can automatically register response body data', () => {
+      const Person = z
+        .object({
+          name: z.string(),
+        })
+        .openapi('Person');
+
+      const { documentSchemas, responses } = generateDataForRoute({
+        responses: {
+          '200': {
+            description: 'Test response',
+            content: {
+              'application/json': {
+                schema: Person,
+              },
+            },
+          },
+        },
+      });
+
+      expect(documentSchemas).toEqual({
+        Person: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+          required: ['name'],
+        },
+      });
+
+      const response = responses['200'].content['application/json'];
+
+      expect(response).toEqual({
+        schema: {
+          $ref: '#/components/schemas/Person',
+        },
+      });
+    });
   });
 
   it('can generate paths with multiple examples', () => {
@@ -362,6 +405,38 @@ const routeTests = ({
 
       expect(requestBody['application/xml']).toEqual({
         schema: { $ref: '#/components/schemas/User' },
+      });
+    });
+
+    it('can automatically register request body data', () => {
+      const Person = z
+        .object({
+          name: z.string(),
+        })
+        .openapi('Person');
+
+      const { documentSchemas, requestBody } = generateDataForRoute({
+        request: {
+          body: { content: { 'application/json': { schema: Person } } },
+        },
+      });
+
+      expect(documentSchemas).toEqual({
+        Person: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+          required: ['name'],
+        },
+      });
+
+      expect(requestBody).toEqual({
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/Person' },
+          },
+        },
       });
     });
   });

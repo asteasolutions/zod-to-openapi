@@ -28,6 +28,29 @@ describe('union', () => {
     );
   });
 
+  it('can automatically register union items', () => {
+    const schema = z
+      .union([z.string().openapi('StringId'), z.number().openapi('NumberId')])
+      .openapi('Union');
+
+    expectSchema([schema], {
+      StringId: {
+        type: 'string',
+      },
+
+      NumberId: {
+        type: 'number',
+      },
+
+      Union: {
+        anyOf: [
+          { $ref: '#/components/schemas/StringId' },
+          { $ref: '#/components/schemas/NumberId' },
+        ],
+      },
+    });
+  });
+
   it('supports nullable union types', () => {
     expectSchema(
       [registerSchema('Test', z.string().or(z.number()).nullable())],

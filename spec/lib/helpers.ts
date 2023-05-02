@@ -3,9 +3,17 @@ import {
   OpenAPIObjectConfig,
   OpenApiVersion,
 } from '../../src/openapi-generator';
-import type { SchemasObject } from 'openapi3-ts';
+import type {
+  ComponentsObject,
+  OperationObject,
+  SchemasObject,
+} from 'openapi3-ts';
 import type { ZodSchema } from 'zod';
-import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
+import {
+  OpenAPIDefinitions,
+  OpenAPIRegistry,
+  RouteConfig,
+} from '../../src/openapi-registry';
 
 export function createSchemas(
   zodSchemas: ZodSchema<any>[],
@@ -38,9 +46,18 @@ export function registerSchema<T extends ZodSchema<any>>(
   refId: string,
   zodSchema: T
 ): T {
+  return zodSchema.openapi(refId);
+}
+
+export function registerParameter<T extends ZodSchema<any>>(
+  refId: string,
+  zodSchema: T
+) {
   const registry = new OpenAPIRegistry();
 
-  return registry.register(refId, zodSchema);
+  const schema = registry.registerParameter(refId, zodSchema);
+
+  return { type: 'parameter', schema } as const;
 }
 
 export function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
@@ -69,3 +86,31 @@ export const testDocConfig: OpenAPIObjectConfig = {
   },
   servers: [{ url: 'v1' }],
 };
+
+export function generateDataForRoute(
+  props: Partial<RouteConfig> = {},
+  additionalDefinitions: OpenAPIDefinitions[] = []
+): OperationObject & {
+  documentSchemas: ComponentsObject['schemas'];
+  documentParameters: ComponentsObject['parameters'];
+} {
+  const route = createTestRoute(props);
+
+  const routeDefinition = {
+    type: 'route' as const,
+    route,
+  };
+
+  const { paths, components } = new OpenAPIGenerator(
+    [...additionalDefinitions, routeDefinition],
+    '3.0.0'
+  ).generateDocument(testDocConfig);
+
+  const routeDoc = paths[route.path][route.method] as OperationObject;
+
+  return {
+    documentSchemas: components?.schemas,
+    documentParameters: components?.parameters,
+    ...routeDoc,
+  };
+}

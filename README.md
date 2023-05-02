@@ -16,6 +16,7 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
    7. [Defining custom components](#defining-custom-components)
    8. [A full example](#a-full-example)
    9. [Adding it as part of your build](#adding-it-as-part-of-your-build)
+   10. [Using schemas vs a registry](#using-schemas-vs-a-registry)
 3. [Zod schema types](#zod-schema-types)
    1. [Supported types](#supported-types)
    2. [Unsupported types](#unsupported-types)
@@ -30,14 +31,13 @@ We at [Astea Solutions](https://asteasolutions.com/) made this library because w
 Simply put, it turns this:
 
 ```ts
-const UserSchema = registry.register(
-  'User',
-  z.object({
+const UserSchema = z
+  .object({
     id: z.string().openapi({ example: '1212121' }),
     name: z.string().openapi({ example: 'John Doe' }),
     age: z.number().openapi({ example: 42 }),
   })
-);
+  .openapi('User');
 
 registry.registerPath({
   method: 'get',
@@ -114,7 +114,14 @@ yarn add @asteasolutions/zod-to-openapi
 
 ### The `openapi` method
 
-To keep openapi definitions natural, we add an `openapi` method to all Zod objects. For this to work, you need to call `extendZodWithOpenApi` once in your project.
+To keep openapi definitions natural, we add an `openapi` method to all Zod objects. Its idea is to provide a convenient way to provide OpenApi specific data.
+It has three overloads:
+
+1. `.openapi({ [key]: value })` - this way we can specify any OpenApi fields. For example `z.number().openapi({ example: 3 })` would add `example: 3` to the generated schema.
+2. `.openapi("<schema-name>")` - this way we specify that the underlying zod schema should be "registered" i.e added into `components/schemas` with the provided `<schema-name>`
+3. `.openapi("<schema-name>", { [key]: value })` - this unites the two use cases above so that we can specify both a registration `<schema-name>` and additional metadata
+
+For this to work, you need to call `extendZodWithOpenApi` once in your project.
 
 Note: This should be done only once in a common-entrypoint file of your project (for example an `index.ts`/`app.ts`). If you're using tree-shaking with Webpack, mark that file as having side-effects.
 
@@ -130,7 +137,7 @@ z.string().openapi({ description: 'Some string' });
 
 ### The Registry
 
-The `OpenAPIRegistry` is used to track definitions which are later generated using the `OpenAPIGenerator` class.
+The `OpenAPIRegistry` is a utility that can be used to collect definitions which would later be passed to the `OpenAPIGenerator` class.
 
 ```ts
 import {
@@ -177,7 +184,21 @@ name:
 
 ### Defining schemas
 
-An OpenAPI schema should be registered using the `register` method of an `OpenAPIRegistry` instance.
+An OpenApi schema should be registered by using the `.openapi` method and providing a name:
+
+```ts
+const UserSchema = z
+  .object({
+    id: z.string().openapi({ example: '1212121' }),
+    name: z.string().openapi({ example: 'John Doe' }),
+    age: z.number().openapi({ example: 42 }),
+  })
+  .openapi('User');
+
+const generator = new OpenAPIGenerator([UserSchema], '3.0.0');
+```
+
+The same can be achieved by using the `register` method of an `OpenAPIRegistry` instance. For more check the ["Using schemas vs a registry"](#using-schemas-vs-a-registry) section
 
 ```ts
 const UserSchema = registry.register(
@@ -188,9 +209,11 @@ const UserSchema = registry.register(
     age: z.number().openapi({ example: 42 }),
   })
 );
+
+const generator = new OpenAPIGenerator(registry.definitions, '3.0.0');
 ```
 
-If run now, `generateComponents` will generate the following structure:
+If run now, `generator.generateComponents()` will generate the following structure:
 
 ```yaml
 components:
@@ -213,7 +236,7 @@ components:
         - age
 ```
 
-The key for the schema in the output is the first argument passed to `.register` (in this case - `User`).
+The key for the schema in the output is the first argument passed to `.openapi` method (or the `.register`) - in this case: `User`.
 
 Note that `generateComponents` does not return YAML but a JS object - you can then serialize that object into YAML or JSON depending on your use-case.
 
@@ -363,6 +386,80 @@ You can define components that are not OpenAPI schemas, including security schem
 ### A full example
 
 A full example code can be found [here](./example/index.ts). And the YAML representation of its result - [here](./example/openapi-docs.yml)
+
+### Using schemas vs a registry
+
+Schemas are automatically being registered when referenced. That means that if you have a schema like:
+
+```ts
+const schema = z.object({ key: z.string().openapi('Test') }).openapi('Object');
+```
+
+you'd have the following resulting structure:
+
+```yaml
+components:
+  schemas:
+    Test:
+      type: 'string',
+    Object:
+      type: 'object',
+      properties:
+        key:
+          $ref: '#/components/schemas/Test'
+      required: ['key']
+```
+
+This does not require any usages of an `OpenAPIRegistry` instance.
+
+However the same output can be achieved with the following code:
+
+```ts
+const registry = new OpenAPIRegistry();
+const schema = registry.register(
+  'Object',
+  z.object({ key: z.string().openapi('Test') })
+);
+```
+
+The main benefit of the `.registry` method is that you can use the registry as a "collection" where you would put all such schemas.
+
+With `.openapi`:
+
+```ts
+// file1.ts
+export const Schema1 = ...
+
+// file2.ts
+export const Schema2 = ...
+
+new OpenAPIGenerator([Schema1, Schema2])
+```
+
+Adding a `NewSchema` into `file3.ts` would require you to pass that schema manually into the array of the generator constructor.
+Note: If a `NewSchema` is referenced by any other schemas or a route/webhook definition it would still appear in the resulting document.
+
+With `registry.register`:
+
+```ts
+// registry.ts
+export const registry = new OpenAPIRegistry()
+
+// file1.ts
+export const Schema1 = registry.register(...)
+
+// file2.ts
+export const Schema2 = registry.register(...)
+
+new OpenAPIGenerator(registry.definitions)
+```
+
+Adding a `NewSchema` into `file3.ts` and using `registry.register` would NOT require you to do any changes to the generator constructor.
+
+#### Conclusion
+
+Using an `OpenAPIRegistry` instance is mostly useful if you would want your resulting document to contain unreferenced schemas.
+That can sometimes be useful - for example when you are slowly integrating an already existing documentation with `@asteasolutions/zod-to-openapi` and you are migrating small pieces at a time. Those pieces can then be referenced directly from an existing documentation.
 
 ### Adding it as part of your build
 

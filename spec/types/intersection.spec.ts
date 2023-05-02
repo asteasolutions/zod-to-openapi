@@ -29,6 +29,43 @@ describe('intersection', () => {
     });
   });
 
+  it('can automatically register intersection items', () => {
+    const Person = z
+      .object({
+        name: z.string(),
+      })
+      .openapi('Person');
+
+    const Employee = z.object({
+      role: z.string(),
+    });
+
+    const schema = z.intersection(Person, Employee).openapi('Intersection');
+
+    expectSchema([schema], {
+      Person: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+        required: ['name'],
+      },
+
+      Intersection: {
+        allOf: [
+          { $ref: '#/components/schemas/Person' },
+          {
+            type: 'object',
+            properties: { role: { type: 'string' } },
+            required: ['role'],
+          },
+        ],
+      },
+    });
+  });
+
   it('supports nullable intersection types', () => {
     const Person = z.object({
       name: z.string(),

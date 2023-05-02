@@ -219,4 +219,46 @@ describe('discriminated union', () => {
       }
     );
   });
+
+  it('can automatically register discriminated union items', () => {
+    const schema = z
+      .discriminatedUnion('type', [
+        z.object({ type: z.literal('dog').openapi('DogType') }).openapi('Dog'),
+        z.object({ type: z.literal('cat').openapi('CatType') }),
+      ])
+      .openapi('DiscriminatedUnion');
+
+    expectSchema([schema], {
+      DogType: {
+        type: 'string',
+        enum: ['dog'],
+      },
+
+      CatType: {
+        type: 'string',
+        enum: ['cat'],
+      },
+
+      Dog: {
+        type: 'object',
+        required: ['type'],
+        properties: {
+          type: { $ref: '#/components/schemas/DogType' },
+        },
+      },
+
+      DiscriminatedUnion: {
+        oneOf: [
+          { $ref: '#/components/schemas/Dog' },
+          {
+            type: 'object',
+            required: ['type'],
+            properties: {
+              type: { $ref: '#/components/schemas/CatType' },
+            },
+          },
+        ],
+      },
+    });
+  });
 });

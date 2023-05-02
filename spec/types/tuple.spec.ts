@@ -78,6 +78,35 @@ describe('tuple', () => {
     });
   });
 
+  it('can automatically register tuple items', () => {
+    const schema = z
+      .tuple([z.string().openapi('StringId'), z.number().openapi('NumberId')])
+      .openapi('Tuple');
+
+    expectSchema([schema], {
+      StringId: {
+        type: 'string',
+      },
+
+      NumberId: {
+        type: 'number',
+      },
+
+      Tuple: {
+        type: 'array',
+
+        items: {
+          anyOf: [
+            { $ref: '#/components/schemas/StringId' },
+            { $ref: '#/components/schemas/NumberId' },
+          ],
+        },
+        maxItems: 2,
+        minItems: 2,
+      },
+    });
+  });
+
   describe('nullable', () => {
     it('supports tuples with nullable in 3.0.0', () => {
       expectSchema(
