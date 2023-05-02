@@ -149,4 +149,22 @@ describe('refine', () => {
       }
     );
   });
+
+  // TODO: This test should probably be made to work.
+  it.skip('can automatically register schemas in refine', () => {
+    const schema = z
+      .string()
+      .openapi('PlainString')
+      .refine(data => data.length > 3)
+      .openapi('RefinedString');
+
+    expectSchema([schema], {
+      PlainString: {
+        type: 'string',
+      },
+      RefinedString: {
+        type: 'string',
+      },
+    });
+  });
 });

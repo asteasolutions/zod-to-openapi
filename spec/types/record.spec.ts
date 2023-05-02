@@ -42,4 +42,21 @@ describe('record', () => {
       },
     });
   });
+
+  it('can automatically register record items', () => {
+    const schema = z.record(z.number().openapi('NumberId')).openapi('Record');
+
+    expectSchema([schema], {
+      NumberId: {
+        type: 'number',
+      },
+
+      Record: {
+        type: 'object',
+        additionalProperties: {
+          $ref: '#/components/schemas/NumberId',
+        },
+      },
+    });
+  });
 });

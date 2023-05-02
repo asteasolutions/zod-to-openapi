@@ -3,159 +3,264 @@ import { MissingParameterDataError } from '../../src/errors';
 import { generateDataForRoute, registerParameter } from '../lib/helpers';
 
 describe('parameters', () => {
-  it('generates a query parameter for route', () => {
-    const { parameters } = generateDataForRoute({
-      request: { query: z.object({ test: z.string() }) },
+  describe('query', () => {
+    it('generates a query parameter for route', () => {
+      const { parameters } = generateDataForRoute({
+        request: { query: z.object({ test: z.string() }) },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'query',
+          name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
     });
 
-    expect(parameters).toEqual([
-      {
-        in: 'query',
-        name: 'test',
-        required: true,
-        schema: {
+    it('generates a reference query parameter for route', () => {
+      const TestQuery = registerParameter(
+        'TestQuery',
+        z.string().openapi({
+          param: { name: 'test', in: 'query' },
+        })
+      );
+
+      const { parameters, documentParameters } = generateDataForRoute(
+        { request: { query: z.object({ test: TestQuery.schema }) } },
+        [TestQuery]
+      );
+
+      expect(documentParameters).toEqual({
+        TestQuery: {
+          in: 'query',
+          name: 'test',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/TestQuery',
+          },
+        },
+      });
+
+      expect(parameters).toEqual([
+        { $ref: '#/components/parameters/TestQuery' },
+      ]);
+    });
+
+    it('can automatically register request query parameters', () => {
+      const Person = z.object({ name: z.string() }).openapi('Person');
+
+      const { documentSchemas, parameters } = generateDataForRoute({
+        request: {
+          query: z.object({
+            person: Person,
+          }),
+        },
+      });
+
+      expect(documentSchemas).toEqual({
+        Person: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+          required: ['name'],
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'query',
+          name: 'person',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/Person',
+          },
+        },
+      ]);
+    });
+  });
+
+  describe('path', () => {
+    it('generates a path parameter for route', () => {
+      const { parameters } = generateDataForRoute({
+        request: { params: z.object({ test: z.string() }) },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'path',
+          name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
+    it('generates a reference path parameter for route', () => {
+      const TestParam = registerParameter(
+        'TestParam',
+        z.string().openapi({
+          param: { name: 'test', in: 'path' },
+        })
+      );
+
+      const { parameters, documentParameters } = generateDataForRoute(
+        { request: { params: z.object({ test: TestParam.schema }) } },
+        [TestParam]
+      );
+
+      expect(documentParameters).toEqual({
+        TestParam: {
+          in: 'path',
+          name: 'test',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/TestParam',
+          },
+        },
+      });
+
+      expect(parameters).toEqual([
+        { $ref: '#/components/parameters/TestParam' },
+      ]);
+    });
+
+    it('can automatically register request path parameters', () => {
+      const UserId = z.string().openapi('UserId').length(6);
+
+      const { documentSchemas, parameters } = generateDataForRoute({
+        request: {
+          params: z.object({
+            id: UserId,
+          }),
+        },
+      });
+
+      expect(documentSchemas).toEqual({
+        UserId: {
           type: 'string',
+          minLength: 6,
+          maxLength: 6,
         },
-      },
-    ]);
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'path',
+          name: 'id',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/UserId',
+          },
+        },
+      ]);
+    });
   });
 
-  it('generates a path parameter for route', () => {
-    const { parameters } = generateDataForRoute({
-      request: { params: z.object({ test: z.string() }) },
+  describe('header', () => {
+    it('generates a header parameter with array for route', () => {
+      const { parameters } = generateDataForRoute({
+        request: {
+          headers: z.object({ test: z.string() }),
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'header',
+          name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
     });
 
-    expect(parameters).toEqual([
-      {
-        in: 'path',
-        name: 'test',
-        required: true,
-        schema: {
+    it('generates a header parameter with object for route', () => {
+      const { parameters } = generateDataForRoute({
+        request: {
+          headers: [z.string().openapi({ param: { name: 'test' } })],
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'header',
+          name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
+    it('generates a reference header parameter for route', () => {
+      const TestHeader = registerParameter(
+        'TestHeader',
+        z.string().openapi({
+          param: { name: 'test', in: 'header' },
+        })
+      );
+
+      const { parameters, documentParameters } = generateDataForRoute(
+        { request: { headers: [TestHeader.schema] } },
+        [TestHeader]
+      );
+
+      expect(documentParameters).toEqual({
+        TestHeader: {
+          in: 'header',
+          name: 'test',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/TestHeader',
+          },
+        },
+      });
+
+      expect(parameters).toEqual([
+        { $ref: '#/components/parameters/TestHeader' },
+      ]);
+    });
+
+    it('can automatically register request header parameters', () => {
+      const SessionToken = z.string().openapi('SessionToken').length(6);
+
+      const { documentSchemas, parameters } = generateDataForRoute({
+        request: {
+          headers: z.object({
+            'x-session': SessionToken,
+          }),
+        },
+      });
+
+      expect(documentSchemas).toEqual({
+        SessionToken: {
           type: 'string',
+          minLength: 6,
+          maxLength: 6,
         },
-      },
-    ]);
-  });
+      });
 
-  it('generates a header parameter with array for route', () => {
-    const { parameters } = generateDataForRoute({
-      request: {
-        headers: z.object({ test: z.string() }),
-      },
+      expect(parameters).toEqual([
+        {
+          in: 'header',
+          name: 'x-session',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/SessionToken',
+          },
+        },
+      ]);
     });
-
-    expect(parameters).toEqual([
-      {
-        in: 'header',
-        name: 'test',
-        required: true,
-        schema: {
-          type: 'string',
-        },
-      },
-    ]);
-  });
-
-  it('generates a header parameter with object for route', () => {
-    const { parameters } = generateDataForRoute({
-      request: {
-        headers: [z.string().openapi({ param: { name: 'test' } })],
-      },
-    });
-
-    expect(parameters).toEqual([
-      {
-        in: 'header',
-        name: 'test',
-        required: true,
-        schema: {
-          type: 'string',
-        },
-      },
-    ]);
-  });
-
-  it('generates a reference header parameter for route', () => {
-    const TestHeader = registerParameter(
-      'TestHeader',
-      z.string().openapi({
-        param: { name: 'test', in: 'header' },
-      })
-    );
-
-    const { parameters, documentParameters } = generateDataForRoute(
-      { request: { headers: [TestHeader.schema] } },
-      [TestHeader]
-    );
-
-    expect(documentParameters).toEqual({
-      TestHeader: {
-        in: 'header',
-        name: 'test',
-        required: true,
-        schema: {
-          $ref: '#/components/schemas/TestHeader',
-        },
-      },
-    });
-
-    expect(parameters).toEqual([
-      { $ref: '#/components/parameters/TestHeader' },
-    ]);
-  });
-
-  it('generates a reference query parameter for route', () => {
-    const TestQuery = registerParameter(
-      'TestQuery',
-      z.string().openapi({
-        param: { name: 'test', in: 'query' },
-      })
-    );
-
-    const { parameters, documentParameters } = generateDataForRoute(
-      { request: { query: z.object({ test: TestQuery.schema }) } },
-      [TestQuery]
-    );
-
-    expect(documentParameters).toEqual({
-      TestQuery: {
-        in: 'query',
-        name: 'test',
-        required: true,
-        schema: {
-          $ref: '#/components/schemas/TestQuery',
-        },
-      },
-    });
-
-    expect(parameters).toEqual([{ $ref: '#/components/parameters/TestQuery' }]);
-  });
-
-  it('generates a reference path parameter for route', () => {
-    const TestParam = registerParameter(
-      'TestParam',
-      z.string().openapi({
-        param: { name: 'test', in: 'path' },
-      })
-    );
-
-    const { parameters, documentParameters } = generateDataForRoute(
-      { request: { params: z.object({ test: TestParam.schema }) } },
-      [TestParam]
-    );
-
-    expect(documentParameters).toEqual({
-      TestParam: {
-        in: 'path',
-        name: 'test',
-        required: true,
-        schema: {
-          $ref: '#/components/schemas/TestParam',
-        },
-      },
-    });
-
-    expect(parameters).toEqual([{ $ref: '#/components/parameters/TestParam' }]);
   });
 
   it('generates required based on inner schema', () => {

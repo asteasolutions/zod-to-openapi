@@ -24,4 +24,21 @@ describe('array', () => {
       }
     );
   });
+
+  it('can automatically register array items', () => {
+    const schema = z.array(z.string().openapi('StringId')).openapi('Array');
+
+    expectSchema([schema], {
+      StringId: {
+        type: 'string',
+      },
+
+      Array: {
+        type: 'array',
+        items: {
+          $ref: '#/components/schemas/StringId',
+        },
+      },
+    });
+  });
 });
