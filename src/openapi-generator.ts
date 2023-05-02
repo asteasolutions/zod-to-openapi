@@ -10,6 +10,8 @@ import {
   ResponseObject,
   ContentObject,
   DiscriminatorObject,
+  HeadersObject,
+  BaseParameterObject,
 } from 'openapi3-ts';
 import type {
   AnyZodObject,
@@ -313,6 +315,24 @@ export class OpenAPIGenerator {
     ];
   }
 
+  private generateSimpleParameter(
+    zodSchema: ZodSchema<any>
+  ): BaseParameterObject {
+    const metadata = this.getMetadata(zodSchema);
+    const paramMetadata = metadata?.metadata?.param;
+
+    const required =
+      !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
+
+    const schema = this.generateSimpleSchema(zodSchema);
+
+    return {
+      schema,
+      required,
+      ...(paramMetadata ? this.buildParameterMetadata(paramMetadata) : {}),
+    };
+  }
+
   private generateParameter(zodSchema: ZodSchema<any>): ParameterObject {
     const metadata = this.getMetadata(zodSchema);
 
@@ -332,17 +352,12 @@ export class OpenAPIGenerator {
       });
     }
 
-    const required =
-      !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
-
-    const schema = this.generateSimpleSchema(zodSchema);
+    const baseParameter = this.generateSimpleParameter(zodSchema);
 
     return {
+      ...baseParameter,
       in: paramLocation,
       name: paramName,
-      schema,
-      required,
-      ...(paramMetadata ? this.buildParameterMetadata(paramMetadata) : {}),
     };
   }
 
@@ -536,16 +551,43 @@ export class OpenAPIGenerator {
 
   private getResponse({
     content,
+    headers,
     ...rest
   }: ResponseConfig): ResponseObject | ReferenceObject {
     const responseContent = content
       ? { content: this.getBodyContent(content) }
       : {};
 
+    if (!headers) {
+      return {
+        ...rest,
+        ...responseContent,
+      };
+    }
+
+    const responseHeaders = this.getResponseHeaders(headers);
+
     return {
       ...rest,
+      headers: responseHeaders,
       ...responseContent,
     };
+  }
+
+  private getResponseHeaders(
+    headers: HeadersObject | AnyZodObject
+  ): HeadersObject {
+    if (!isZodType(headers, 'ZodObject')) {
+      return headers;
+    }
+
+    const schemaShape = headers._def.shape();
+
+    const responseHeaders = mapValues(schemaShape, _ =>
+      this.generateSimpleParameter(_)
+    );
+
+    return responseHeaders;
   }
 
   private getBodyContent(content: ZodContentObject): ContentObject {

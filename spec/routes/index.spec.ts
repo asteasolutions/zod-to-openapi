@@ -1,8 +1,7 @@
-import { z, ZodSchema } from 'zod';
-import { OperationObject, PathItemObject } from 'openapi3-ts';
+import { z } from 'zod';
 import { OpenAPIGenerator } from '../../src/openapi-generator';
-import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
-import { createTestRoute, registerSchema, testDocConfig } from '../lib/helpers';
+import { OpenAPIRegistry } from '../../src/openapi-registry';
+import { createTestRoute, testDocConfig } from '../lib/helpers';
 
 const routeTests = ({
   registerFunction,
@@ -157,6 +156,50 @@ const routeTests = ({
       const responses = document[rootDocPath]?.['/'].get.responses;
 
       expect(responses['204']).toEqual({ description: 'Success' });
+    });
+
+    it('can generate response headers', () => {
+      const registry = new OpenAPIRegistry();
+
+      registry[registerFunction]({
+        method: 'get',
+        path: '/',
+        responses: {
+          204: {
+            description: 'Success',
+            headers: z.object({
+              'Set-Cookie': z.string().openapi({
+                example: 'token=test',
+                description: 'Some string value',
+                param: {
+                  description: 'JWT session cookie',
+                },
+              }),
+            }),
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions,
+        '3.0.0'
+      ).generateDocument(testDocConfig);
+      const responses = document[rootDocPath]?.['/'].get.responses;
+
+      expect(responses['204']).toEqual({
+        description: 'Success',
+        headers: {
+          'Set-Cookie': {
+            schema: {
+              type: 'string',
+              example: 'token=test',
+              description: 'Some string value',
+            },
+            description: 'JWT session cookie',
+            required: true,
+          },
+        },
+      });
     });
   });
 
