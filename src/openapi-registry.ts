@@ -48,7 +48,7 @@ export interface ZodRequestBody {
 
 export interface ResponseConfig {
   description: string;
-  headers?: HeadersObject;
+  headers?: AnyZodObject | HeadersObject;
   links?: LinksObject;
   content?: ZodContentObject;
 }

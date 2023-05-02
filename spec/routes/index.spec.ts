@@ -157,6 +157,50 @@ const routeTests = ({
 
       expect(responses['204']).toEqual({ description: 'Success' });
     });
+
+    it('can generate response headers', () => {
+      const registry = new OpenAPIRegistry();
+
+      registry[registerFunction]({
+        method: 'get',
+        path: '/',
+        responses: {
+          204: {
+            description: 'Success',
+            headers: z.object({
+              'Set-Cookie': z.string().openapi({
+                example: 'token=test',
+                description: 'Some string value',
+                param: {
+                  description: 'JWT session cookie',
+                },
+              }),
+            }),
+          },
+        },
+      });
+
+      const document = new OpenAPIGenerator(
+        registry.definitions,
+        '3.0.0'
+      ).generateDocument(testDocConfig);
+      const responses = document[rootDocPath]?.['/'].get.responses;
+
+      expect(responses['204']).toEqual({
+        description: 'Success',
+        headers: {
+          'Set-Cookie': {
+            schema: {
+              type: 'string',
+              example: 'token=test',
+              description: 'Some string value',
+            },
+            description: 'JWT session cookie',
+            required: true,
+          },
+        },
+      });
+    });
   });
 
   it('can generate paths with multiple examples', () => {
