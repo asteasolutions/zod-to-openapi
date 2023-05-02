@@ -21,9 +21,8 @@ const UserIdSchema = registry.registerParameter(
     example: '1212121',
   })
 );
-const UserSchema = registry.register(
-  'User',
-  z.object({
+const UserSchema = z
+  .object({
     id: z.string().openapi({
       example: '1212121',
     }),
@@ -34,7 +33,7 @@ const UserSchema = registry.register(
       example: 42,
     }),
   })
-);
+  .openapi('User');
 
 const bearerAuth = registry.registerComponent('securitySchemes', 'bearerAuth', {
   type: 'http',

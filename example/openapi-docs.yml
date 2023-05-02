@@ -6,7 +6,15 @@ info:
 servers:
   - url: v1
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    UserId:
+      type: string
+      example: '1212121'
     User:
       type: object
       properties:
@@ -25,17 +33,18 @@ components:
         - age
   parameters:
     UserId:
-      in: path
-      name: id
       schema:
-        type: string
-        example: '1212121'
+        $ref: '#/components/schemas/UserId'
       required: true
+      name: id
+      in: path
 paths:
   '/users/{id}':
     get:
       description: Get user data by its id
       summary: Get a single user
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/UserId'
       responses:
