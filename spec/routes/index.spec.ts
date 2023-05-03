@@ -144,13 +144,13 @@ const routeTests = ({
         registry.definitions,
         '3.0.0'
       );
-      const responses = document[rootDocPath]?.['/'].get.responses;
+      const responses = document[rootDocPath]?.['/']?.get?.responses;
 
-      expect(responses['200'].description).toEqual('Simple response');
-      expect(responses['200'].content['application/json'].schema).toEqual({
+      expect(responses?.['200'].description).toEqual('Simple response');
+      expect(responses?.['200'].content['application/json'].schema).toEqual({
         $ref: '#/components/schemas/User',
       });
-      expect(responses['200'].content['application/xml'].schema).toEqual({
+      expect(responses?.['200'].content['application/xml'].schema).toEqual({
         $ref: '#/components/schemas/User',
       });
     });
