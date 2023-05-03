@@ -97,9 +97,9 @@ export function generateDataForRoute(
   const { paths, components } = new OpenAPIGenerator(
     [...additionalDefinitions, routeDefinition],
     '3.0.0'
-  ).generateDocument(testDocConfig) as any;
+  ).generateDocument(testDocConfig);
 
-  const routeDoc = paths[route.path][route.method] as OperationObject;
+  const routeDoc = paths[route.path]?.[route.method] as OperationObject;
 
   return {
     documentSchemas: components?.schemas,
