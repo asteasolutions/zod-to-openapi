@@ -51,9 +51,11 @@ describe('Custom components', () => {
     });
 
     const builder = new OpenApiGeneratorV3(registry.definitions, '3.0.0');
-    const document = builder.generateDocument(testDocConfig) as any;
+    const document = builder.generateDocument(testDocConfig);
 
-    expect(document.paths['/units'].get.security).toEqual([{ bearerAuth: [] }]);
+    expect(document.paths['/units']?.get?.security).toEqual([
+      { bearerAuth: [] },
+    ]);
 
     expect(document.components!.securitySchemes).toEqual({
       bearerAuth: {
@@ -90,9 +92,9 @@ describe('Custom components', () => {
     });
 
     const builder = new OpenApiGeneratorV3(registry.definitions, '3.0.0');
-    const document = builder.generateDocument(testDocConfig) as any;
+    const document = builder.generateDocument(testDocConfig);
 
-    expect(document.paths['/units'].get.responses['200'].headers).toEqual({
+    expect(document.paths['/units']?.get?.responses['200'].headers).toEqual({
       'x-api-key': { $ref: '#/components/headers/api-key' },
     });
 

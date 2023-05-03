@@ -1,13 +1,11 @@
 import { z } from 'zod';
-import { expectSchema, registerSchema } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('object polymorphism', () => {
   it('can use allOf for extended schemas', () => {
-    const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
-
-    const ExtendedSchema = registerSchema(
-      'Extended',
-      BaseSchema.extend({ bonus: z.number() })
+    const BaseSchema = z.object({ id: z.string() }).openapi('Base');
+    const ExtendedSchema = BaseSchema.extend({ bonus: z.number() }).openapi(
+      'Extended'
     );
 
     expectSchema([BaseSchema, ExtendedSchema], {
@@ -34,21 +32,15 @@ describe('object polymorphism', () => {
   });
 
   it('can chain-extend objects correctly', () => {
-    const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
+    const BaseSchema = z.object({ id: z.string() }).openapi('Base');
 
-    const A = registerSchema(
-      'A',
-      BaseSchema.extend({
-        bonus: z.number(),
-      })
-    );
+    const A = BaseSchema.extend({
+      bonus: z.number(),
+    }).openapi('A');
 
-    const B = registerSchema(
-      'B',
-      A.extend({
-        points: z.number(),
-      })
-    );
+    const B = A.extend({
+      points: z.number(),
+    }).openapi('B');
 
     expectSchema([BaseSchema, A, B], {
       Base: {
@@ -90,16 +82,12 @@ describe('object polymorphism', () => {
   });
 
   it('can chain-extend objects correctly without intermediate link', () => {
-    const BaseSchema = registerSchema('Base', z.object({ id: z.string() }));
-
+    const BaseSchema = z.object({ id: z.string() }).openapi('Base');
     const A = BaseSchema.extend({ bonus: z.number() });
 
-    const B = registerSchema(
-      'B',
-      A.extend({
-        points: z.number(),
-      })
-    );
+    const B = A.extend({
+      points: z.number(),
+    }).openapi('B');
 
     expectSchema([BaseSchema, B], {
       Base: {
@@ -126,14 +114,12 @@ describe('object polymorphism', () => {
   });
 
   it('can apply nullable', () => {
-    const BaseSchema = registerSchema('Base', z.object({ id: z.ostring() }));
-
-    const ExtendedSchema = registerSchema(
-      'Extended',
-      BaseSchema.extend({
-        bonus: z.onumber(),
-      }).nullable()
-    );
+    const BaseSchema = z.object({ id: z.ostring() }).openapi('Base');
+    const ExtendedSchema = BaseSchema.extend({
+      bonus: z.onumber(),
+    })
+      .nullable()
+      .openapi('Extended');
 
     expectSchema([BaseSchema, ExtendedSchema], {
       Base: {
@@ -158,25 +144,21 @@ describe('object polymorphism', () => {
   });
 
   it('can override properties', () => {
-    const AnimalSchema = registerSchema(
-      'Animal',
-      z.object({
+    const AnimalSchema = z
+      .object({
         name: z.ostring(),
         type: z.enum(['dog', 'cat']).optional(),
       })
-    ).openapi({
-      discriminator: {
-        propertyName: 'type',
-      },
-    });
+      .openapi('Animal', {
+        discriminator: {
+          propertyName: 'type',
+        },
+      });
 
-    const DogSchema = registerSchema(
-      'Dog',
-      AnimalSchema.extend({
-        type: z.string().openapi({ example: 'dog' }),
-      })
-    )
-      .openapi({
+    const DogSchema = AnimalSchema.extend({
+      type: z.string().openapi({ example: 'dog' }),
+    })
+      .openapi('Dog', {
         discriminator: {
           propertyName: 'type',
         },
@@ -213,21 +195,15 @@ describe('object polymorphism', () => {
   });
 
   it('treats objects created by .omit as a new object', () => {
-    const BaseSchema = registerSchema(
-      'Base',
-      z.object({
+    const BaseSchema = z
+      .object({
         name: z.string(),
         type: z.enum(['dog', 'cat']).optional(),
       })
-    );
-
+      .openapi('Base');
     const OmittedSchema = BaseSchema.omit({ type: true });
 
-    const OtherSchema = registerSchema(
-      'Other',
-      z.object({ omit: OmittedSchema })
-    );
-
+    const OtherSchema = z.object({ omit: OmittedSchema }).openapi('Other');
     expectSchema([BaseSchema, OtherSchema], {
       Base: {
         properties: {
@@ -257,20 +233,15 @@ describe('object polymorphism', () => {
   });
 
   it('treats objects created by .pick as a new object', () => {
-    const BaseSchema = registerSchema(
-      'Base',
-      z.object({
+    const BaseSchema = z
+      .object({
         name: z.string(),
         type: z.enum(['dog', 'cat']).optional(),
       })
-    );
-
+      .openapi('Base');
     const PickedSchema = BaseSchema.pick({ name: true });
 
-    const OtherSchema = registerSchema(
-      'Other',
-      z.object({ pick: PickedSchema })
-    );
+    const OtherSchema = z.object({ pick: PickedSchema }).openapi('Other');
 
     expectSchema([BaseSchema, OtherSchema], {
       Base: {

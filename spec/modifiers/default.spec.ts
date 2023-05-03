@@ -1,26 +1,24 @@
 import { z } from 'zod';
-import { expectSchema, registerSchema } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('default', () => {
   it('supports defaults', () => {
-    expectSchema(
-      [registerSchema('StringWithDefault', z.string().default('test'))],
-      {
-        StringWithDefault: {
-          type: 'string',
-          default: 'test',
-        },
-      }
-    );
+    expectSchema([z.string().default('test').openapi('StringWithDefault')], {
+      StringWithDefault: {
+        type: 'string',
+        default: 'test',
+      },
+    });
   });
 
   it('supports defaults override', () => {
     expectSchema(
       [
-        registerSchema(
-          'StringWithDefault',
-          z.string().default('test').default('override')
-        ),
+        z
+          .string()
+          .default('test')
+          .default('override')
+          .openapi('StringWithDefault'),
       ],
       {
         StringWithDefault: {
@@ -32,78 +30,64 @@ describe('default', () => {
   });
 
   it('supports falsy defaults', () => {
-    expectSchema(
-      [registerSchema('BooleanWithDefault', z.boolean().default(false))],
-      {
-        BooleanWithDefault: {
-          type: 'boolean',
-          default: false,
-        },
-      }
-    );
+    expectSchema([z.boolean().default(false).openapi('BooleanWithDefault')], {
+      BooleanWithDefault: {
+        type: 'boolean',
+        default: false,
+      },
+    });
   });
 
   it('supports optional defaults', () => {
-    expectSchema(
-      [
-        registerSchema(
-          'ObjectWithDefault',
-          z.object({
-            test: z.ostring().default('test'),
-          })
-        ),
-      ],
-      {
-        ObjectWithDefault: {
-          type: 'object',
-          properties: {
-            test: {
-              type: 'string',
-              default: 'test',
-            },
+    const schema = z
+      .object({ test: z.ostring().default('test') })
+      .openapi('ObjectWithDefault');
+
+    expectSchema([schema], {
+      ObjectWithDefault: {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'string',
+            default: 'test',
           },
         },
-      }
-    );
+      },
+    });
   });
 
   it('supports required defaults', () => {
-    expectSchema(
-      [
-        registerSchema(
-          'ObjectWithDefault',
-          z.object({
-            test: z.string().default('test'),
-          })
-        ),
-      ],
-      {
-        ObjectWithDefault: {
-          type: 'object',
-          properties: {
-            test: {
-              type: 'string',
-              default: 'test',
-            },
+    const schema = z
+      .object({
+        test: z.string().default('test'),
+      })
+      .openapi('ObjectWithDefault');
+
+    expectSchema([schema], {
+      ObjectWithDefault: {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'string',
+            default: 'test',
           },
-          required: ['test'],
         },
-      }
-    );
+        required: ['test'],
+      },
+    });
   });
 
   it('supports optional default schemas with refine', () => {
     expectSchema(
       [
-        registerSchema(
-          'Object',
-          z.object({
+        z
+          .object({
             test: z
               .onumber()
               .default(42)
               .refine(num => num && num % 2 === 0),
           })
-        ),
+          .openapi('Object'),
       ],
       {
         Object: {
@@ -122,15 +106,14 @@ describe('default', () => {
   it('supports required default schemas with refine', () => {
     expectSchema(
       [
-        registerSchema(
-          'Object',
-          z.object({
+        z
+          .object({
             test: z
               .number()
               .default(42)
               .refine(num => num && num % 2 === 0),
           })
-        ),
+          .openapi('Object'),
       ],
       {
         Object: {
@@ -150,10 +133,10 @@ describe('default', () => {
   it('supports overriding default with .openapi', () => {
     expectSchema(
       [
-        registerSchema(
-          'EnumWithDefault',
-          z.enum(['a', 'b']).default('a')
-        ).openapi({ default: 'b', examples: ['b'] }),
+        z
+          .enum(['a', 'b'])
+          .default('a')
+          .openapi('EnumWithDefault', { default: 'b', examples: ['b'] }),
       ],
       {
         EnumWithDefault: {

@@ -1,7 +1,15 @@
 import { OpenAPIObjectConfig, OpenApiVersion } from '../../src/types';
-import type { SchemasObject } from 'openapi3-ts/oas30';
+import type {
+  ComponentsObject,
+  OperationObject,
+  SchemasObject,
+} from 'openapi3-ts/oas30';
 import type { ZodSchema } from 'zod';
-import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
+import {
+  OpenAPIDefinitions,
+  OpenAPIRegistry,
+  RouteConfig,
+} from '../../src/openapi-registry';
 import { OpenApiGeneratorV3 } from '../../src/v3.0/openapi-generator';
 import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 
@@ -35,13 +43,15 @@ export function expectSchema(
   expect(components?.['schemas']).toEqual(openAPISchemas);
 }
 
-export function registerSchema<T extends ZodSchema<any>>(
+export function registerParameter<T extends ZodSchema<any>>(
   refId: string,
   zodSchema: T
-): T {
+) {
   const registry = new OpenAPIRegistry();
 
-  return registry.register(refId, zodSchema);
+  const schema = registry.registerParameter(refId, zodSchema);
+
+  return { type: 'parameter', schema } as const;
 }
 
 export function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
@@ -70,3 +80,31 @@ export const testDocConfig: OpenAPIObjectConfig = {
   },
   servers: [{ url: 'v1' }],
 };
+
+export function generateDataForRoute(
+  props: Partial<RouteConfig> = {},
+  additionalDefinitions: OpenAPIDefinitions[] = []
+): OperationObject & {
+  documentSchemas: ComponentsObject['schemas'];
+  documentParameters: ComponentsObject['parameters'];
+} {
+  const route = createTestRoute(props);
+
+  const routeDefinition = {
+    type: 'route' as const,
+    route,
+  };
+
+  const { paths, components } = new OpenApiGeneratorV3(
+    [...additionalDefinitions, routeDefinition],
+    '3.0.0'
+  ).generateDocument(testDocConfig);
+
+  const routeDoc = paths[route.path]?.[route.method] as OperationObject;
+
+  return {
+    documentSchemas: components?.schemas,
+    documentParameters: components?.parameters,
+    ...routeDoc,
+  };
+}
