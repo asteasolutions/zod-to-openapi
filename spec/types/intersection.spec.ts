@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { expectSchema, registerSchema } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('intersection', () => {
   it('supports intersection types', () => {
@@ -11,7 +11,7 @@ describe('intersection', () => {
       role: z.string(),
     });
 
-    expectSchema([registerSchema('Test', z.intersection(Person, Employee))], {
+    expectSchema([z.intersection(Person, Employee).openapi('Test')], {
       Test: {
         allOf: [
           {
@@ -19,6 +19,43 @@ describe('intersection', () => {
             properties: { name: { type: 'string' } },
             required: ['name'],
           },
+          {
+            type: 'object',
+            properties: { role: { type: 'string' } },
+            required: ['role'],
+          },
+        ],
+      },
+    });
+  });
+
+  it('can automatically register intersection items', () => {
+    const Person = z
+      .object({
+        name: z.string(),
+      })
+      .openapi('Person');
+
+    const Employee = z.object({
+      role: z.string(),
+    });
+
+    const schema = z.intersection(Person, Employee).openapi('Intersection');
+
+    expectSchema([schema], {
+      Person: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+        required: ['name'],
+      },
+
+      Intersection: {
+        allOf: [
+          { $ref: '#/components/schemas/Person' },
           {
             type: 'object',
             properties: { role: { type: 'string' } },
@@ -39,7 +76,7 @@ describe('intersection', () => {
     });
 
     expectSchema(
-      [registerSchema('Test', z.intersection(Person, Employee).nullable())],
+      [z.intersection(Person, Employee).nullable().openapi('Test')],
       {
         Test: {
           anyOf: [
@@ -75,12 +112,10 @@ describe('intersection', () => {
 
     expectSchema(
       [
-        registerSchema(
-          'Test',
-          z
-            .intersection(Person, Employee)
-            .default({ name: 'hello', role: 'world' })
-        ),
+        z
+          .intersection(Person, Employee)
+          .default({ name: 'hello', role: 'world' })
+          .openapi('Test'),
       ],
       {
         Test: {
@@ -116,13 +151,11 @@ describe('intersection', () => {
 
     expectSchema(
       [
-        registerSchema(
-          'Test',
-          z
-            .intersection(Person, Employee)
-            .nullable()
-            .default({ name: 'hello', role: 'world' })
-        ),
+        z
+          .intersection(Person, Employee)
+          .nullable()
+          .default({ name: 'hello', role: 'world' })
+          .openapi('Test'),
       ],
       {
         Test: {

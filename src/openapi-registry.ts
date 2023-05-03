@@ -48,7 +48,7 @@ export interface ZodRequestBody {
 
 export interface ResponseConfig {
   description: string;
-  headers?: HeadersObject;
+  headers?: AnyZodObject | HeadersObject;
   links?: LinksObject;
   content?: ZodContentObject;
 }
@@ -193,6 +193,6 @@ export class OpenAPIRegistry {
     refId: string,
     zodSchema: T
   ): T {
-    return zodSchema.internal_openapi({ refId });
+    return zodSchema.openapi(refId);
   }
 }

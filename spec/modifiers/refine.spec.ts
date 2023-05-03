@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { expectSchema, registerSchema } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('refine', () => {
   it('supports refined schemas', () => {
     expectSchema(
       [
-        registerSchema(
-          'RefinedString',
-          z.number().refine(num => num % 2 === 0)
-        ),
+        z
+          .number()
+          .refine(num => num % 2 === 0)
+          .openapi('RefinedString'),
       ],
       {
         RefinedString: {
@@ -21,12 +21,11 @@ describe('refine', () => {
   it('supports required refined schemas', () => {
     expectSchema(
       [
-        registerSchema(
-          'ObjectWithRefinedString',
-          z.object({
+        z
+          .object({
             test: z.number().refine(num => num && num % 2 === 0),
           })
-        ),
+          .openapi('ObjectWithRefinedString'),
       ],
       {
         ObjectWithRefinedString: {
@@ -45,12 +44,11 @@ describe('refine', () => {
   it('supports optional refined schemas', () => {
     expectSchema(
       [
-        registerSchema(
-          'ObjectWithRefinedString',
-          z.object({
+        z
+          .object({
             test: z.onumber().refine(num => num && num % 2 === 0),
           })
-        ),
+          .openapi('ObjectWithRefinedString'),
       ],
       {
         ObjectWithRefinedString: {
@@ -68,15 +66,14 @@ describe('refine', () => {
   it('supports optional refined schemas with default', () => {
     expectSchema(
       [
-        registerSchema(
-          'Object',
-          z.object({
+        z
+          .object({
             test: z
               .onumber()
               .refine(num => num && num % 2 === 0)
               .default(42),
           })
-        ),
+          .openapi('Object'),
       ],
       {
         Object: {
@@ -95,15 +92,14 @@ describe('refine', () => {
   it('supports required refined schemas with default', () => {
     expectSchema(
       [
-        registerSchema(
-          'Object',
-          z.object({
+        z
+          .object({
             test: z
               .number()
               .refine(num => num && num % 2 === 0)
               .default(42),
           })
-        ),
+          .openapi('Object'),
       ],
       {
         Object: {
@@ -123,9 +119,8 @@ describe('refine', () => {
   it('supports refined transforms when type is provided', () => {
     expectSchema(
       [
-        registerSchema(
-          'Object',
-          z.object({
+        z
+          .object({
             test: z
               .string()
               .transform(value => value.trim())
@@ -134,7 +129,7 @@ describe('refine', () => {
                 type: 'string',
               }),
           })
-        ),
+          .openapi('Object'),
       ],
       {
         Object: {
@@ -148,5 +143,23 @@ describe('refine', () => {
         },
       }
     );
+  });
+
+  // TODO: This test should probably be made to work.
+  it.skip('can automatically register schemas in refine', () => {
+    const schema = z
+      .string()
+      .openapi('PlainString')
+      .refine(data => data.length > 3)
+      .openapi('RefinedString');
+
+    expectSchema([schema], {
+      PlainString: {
+        type: 'string',
+      },
+      RefinedString: {
+        type: 'string',
+      },
+    });
   });
 });

@@ -1,52 +1,60 @@
 import { z } from 'zod';
-import { expectSchema, registerSchema } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('number', () => {
   it('generates OpenAPI schema for a simple number type', () => {
-    expectSchema([registerSchema('SimpleNumber', z.number())], {
+    expectSchema([z.number().openapi('SimpleNumber')], {
       SimpleNumber: { type: 'number' },
     });
   });
 
   it('generates OpenAPI schema for a simple integer type', () => {
-    expectSchema([registerSchema('SimpleInteger', z.number().int())], {
+    expectSchema([z.number().int().openapi('SimpleInteger')], {
       SimpleInteger: { type: 'integer' },
     });
   });
 
   it('supports number literals', () => {
-    expectSchema([registerSchema('Literal', z.literal(42))], {
+    expectSchema([z.literal(42).openapi('Literal')], {
       Literal: { type: 'number', enum: [42] },
     });
   });
 
   it('supports minimum in open api 3.0.0', () => {
-    expectSchema([registerSchema('SimpleInteger', z.number().int().gte(0))], {
+    expectSchema([z.number().int().gte(0).openapi('SimpleInteger')], {
       SimpleInteger: { type: 'integer', minimum: 0 },
     });
   });
 
   it('supports exclusive minimum in open api 3.0.0', () => {
-    expectSchema([registerSchema('SimpleInteger', z.number().int().gt(0))], {
-      SimpleInteger: { type: 'integer', minimum: 0, exclusiveMinimum: true },
+    expectSchema([z.number().int().gt(0).openapi('SimpleInteger')], {
+      SimpleInteger: {
+        type: 'integer',
+        minimum: 0,
+        exclusiveMinimum: true,
+      },
     });
   });
 
   it('supports maximum in open api 3.0.0', () => {
-    expectSchema([registerSchema('SimpleInteger', z.number().int().lte(0))], {
+    expectSchema([z.number().int().lte(0).openapi('SimpleInteger')], {
       SimpleInteger: { type: 'integer', maximum: 0 },
     });
   });
 
   it('supports exclusive maximum in open api 3.0.0', () => {
-    expectSchema([registerSchema('SimpleInteger', z.number().int().lt(0))], {
-      SimpleInteger: { type: 'integer', maximum: 0, exclusiveMaximum: true },
+    expectSchema([z.number().int().lt(0).openapi('SimpleInteger')], {
+      SimpleInteger: {
+        type: 'integer',
+        maximum: 0,
+        exclusiveMaximum: true,
+      },
     });
   });
 
   it('supports minimum in open api 3.1.0', () => {
     expectSchema(
-      [registerSchema('SimpleInteger', z.number().int().gte(0))],
+      [z.number().int().gte(0).openapi('SimpleInteger')],
       {
         SimpleInteger: { type: 'integer', minimum: 0 },
       },
@@ -56,7 +64,7 @@ describe('number', () => {
 
   it('supports exclusive minimum in open api 3.1.0', () => {
     expectSchema(
-      [registerSchema('SimpleInteger', z.number().int().gt(0))],
+      [z.number().int().gt(0).openapi('SimpleInteger')],
       {
         SimpleInteger: { type: 'integer', exclusiveMinimum: 0 } as any,
       },
@@ -66,7 +74,7 @@ describe('number', () => {
 
   it('supports maximum in open api 3.1.0', () => {
     expectSchema(
-      [registerSchema('SimpleInteger', z.number().int().lte(0))],
+      [z.number().int().lte(0).openapi('SimpleInteger')],
       {
         SimpleInteger: { type: 'integer', maximum: 0 },
       },
@@ -76,7 +84,7 @@ describe('number', () => {
 
   it('supports exclusive maximum in open api 3.1.0', () => {
     expectSchema(
-      [registerSchema('SimpleInteger', z.number().int().lt(0))],
+      [z.number().int().lt(0).openapi('SimpleInteger')],
       {
         SimpleInteger: { type: 'integer', exclusiveMaximum: 0 } as any,
       },

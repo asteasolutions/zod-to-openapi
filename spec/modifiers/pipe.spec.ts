@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { expectSchema, registerSchema } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('pipe', () => {
   it('can generate schema for pipes', () => {
     expectSchema(
       [
-        registerSchema(
-          'PipedDate',
-          z.date().or(z.string().min(1).pipe(z.coerce.date()))
-        ),
+        z
+          .date()
+          .or(z.string().min(1).pipe(z.coerce.date()))
+          .openapi('PipedDate'),
       ],
       {
         PipedDate: {
@@ -22,10 +22,11 @@ describe('pipe', () => {
   it('can generate schema for pipes with internal type transformation', () => {
     expectSchema(
       [
-        registerSchema(
-          'PipedNumber',
-          z.number().or(z.string()).pipe(z.coerce.number())
-        ),
+        z
+          .number()
+          .or(z.string())
+          .pipe(z.coerce.number())
+          .openapi('PipedNumber'),
       ],
       {
         PipedNumber: { anyOf: [{ type: 'number' }, { type: 'string' }] },

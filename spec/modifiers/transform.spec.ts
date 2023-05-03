@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { createSchemas, registerSchema } from '../lib/helpers';
+import { createSchemas } from '../lib/helpers';
 
 describe('transform', () => {
   it('does not support transformed schemas', () => {
     expect(() =>
       createSchemas([
-        registerSchema(
-          'Transformed',
-          z.number().transform(num => num.toString())
-        ),
+        z
+          .number()
+          .transform(num => num.toString())
+          .openapi('Transformed'),
       ])
     ).toThrow(/^Unknown zod object type/);
   });
