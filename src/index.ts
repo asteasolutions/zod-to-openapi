@@ -10,4 +10,4 @@ export {
   ZodRequestBody,
 } from './openapi-registry';
 
-export * as OpenAPI from 'openapi3-ts';
+export * as OpenAPI from 'openapi3-ts/oas30';

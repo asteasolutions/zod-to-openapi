@@ -1,11 +1,26 @@
-import { z } from 'zod';
-import { OpenAPIGenerator } from '../../src/openapi-generator';
-import { OpenAPIRegistry } from '../../src/openapi-registry';
+import { ZodSchema, z } from 'zod';
+import { OpenAPIGenerator, OpenApiVersion } from '../../src/openapi-generator';
+import {
+  OpenAPIDefinitions,
+  OpenAPIRegistry,
+} from '../../src/openapi-registry';
 import {
   createTestRoute,
   generateDataForRoute,
   testDocConfig,
 } from '../lib/helpers';
+import { OpenAPIObject as OpenAPIObject31 } from 'openapi3-ts/dist/oas31';
+
+// We need OpenAPIObject31 because of the webhooks property.
+// All tests can probably be refactored to use generateDataForRoute instead
+function generateDocumentWithPossibleWebhooks(
+  definitions: (OpenAPIDefinitions | ZodSchema)[],
+  openAPIVersion: OpenApiVersion
+) {
+  return new OpenAPIGenerator(definitions, openAPIVersion).generateDocument(
+    testDocConfig
+  ) as OpenAPIObject31;
+}
 
 const routeTests = ({
   registerFunction,
@@ -42,14 +57,14 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]?.['/'].get.responses;
+      );
+      const responses = document[rootDocPath]?.['/']?.get?.responses;
 
-      expect(responses['200'].description).toEqual('Simple response');
-      expect(responses['404'].description).toEqual('Missing object');
+      expect(responses?.['200'].description).toEqual('Simple response');
+      expect(responses?.['404'].description).toEqual('Missing object');
     });
 
     it('can specify response with plain OpenApi format', () => {
@@ -84,17 +99,17 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]?.['/'].get.responses;
+      );
+      const responses = document[rootDocPath]?.['/']?.get?.responses;
 
-      expect(responses['200'].content['application/json'].schema).toEqual({
+      expect(responses?.['200'].content['application/json'].schema).toEqual({
         type: 'string',
         example: 'test',
       });
-      expect(responses['404'].content['application/json'].schema).toEqual({
+      expect(responses?.['404'].content['application/json'].schema).toEqual({
         $ref: '#/components/schemas/SomeRef',
       });
     });
@@ -125,17 +140,17 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]?.['/'].get.responses;
+      );
+      const responses = document[rootDocPath]?.['/']?.get?.responses;
 
-      expect(responses['200'].description).toEqual('Simple response');
-      expect(responses['200'].content['application/json'].schema).toEqual({
+      expect(responses?.['200'].description).toEqual('Simple response');
+      expect(responses?.['200'].content['application/json'].schema).toEqual({
         $ref: '#/components/schemas/User',
       });
-      expect(responses['200'].content['application/xml'].schema).toEqual({
+      expect(responses?.['200'].content['application/xml'].schema).toEqual({
         $ref: '#/components/schemas/User',
       });
     });
@@ -153,13 +168,13 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]?.['/'].get.responses;
+      );
+      const responses = document[rootDocPath]?.['/']?.get?.responses;
 
-      expect(responses['204']).toEqual({ description: 'Success' });
+      expect(responses?.['204']).toEqual({ description: 'Success' });
     });
 
     it('can generate response headers', () => {
@@ -184,13 +199,13 @@ const routeTests = ({
         },
       });
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
-      const responses = document[rootDocPath]?.['/'].get.responses;
+      );
+      const responses = document[rootDocPath]?.['/']?.get?.responses;
 
-      expect(responses['204']).toEqual({
+      expect(responses?.['204']).toEqual({
         description: 'Success',
         headers: {
           'Set-Cookie': {
@@ -272,17 +287,17 @@ const routeTests = ({
       },
     });
 
-    const document = new OpenAPIGenerator(
+    const document = generateDocumentWithPossibleWebhooks(
       registry.definitions,
       '3.0.0'
-    ).generateDocument(testDocConfig);
-    const responses = document[rootDocPath]?.['/'].get.responses;
+    );
+    const responses = document[rootDocPath]?.['/']?.get?.responses;
 
-    expect(responses['400']).toEqual(
+    expect(responses?.['400']).toEqual(
       expect.objectContaining({ description: 'Failure' })
     );
 
-    const examples = responses['400']?.content['application/json']?.examples;
+    const examples = responses?.['400']?.content['application/json']?.examples;
 
     expect(examples).toEqual({
       example0: {
@@ -314,12 +329,12 @@ const routeTests = ({
 
       registry[registerFunction](route);
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      );
 
-      const { requestBody } = document[rootDocPath]?.['/'].get;
+      const requestBody = document[rootDocPath]?.['/']?.get?.requestBody;
 
       expect(requestBody).toEqual({
         description: 'Test description',
@@ -351,12 +366,14 @@ const routeTests = ({
 
       registry[registerFunction](route);
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      );
 
-      const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;
+      const requestBody = (
+        document[rootDocPath]?.['/']?.get?.requestBody as any
+      ).content;
 
       expect(requestBody['application/json']).toEqual({
         schema: { type: 'string', enum: ['test'] },
@@ -392,12 +409,14 @@ const routeTests = ({
 
       registry[registerFunction](route);
 
-      const document = new OpenAPIGenerator(
+      const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
         '3.0.0'
-      ).generateDocument(testDocConfig);
+      );
 
-      const requestBody = document[rootDocPath]?.['/'].get.requestBody.content;
+      const requestBody = (
+        document[rootDocPath]?.['/']?.get?.requestBody as any
+      ).content;
 
       expect(requestBody['application/json']).toEqual({
         schema: { type: 'string' },

@@ -7,7 +7,7 @@ import type {
   ComponentsObject,
   OperationObject,
   SchemasObject,
-} from 'openapi3-ts';
+} from 'openapi3-ts/oas30';
 import type { ZodSchema } from 'zod';
 import {
   OpenAPIDefinitions,
@@ -99,7 +99,7 @@ export function generateDataForRoute(
     '3.0.0'
   ).generateDocument(testDocConfig);
 
-  const routeDoc = paths[route.path][route.method] as OperationObject;
+  const routeDoc = paths[route.path]?.[route.method] as OperationObject;
 
   return {
     documentSchemas: components?.schemas,

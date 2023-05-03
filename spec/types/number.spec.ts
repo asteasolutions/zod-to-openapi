@@ -66,7 +66,7 @@ describe('number', () => {
     expectSchema(
       [z.number().int().gt(0).openapi('SimpleInteger')],
       {
-        SimpleInteger: { type: 'integer', exclusiveMinimum: 0 },
+        SimpleInteger: { type: 'integer', exclusiveMinimum: 0 } as never,
       },
       '3.1.0'
     );
@@ -86,7 +86,7 @@ describe('number', () => {
     expectSchema(
       [z.number().int().lt(0).openapi('SimpleInteger')],
       {
-        SimpleInteger: { type: 'integer', exclusiveMaximum: 0 },
+        SimpleInteger: { type: 'integer', exclusiveMaximum: 0 } as never,
       },
       '3.1.0'
     );
