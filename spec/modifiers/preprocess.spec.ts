@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { expectSchema, registerSchema } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('preprocess', () => {
   it('supports preprocessed string -> boolean schema', () => {
     expectSchema(
       [
-        registerSchema(
-          'PreprocessedBoolean',
-          z.preprocess(arg => {
+        z
+          .preprocess(arg => {
             if (typeof arg === 'boolean') {
               return arg;
             }
@@ -19,7 +18,7 @@ describe('preprocess', () => {
 
             return undefined;
           }, z.boolean())
-        ),
+          .openapi('PreprocessedBoolean'),
       ],
       {
         PreprocessedBoolean: {
@@ -32,9 +31,8 @@ describe('preprocess', () => {
   it('supports preprocessed string -> number schema', () => {
     expectSchema(
       [
-        registerSchema(
-          'PreprocessedNumber',
-          z.preprocess(arg => {
+        z
+          .preprocess(arg => {
             if (typeof arg === 'number') {
               return arg;
             }
@@ -45,7 +43,7 @@ describe('preprocess', () => {
 
             return undefined;
           }, z.number())
-        ),
+          .openapi('PreprocessedNumber'),
       ],
       {
         PreprocessedNumber: {

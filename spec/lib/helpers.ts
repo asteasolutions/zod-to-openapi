@@ -42,13 +42,6 @@ export function expectSchema(
   expect(components?.['schemas']).toEqual(openAPISchemas);
 }
 
-export function registerSchema<T extends ZodSchema<any>>(
-  refId: string,
-  zodSchema: T
-): T {
-  return zodSchema.openapi(refId);
-}
-
 export function registerParameter<T extends ZodSchema<any>>(
   refId: string,
   zodSchema: T

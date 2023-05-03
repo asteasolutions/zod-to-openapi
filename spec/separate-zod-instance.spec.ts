@@ -1,5 +1,5 @@
 import { extendZodWithOpenApi } from '../src/zod-extensions';
-import { expectSchema, registerSchema } from './lib/helpers';
+import { expectSchema } from './lib/helpers';
 
 /**
  * See https://github.com/asteasolutions/zod-to-openapi/issues/17
@@ -19,11 +19,11 @@ describe('Separate Zod instance', () => {
   extendZodWithOpenApi(zod2);
 
   it('can check object types of different zod instances', () => {
-    expectSchema([registerSchema('SimpleString', zod1.string())], {
+    expectSchema([zod1.string().openapi('SimpleString')], {
       SimpleString: { type: 'string' },
     });
 
-    expectSchema([registerSchema('SimpleString', zod2.string())], {
+    expectSchema([zod2.string().openapi('SimpleString')], {
       SimpleString: { type: 'string' },
     });
   });
