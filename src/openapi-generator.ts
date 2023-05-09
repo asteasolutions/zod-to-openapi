@@ -311,7 +311,9 @@ export class OpenAPIGenerator {
         }
 
         return this.generateParameter(
-          schema.openapi({ param: { name: key, in: location } })
+          schema.openapi({
+            param: { name: key, in: location, ...innerParameterMetadata },
+          })
         );
       });
 

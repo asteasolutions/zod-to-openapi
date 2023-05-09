@@ -21,6 +21,37 @@ describe('parameters', () => {
       ]);
     });
 
+    it('generates a deepPartial object query parameter for route', () => {
+      const { parameters } = generateDataForRoute({
+        request: {
+          query: z
+            .object({
+              filter: z
+                .object({ test: z.string() })
+                .openapi({ param: { style: 'deepObject' } }),
+            })
+            .deepPartial(),
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'query',
+          name: 'filter',
+          required: false,
+          style: 'deepObject',
+          schema: {
+            type: 'object',
+            properties: {
+              test: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      ]);
+    });
+
     it('generates a reference query parameter for route', () => {
       const TestQuery = registerParameter(
         'TestQuery',
