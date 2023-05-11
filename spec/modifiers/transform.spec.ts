@@ -1,15 +1,21 @@
 import { z } from 'zod';
-import { createSchemas } from '../lib/helpers';
+import { expectSchema } from '../lib/helpers';
 
 describe('transform', () => {
-  it('does not support transformed schemas', () => {
-    expect(() =>
-      createSchemas([
+  it('does support transformed schemas', () => {
+    expectSchema(
+      [
         z
           .number()
           .transform(num => num.toString())
           .openapi('Transformed'),
-      ])
-    ).toThrow(/^Unknown zod object type/);
+      ],
+      {
+        Transformed: {
+          type: 'number',
+        },
+      },
+      '3.1.0'
+    );
   });
 });
