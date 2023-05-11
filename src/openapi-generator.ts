@@ -86,7 +86,6 @@ export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
-  private webhookRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
     componentType: keyof ComponentsObject;
     name: string;
@@ -109,11 +108,6 @@ export class OpenAPIGenerator {
       openapi: this.openAPIVersion,
       components: this.buildComponents(),
       paths: this.pathRefs,
-      // TODO: Can easily be moved into the V31 generator
-      // As the `webhooks` key is invalid in Open API 3.0.x we need to optionally set it
-      ...(Object.keys(this.webhookRefs).length && {
-        webhooks: this.webhookRefs,
-      }),
     };
   }
 
@@ -153,7 +147,6 @@ export class OpenAPIGenerator {
       'parameter',
       'component',
       'route',
-      'webhook',
     ];
 
     this.definitions.sort((left, right) => {
@@ -193,10 +186,6 @@ export class OpenAPIGenerator {
 
       case 'route':
         this.generateSingleRoute(definition.route);
-        return;
-
-      case 'webhook':
-        this.generateSingleWebhook(definition.webhook);
         return;
 
       case 'component':
@@ -552,7 +541,7 @@ export class OpenAPIGenerator {
     return [...pathParameters, ...queryParameters, ...headerParameters];
   }
 
-  private generatePath(route: RouteConfig): PathItemObject {
+  generatePath(route: RouteConfig): PathItemObject {
     const { method, path, request, responses, ...pathItemConfig } = route;
 
     const generatedResponses = mapValues(responses, response => {
@@ -585,15 +574,6 @@ export class OpenAPIGenerator {
     const routeDoc = this.generatePath(route);
     this.pathRefs[route.path] = {
       ...this.pathRefs[route.path],
-      ...routeDoc,
-    };
-    return routeDoc;
-  }
-
-  private generateSingleWebhook(route: RouteConfig): PathItemObject {
-    const routeDoc = this.generatePath(route);
-    this.webhookRefs[route.path] = {
-      ...this.webhookRefs[route.path],
       ...routeDoc,
     };
     return routeDoc;

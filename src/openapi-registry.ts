@@ -85,6 +85,8 @@ export type ComponentTypeOf<K extends ComponentTypeKey> = NonNullable<
   ComponentsObject[K]
 >[string];
 
+export type WebhookDefinition = { type: 'webhook'; webhook: RouteConfig };
+
 export type OpenAPIDefinitions =
   | {
       type: 'component';
@@ -95,7 +97,7 @@ export type OpenAPIDefinitions =
   | { type: 'schema'; schema: ZodSchema<any> }
   | { type: 'parameter'; schema: ZodSchema<any> }
   | { type: 'route'; route: RouteConfig }
-  | { type: 'webhook'; webhook: RouteConfig };
+  | WebhookDefinition;
 
 export class OpenAPIRegistry {
   private _definitions: OpenAPIDefinitions[] = [];
