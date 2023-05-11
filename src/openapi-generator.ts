@@ -173,7 +173,7 @@ export class OpenAPIGenerator {
   }
 
   private generateParameterDefinition(
-    zodSchema: ZodSchema<any>
+    zodSchema: ZodTypeAny
   ): ParameterObject | ReferenceObject {
     const refId = this.getRefId(zodSchema);
 
@@ -237,7 +237,7 @@ export class OpenAPIGenerator {
   }
 
   private generateInlineParameters(
-    zodSchema: ZodSchema<any>,
+    zodSchema: ZodTypeAny,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
     const metadata = this.getMetadata(zodSchema);
@@ -314,7 +314,7 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private generateParameter(zodSchema: ZodSchema<any>): ParameterObject {
+  private generateParameter(zodSchema: ZodTypeAny): ParameterObject {
     const metadata = this.getMetadata(zodSchema);
 
     const paramMetadata = metadata?.metadata?.param;
@@ -415,7 +415,7 @@ export class OpenAPIGenerator {
   }
 
   private generateSchemaDefinition(
-    zodSchema: ZodSchema<any>
+    zodSchema: ZodTypeAny
   ): SchemaObject | ReferenceObject {
     const metadata = this.getMetadata(zodSchema);
     const refId = this.getRefId(zodSchema);
@@ -788,7 +788,7 @@ export class OpenAPIGenerator {
       (zodSchema._def.effect.type === 'refinement' ||
         zodSchema._def.effect.type === 'preprocess')
     ) {
-      const innerSchema = zodSchema._def.schema as ZodSchema<any>;
+      const innerSchema = zodSchema._def.schema as ZodTypeAny;
       return this.generateSimpleSchema(innerSchema);
     }
 
@@ -848,7 +848,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
-      const itemType = zodSchema._def.type as ZodSchema<any>;
+      const itemType = zodSchema._def.type as ZodTypeAny;
 
       return {
         ...this.mapNullableType('array', isNullable),
@@ -1074,17 +1074,17 @@ export class OpenAPIGenerator {
     return objectData;
   }
 
-  private flattenUnionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {
+  private flattenUnionTypes(schema: ZodTypeAny): ZodTypeAny[] {
     if (!isZodType(schema, 'ZodUnion')) {
       return [schema];
     }
 
-    const options = schema._def.options as ZodSchema<any>[];
+    const options = schema._def.options as ZodTypeAny[];
 
     return options.flatMap(option => this.flattenUnionTypes(option));
   }
 
-  private flattenIntersectionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {
+  private flattenIntersectionTypes(schema: ZodTypeAny): ZodTypeAny[] {
     if (!isZodType(schema, 'ZodIntersection')) {
       return [schema];
     }
@@ -1095,7 +1095,7 @@ export class OpenAPIGenerator {
     return [...leftSubTypes, ...rightSubTypes];
   }
 
-  private unwrapChained(schema: ZodSchema<any>): ZodSchema<any> {
+  private unwrapChained(schema: ZodTypeAny): ZodTypeAny {
     if (
       isZodType(schema, 'ZodOptional') ||
       isZodType(schema, 'ZodNullable') ||

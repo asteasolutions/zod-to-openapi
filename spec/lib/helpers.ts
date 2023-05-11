@@ -4,11 +4,11 @@ import {
   OpenApiVersion,
 } from '../../src/openapi-generator';
 import type { SchemasObject } from 'openapi3-ts/oas30';
-import type { ZodSchema } from 'zod';
 import { OpenAPIRegistry, RouteConfig } from '../../src/openapi-registry';
+import type { ZodTypeAny } from 'zod';
 
 export function createSchemas(
-  zodSchemas: ZodSchema<any>[],
+  zodSchemas: ZodTypeAny[],
   openApiVersion: OpenApiVersion = '3.0.0'
 ) {
   const definitions = zodSchemas.map(schema => ({
@@ -25,7 +25,7 @@ export function createSchemas(
 }
 
 export function expectSchema(
-  zodSchemas: ZodSchema<any>[],
+  zodSchemas: ZodTypeAny[],
   openAPISchemas: SchemasObject,
   openApiVersion: OpenApiVersion = '3.0.0'
 ) {
@@ -34,7 +34,7 @@ export function expectSchema(
   expect(components?.['schemas']).toEqual(openAPISchemas);
 }
 
-export function registerSchema<T extends ZodSchema<any>>(
+export function registerSchema<T extends ZodTypeAny>(
   refId: string,
   zodSchema: T
 ): T {
