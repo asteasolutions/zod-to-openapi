@@ -705,8 +705,10 @@ export class OpenAPIGenerator {
     };
   }
 
-  // TODO: Can I remove some anys?
-  private mapNullableOfArray(objects: any[], isNullable: boolean) {
+  private mapNullableOfArray(
+    objects: (SchemaObject | ReferenceObject)[],
+    isNullable: boolean
+  ): (SchemaObject | ReferenceObject)[] {
     isNullable;
     return this.versionSpecifics.mapNullableOfArray(objects, isNullable);
   }
@@ -714,11 +716,16 @@ export class OpenAPIGenerator {
   private mapNullableType(
     type: NonNullable<SchemaObject['type']>,
     isNullable: boolean
-  ) {
+  ): Pick<SchemaObject, 'type' | 'nullable'> {
     return this.versionSpecifics.mapNullableType(type, isNullable);
   }
 
-  private getNumberChecks(checks: ZodNumberDef['checks']) {
+  private getNumberChecks(
+    checks: ZodNumberDef['checks']
+  ): Pick<
+    SchemaObject,
+    'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
+  > {
     return this.versionSpecifics.getNumberChecks(checks);
   }
 
