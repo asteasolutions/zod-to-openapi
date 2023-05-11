@@ -192,7 +192,7 @@ export class OpenAPIGenerator {
   }
 
   private generateParameterDefinition(
-    zodSchema: ZodSchema<any>
+    zodSchema: ZodTypeAny
   ): ParameterObject | ReferenceObject {
     const refId = this.getRefId(zodSchema);
 
@@ -256,7 +256,7 @@ export class OpenAPIGenerator {
   }
 
   private generateInlineParameters(
-    zodSchema: ZodSchema<any>,
+    zodSchema: ZodTypeAny,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
     const metadata = this.getMetadata(zodSchema);
@@ -333,9 +333,7 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private generateSimpleParameter(
-    zodSchema: ZodSchema<any>
-  ): BaseParameterObject {
+  private generateSimpleParameter(zodSchema: ZodTypeAny): BaseParameterObject {
     const metadata = this.getMetadata(zodSchema);
     const paramMetadata = metadata?.metadata?.param;
 
@@ -351,7 +349,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private generateParameter(zodSchema: ZodSchema<any>): ParameterObject {
+  private generateParameter(zodSchema: ZodTypeAny): ParameterObject {
     const metadata = this.getMetadata(zodSchema);
 
     const paramMetadata = metadata?.metadata?.param;
@@ -450,7 +448,7 @@ export class OpenAPIGenerator {
    * Generates a whole OpenApi schema and saves it into
    * schemaRefs if a `refId` is provided.
    */
-  private generateSchema(zodSchema: ZodSchema<any>) {
+  private generateSchema(zodSchema: ZodTypeAny) {
     const refId = this.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
@@ -469,7 +467,7 @@ export class OpenAPIGenerator {
    *
    * Should be used for nested objects, arrays, etc.
    */
-  private generateSchemaWithRef(zodSchema: ZodSchema<any>) {
+  private generateSchemaWithRef(zodSchema: ZodTypeAny) {
     const refId = this.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
@@ -866,7 +864,7 @@ export class OpenAPIGenerator {
       (zodSchema._def.effect.type === 'refinement' ||
         zodSchema._def.effect.type === 'preprocess')
     ) {
-      const innerSchema = zodSchema._def.schema as ZodSchema<any>;
+      const innerSchema = zodSchema._def.schema as ZodTypeAny;
       // Here we want to register any underlying schemas, however we do not want to
       // reference it, hence why `generateSchema` is used instead of `generateSchemaWithRef`
       return this.generateSchema(innerSchema);
@@ -928,7 +926,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
-      const itemType = zodSchema._def.type as ZodSchema<any>;
+      const itemType = zodSchema._def.type as ZodTypeAny;
 
       return {
         ...this.mapNullableType('array', isNullable),
@@ -1162,17 +1160,17 @@ export class OpenAPIGenerator {
     };
   }
 
-  private flattenUnionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {
+  private flattenUnionTypes(schema: ZodTypeAny): ZodTypeAny[] {
     if (!isZodType(schema, 'ZodUnion')) {
       return [schema];
     }
 
-    const options = schema._def.options as ZodSchema<any>[];
+    const options = schema._def.options as ZodTypeAny[];
 
     return options.flatMap(option => this.flattenUnionTypes(option));
   }
 
-  private flattenIntersectionTypes(schema: ZodSchema<any>): ZodSchema<any>[] {
+  private flattenIntersectionTypes(schema: ZodTypeAny): ZodTypeAny[] {
     if (!isZodType(schema, 'ZodIntersection')) {
       return [schema];
     }
@@ -1183,7 +1181,7 @@ export class OpenAPIGenerator {
     return [...leftSubTypes, ...rightSubTypes];
   }
 
-  private unwrapChained(schema: ZodSchema<any>): ZodSchema<any> {
+  private unwrapChained(schema: ZodTypeAny): ZodTypeAny {
     if (
       isZodType(schema, 'ZodOptional') ||
       isZodType(schema, 'ZodNullable') ||

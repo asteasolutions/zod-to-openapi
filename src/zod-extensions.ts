@@ -1,5 +1,5 @@
 import { ParameterObject, SchemaObject } from 'openapi3-ts/oas30';
-import type { z, ZodObject, ZodRawShape } from 'zod';
+import type { z, ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
 type ExampleValue<T> = T extends Date ? string : T;
@@ -28,12 +28,12 @@ declare module 'zod' {
   }
 
   interface ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
-    openapi<T extends ZodSchema<any>>(
+    openapi<T extends ZodTypeAny>(
       this: T,
       metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
     ): T;
 
-    openapi<T extends ZodSchema<any>>(
+    openapi<T extends ZodTypeAny>(
       this: T,
       refId: string,
       metadata?: Partial<ZodOpenAPIMetadata<z.infer<T>>>
