@@ -1,4 +1,3 @@
-import { OpenAPIObjectConfig, OpenApiVersion } from '../../src/types';
 import type {
   ComponentsObject,
   OperationObject,
@@ -12,6 +11,10 @@ import {
 } from '../../src/openapi-registry';
 import { OpenApiGeneratorV3 } from '../../src/v3.0/openapi-generator';
 import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
+import {
+  OpenAPIObjectConfig,
+  OpenApiVersion,
+} from '../../src/openapi-generator';
 
 export function createSchemas(
   zodSchemas: ZodSchema<any>[],

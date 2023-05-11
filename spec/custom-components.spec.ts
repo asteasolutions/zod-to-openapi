@@ -1,8 +1,8 @@
-import { OpenAPIObjectConfig } from '../src/types';
 import { OpenAPIRegistry } from '../src/openapi-registry';
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
 import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator';
+import { OpenAPIObjectConfig } from '../src/openapi-generator';
 
 extendZodWithOpenApi(z);
 

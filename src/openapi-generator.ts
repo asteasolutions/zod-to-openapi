@@ -109,6 +109,7 @@ export class OpenAPIGenerator {
       openapi: this.openAPIVersion,
       components: this.buildComponents(),
       paths: this.pathRefs,
+      // TODO: Can easily be moved into the V31 generator
       // As the `webhooks` key is invalid in Open API 3.0.x we need to optionally set it
       ...(Object.keys(this.webhookRefs).length && {
         webhooks: this.webhookRefs,

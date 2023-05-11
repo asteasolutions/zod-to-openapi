@@ -2,18 +2,7 @@ import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 import { ZodNumberDef } from 'zod';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 
-// TODO: Implements an interface
-
 export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
-  // private generateSingleWebhook(route: RouteConfig): PathItemObject {
-  //   const routeDoc = this.generatePath(route);
-  //   this.webhookRefs[route.path] = {
-  //     ...this.webhookRefs[route.path],
-  //     ...routeDoc,
-  //   };
-  //   return routeDoc;
-  // }
-
   mapNullableOfArray(
     objects: (SchemaObject | ReferenceObject)[],
     isNullable: boolean

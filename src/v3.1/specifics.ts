@@ -1,28 +1,7 @@
-import type {
-  ReferenceObject,
-  OpenAPIObject,
-  SchemaObject,
-} from 'openapi3-ts/oas31';
+import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
 
 import type { ZodNumberDef } from 'zod';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
-
-export type OpenAPIObjectConfig = Omit<
-  OpenAPIObject,
-  'paths' | 'components' | 'webhooks' | 'openapi'
->;
-
-/**
- * OpenApiGeneratorV30 with 2 public methods with correct types by us
- * OpenApiGeneratorV31 with 2 public methods with correct types by us
- *
- * -> OpenAPIGenerator (instanced internally)
- *
- * OpenApiGeneratorV30Specifics (would be passed into OpenAPIGenerator) from OpenApiGeneratorV30
- * OpenApiGeneratorV31Specifics (would be passed into OpenAPIGenerator) from OpenApiGeneratorV31
- *
- * zod-extensions - keep a union
- */
 
 export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
   mapNullableOfArray(
