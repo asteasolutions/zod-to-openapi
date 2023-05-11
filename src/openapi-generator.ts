@@ -70,7 +70,19 @@ interface ParameterData {
   name?: string;
 }
 
-export abstract class OpenAPIGenerator {
+// TODO: Can I improve upon the anys
+export interface OpenApiVersionSpecifics {
+  mapNullableOfArray(objects: any[], isNullable: boolean): any[];
+
+  mapNullableType(
+    type: NonNullable<SchemaObject['type']>,
+    isNullable: boolean
+  ): Pick<SchemaObject, 'type' | 'nullable'>;
+
+  getNumberChecks(checks: ZodNumberDef['checks']): any;
+}
+
+export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
@@ -83,7 +95,8 @@ export abstract class OpenAPIGenerator {
 
   constructor(
     private definitions: (OpenAPIDefinitions | ZodSchema)[],
-    private openAPIVersion: OpenApiVersion
+    private openAPIVersion: OpenApiVersion,
+    private versionSpecifics: OpenApiVersionSpecifics
   ) {
     this.sortDefinitions();
   }
@@ -719,19 +732,22 @@ export abstract class OpenAPIGenerator {
     };
   }
 
-  // TODO: Add JS documentation with type annotations of what is expected + a comment to
-  // check the implementations of the separate function implementations
-  protected abstract mapNullableOfArray(
-    _objects: any[],
-    _isNullable: boolean
-  ): any[];
+  // TODO: Can I remove some anys?
+  private mapNullableOfArray(objects: any[], isNullable: boolean) {
+    isNullable;
+    return this.versionSpecifics.mapNullableOfArray(objects, isNullable);
+  }
 
-  protected abstract mapNullableType(
-    _type: NonNullable<SchemaObject['type']>,
-    _isNullable: boolean
-  ): any;
+  private mapNullableType(
+    type: NonNullable<SchemaObject['type']>,
+    isNullable: boolean
+  ) {
+    return this.versionSpecifics.mapNullableType(type, isNullable);
+  }
 
-  protected abstract getNumberChecks(_checks: ZodNumberDef['checks']): any;
+  private getNumberChecks(checks: ZodNumberDef['checks']) {
+    return this.versionSpecifics.getNumberChecks(checks);
+  }
 
   private constructReferencedOpenAPISchema<T>(
     zodSchema: ZodSchema<T>

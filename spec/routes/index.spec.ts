@@ -11,7 +11,7 @@ import {
 import {} from '../../src/v3.0/openapi-generator';
 import { OpenAPIObject as OpenAPIObject31 } from 'openapi3-ts/dist/oas31';
 import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
-import { OpenApiVersion } from '../../src/openapi-generator-common';
+import { OpenApiVersion } from '../../src/openapi-generator';
 
 // We need OpenAPIObject31 because of the webhooks property.
 // All tests can probably be refactored to use generateDataForRoute instead
