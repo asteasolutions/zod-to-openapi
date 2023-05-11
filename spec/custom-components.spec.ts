@@ -1,8 +1,10 @@
 import { OpenAPIRegistry } from '../src/openapi-registry';
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
-import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator';
-import { OpenAPIObjectConfig } from '../src/openapi-generator';
+import {
+  OpenApiGeneratorV3,
+  OpenAPIObjectConfig,
+} from '../src/v3.0/openapi-generator';
 
 extendZodWithOpenApi(z);
 
@@ -20,6 +22,7 @@ const testDocConfig: OpenAPIObjectConfig = {
   servers: [{ url: 'v1' }],
 };
 
+// TODO: Tests with both generators
 describe('Custom components', () => {
   it('can register and generate security schemes', () => {
     const registry = new OpenAPIRegistry();

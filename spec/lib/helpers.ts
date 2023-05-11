@@ -9,12 +9,12 @@ import {
   OpenAPIRegistry,
   RouteConfig,
 } from '../../src/openapi-registry';
-import { OpenApiGeneratorV3 } from '../../src/v3.0/openapi-generator';
-import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 import {
+  OpenApiGeneratorV3,
   OpenAPIObjectConfig,
-  OpenApiVersion,
-} from '../../src/openapi-generator';
+} from '../../src/v3.0/openapi-generator';
+import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
+import { OpenApiVersion } from '../../src/openapi-generator';
 
 export function createSchemas(
   zodSchemas: ZodSchema<any>[],

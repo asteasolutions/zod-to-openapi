@@ -60,11 +60,6 @@ const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
 
 export type OpenApiVersion = typeof openApiVersions[number];
 
-export type OpenAPIObjectConfig = Omit<
-  OpenAPIObject,
-  'paths' | 'components' | 'webhooks' | 'openapi'
->;
-
 interface ParameterData {
   in?: ParameterLocation;
   name?: string;
@@ -94,18 +89,15 @@ export class OpenAPIGenerator {
 
   constructor(
     private definitions: (OpenAPIDefinitions | ZodSchema)[],
-    private openAPIVersion: OpenApiVersion,
     private versionSpecifics: OpenApiVersionSpecifics
   ) {
     this.sortDefinitions();
   }
 
-  generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
+  generateDocumentData() {
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
-      ...config,
-      openapi: this.openAPIVersion,
       components: this.buildComponents(),
       paths: this.pathRefs,
     };

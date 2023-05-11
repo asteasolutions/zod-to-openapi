@@ -1,10 +1,6 @@
 import type { OpenAPIObject, PathItemObject } from 'openapi3-ts/oas31';
 
-import {
-  OpenAPIGenerator,
-  OpenAPIObjectConfig,
-  OpenApiVersion,
-} from '../openapi-generator';
+import { OpenAPIGenerator, OpenApiVersion } from '../openapi-generator';
 import { ZodSchema } from 'zod';
 import { OpenApiGeneratorV31Specifics } from './specifics';
 import {
@@ -19,33 +15,37 @@ function isWebhookDefinition(
   return 'type' in definition && definition.type === 'webhook';
 }
 
+export type OpenAPIObjectConfigV31 = Omit<
+  OpenAPIObject,
+  'paths' | 'components' | 'webhooks' | 'openapi'
+>;
+
 export class OpenApiGeneratorV31 {
   private generator;
   private webhookRefs: Record<string, PathItemObject> = {};
 
   constructor(
     private definitions: (OpenAPIDefinitions | ZodSchema)[],
-    openAPIVersion: OpenApiVersion
+    private openAPIVersion: OpenApiVersion
   ) {
     const specifics = new OpenApiGeneratorV31Specifics();
-    this.generator = new OpenAPIGenerator(
-      this.definitions,
-      openAPIVersion,
-      specifics
-    );
+    this.generator = new OpenAPIGenerator(this.definitions, specifics);
   }
 
-  // TODO: Fix the casts here. Potentially create "reusable" types based on openapi3-ts
-  generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
-    const baseDocument = this.generator.generateDocument(
-      config
-    ) as OpenAPIObject;
+  generateDocument(config: OpenAPIObjectConfigV31): OpenAPIObject {
+    // TODO: Fix the casts here. Potentially create "reusable" types based on openapi3-ts
+    const baseDocument = this.generator.generateDocumentData() as Pick<
+      OpenAPIObject,
+      'components' | 'paths'
+    >;
 
     this.definitions
       .filter(isWebhookDefinition)
       .forEach(definition => this.generateSingleWebhook(definition.webhook));
 
     return {
+      ...config,
+      openapi: this.openAPIVersion,
       ...baseDocument,
       webhooks: this.webhookRefs,
     };
