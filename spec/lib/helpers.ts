@@ -8,7 +8,7 @@ import type {
   OperationObject,
   SchemasObject,
 } from 'openapi3-ts/oas30';
-import type { ZodSchema, ZodTypeAny } from 'zod';
+import type { ZodTypeAny } from 'zod';
 import {
   OpenAPIDefinitions,
   OpenAPIRegistry,
