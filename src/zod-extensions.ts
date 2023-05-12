@@ -27,7 +27,11 @@ declare module 'zod' {
     openapi?: ZodOpenApiFullMetadata;
   }
 
-  interface ZodSchema<Output, Def extends ZodTypeDef, Input = Output> {
+  interface ZodType<
+    Output = any,
+    Def extends ZodTypeDef = ZodTypeDef,
+    Input = Output
+  > {
     openapi<T extends ZodTypeAny>(
       this: T,
       metadata: Partial<ZodOpenAPIMetadata<z.infer<T>>>
@@ -48,7 +52,7 @@ declare module 'zod' {
 }
 
 export function extendZodWithOpenApi(zod: typeof z) {
-  if (typeof zod.ZodSchema.prototype.openapi !== 'undefined') {
+  if (typeof zod.ZodType.prototype.openapi !== 'undefined') {
     // This zod instance is already extended with the required methods,
     // doing it again will just result in multiple wrapper methods for
     // `optional` and `nullable`
@@ -119,8 +123,8 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
-  const zodOptional = zod.ZodSchema.prototype.optional as any;
-  (zod.ZodSchema.prototype.optional as any) = function (
+  const zodOptional = zod.ZodType.prototype.optional as any;
+  (zod.ZodType.prototype.optional as any) = function (
     this: any,
     ...args: any[]
   ) {
@@ -131,8 +135,8 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
-  const zodNullable = zod.ZodSchema.prototype.nullable as any;
-  (zod.ZodSchema.prototype.nullable as any) = function (
+  const zodNullable = zod.ZodType.prototype.nullable as any;
+  (zod.ZodType.prototype.nullable as any) = function (
     this: any,
     ...args: any[]
   ) {
@@ -143,8 +147,8 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
-  const zodDefault = zod.ZodSchema.prototype.default as any;
-  (zod.ZodSchema.prototype.default as any) = function (
+  const zodDefault = zod.ZodType.prototype.default as any;
+  (zod.ZodType.prototype.default as any) = function (
     this: any,
     ...args: any[]
   ) {
