@@ -1,18 +1,47 @@
 import type {
-  ReferenceObject,
-  ParameterObject,
-  RequestBodyObject,
-  PathItemObject,
-  OpenAPIObject,
-  ComponentsObject,
-  ParameterLocation,
-  ResponseObject,
-  ContentObject,
-  DiscriminatorObject,
-  SchemaObject,
-  BaseParameterObject,
-  HeadersObject,
+  ReferenceObject as ReferenceObject30,
+  ParameterObject as ParameterObject30,
+  RequestBodyObject as RequestBodyObject30,
+  PathItemObject as PathItemObject30,
+  OpenAPIObject as OpenAPIObject30,
+  ComponentsObject as ComponentsObject30,
+  ParameterLocation as ParameterLocation30,
+  ResponseObject as ResponseObject30,
+  ContentObject as ContentObject30,
+  DiscriminatorObject as DiscriminatorObject30,
+  SchemaObject as SchemaObject30,
+  BaseParameterObject as BaseParameterObject30,
+  HeadersObject as HeadersObject30,
 } from 'openapi3-ts/oas30';
+import type {
+  ReferenceObject as ReferenceObject31,
+  ParameterObject as ParameterObject31,
+  RequestBodyObject as RequestBodyObject31,
+  PathItemObject as PathItemObject31,
+  OpenAPIObject as OpenAPIObject31,
+  ComponentsObject as ComponentsObject31,
+  ParameterLocation as ParameterLocation31,
+  ResponseObject as ResponseObject31,
+  ContentObject as ContentObject31,
+  DiscriminatorObject as DiscriminatorObject31,
+  SchemaObject as SchemaObject31,
+  BaseParameterObject as BaseParameterObject31,
+  HeadersObject as HeadersObject31,
+} from 'openapi3-ts/oas31';
+
+type ReferenceObject = ReferenceObject30 & ReferenceObject31;
+type ParameterObject = ParameterObject30 & ParameterObject31;
+type RequestBodyObject = RequestBodyObject30 & RequestBodyObject31;
+type PathItemObject = PathItemObject30 & PathItemObject31;
+type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31;
+type ComponentsObject = ComponentsObject30 & ComponentsObject31;
+type ParameterLocation = ParameterLocation30 & ParameterLocation31;
+type ResponseObject = ResponseObject30 & ResponseObject31;
+type ContentObject = ContentObject30 & ContentObject31;
+type DiscriminatorObject = DiscriminatorObject30 & DiscriminatorObject31;
+type SchemaObject = SchemaObject30 & SchemaObject31;
+type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31;
+type HeadersObject = HeadersObject30 & HeadersObject31;
 
 import type {
   AnyZodObject,
@@ -65,7 +94,6 @@ interface ParameterData {
   name?: string;
 }
 
-// TODO: Can I improve upon the anys
 export interface OpenApiVersionSpecifics {
   mapNullableOfArray(objects: any[], isNullable: boolean): any[];
 
@@ -587,7 +615,11 @@ export class OpenAPIGenerator {
       };
     }
 
-    const responseHeaders = this.getResponseHeaders(headers);
+    const responseHeaders = isZodType(headers, 'ZodObject')
+      ? this.getResponseHeaders(headers)
+      : // This is input data so it is okay to cast in the common generator
+        // since this is the user's responsibility to keep it correct
+        (headers as ResponseObject['headers']);
 
     return {
       ...rest,
@@ -596,13 +628,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getResponseHeaders(
-    headers: HeadersObject | AnyZodObject
-  ): HeadersObject {
-    if (!isZodType(headers, 'ZodObject')) {
-      return headers;
-    }
-
+  private getResponseHeaders(headers: AnyZodObject): HeadersObject {
     const schemaShape = headers._def.shape();
 
     const responseHeaders = mapValues(schemaShape, _ =>

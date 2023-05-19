@@ -18,6 +18,10 @@ import {
   SecuritySchemeObject,
 } from 'openapi3-ts/oas30';
 
+/**
+ * TODO: Those are input parameters => should be unions as well
+ */
+
 import type { AnyZodObject, ZodSchema, ZodType } from 'zod';
 
 type Method =

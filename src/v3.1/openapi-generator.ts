@@ -33,11 +33,7 @@ export class OpenApiGeneratorV31 {
   }
 
   generateDocument(config: OpenAPIObjectConfigV31): OpenAPIObject {
-    // TODO: Fix the casts here. Potentially create "reusable" types based on openapi3-ts
-    const baseDocument = this.generator.generateDocumentData() as Pick<
-      OpenAPIObject,
-      'components' | 'paths'
-    >;
+    const baseDocument = this.generator.generateDocumentData();
 
     this.definitions
       .filter(isWebhookDefinition)
@@ -52,10 +48,7 @@ export class OpenApiGeneratorV31 {
   }
 
   generateComponents(): Pick<OpenAPIObject, 'components'> {
-    return this.generator.generateComponents() as Pick<
-      OpenAPIObject,
-      'components'
-    >;
+    return this.generator.generateComponents();
   }
 
   private generateSingleWebhook(route: RouteConfig): PathItemObject {
