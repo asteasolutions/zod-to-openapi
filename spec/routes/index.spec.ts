@@ -99,7 +99,7 @@ const routeTests = ({
             },
           },
         },
-      });
+      } as const);
 
       const document = generateDocumentWithPossibleWebhooks(
         registry.definitions,
