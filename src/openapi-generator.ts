@@ -1160,7 +1160,7 @@ export class OpenAPIGenerator {
     // TODO: preprocess should be passed here as well
     if (
       isZodType(schema, 'ZodEffects') &&
-      schema._def.effect.type === 'refinement'
+      ['refinement', 'transform'].includes(schema._def.effect.type)
     ) {
       return this.unwrapChained(schema._def.schema);
     }
