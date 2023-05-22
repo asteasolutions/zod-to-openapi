@@ -13,10 +13,7 @@ export type OpenAPIObjectConfig = Omit<
 export class OpenApiGeneratorV3 {
   private generator;
 
-  constructor(
-    definitions: (OpenAPIDefinitions | ZodSchema)[],
-    private openAPIVersion: OpenApiVersion
-  ) {
+  constructor(definitions: (OpenAPIDefinitions | ZodSchema)[]) {
     const specifics = new OpenApiGeneratorV30Specifics();
     this.generator = new OpenAPIGenerator(definitions, specifics);
   }

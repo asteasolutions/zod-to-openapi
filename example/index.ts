@@ -1,8 +1,10 @@
 import {
-  OpenAPIGenerator,
+  OpenApiGeneratorV3,
+  // The exact same can be achieved by importing OpenApiGeneratorV31 instead:
+  // OpenApiGeneratorV31
   OpenAPIRegistry,
   extendZodWithOpenApi,
-} from '@asteasolutions/zod-to-openapi';
+} from '../src';
 import { z } from 'zod';
 import * as yaml from 'yaml';
 import * as fs from 'fs';
@@ -66,9 +68,10 @@ registry.registerPath({
 });
 
 function getOpenApiDocumentation() {
-  const generator = new OpenAPIGenerator(registry.definitions, '3.0.0');
+  const generator = new OpenApiGeneratorV3(registry.definitions);
 
   return generator.generateDocument({
+    openapi: '3.0.0',
     info: {
       version: '1.0.0',
       title: 'My API',
