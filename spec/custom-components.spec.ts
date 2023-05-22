@@ -1,26 +1,10 @@
 import { OpenAPIRegistry } from '../src/openapi-registry';
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
-import {
-  OpenApiGeneratorV3,
-  OpenAPIObjectConfig,
-} from '../src/v3.0/openapi-generator';
+import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator';
+import { testDocConfig } from './lib/helpers';
 
 extendZodWithOpenApi(z);
-
-const testDocConfig: OpenAPIObjectConfig = {
-  info: {
-    version: '1.0.0',
-    title: 'Swagger Petstore',
-    description: 'A sample API',
-    termsOfService: 'http://swagger.io/terms/',
-    license: {
-      name: 'Apache 2.0',
-      url: 'https://www.apache.org/licenses/LICENSE-2.0.html',
-    },
-  },
-  servers: [{ url: 'v1' }],
-};
 
 // TODO: Tests with both generators
 describe('Custom components', () => {

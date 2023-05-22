@@ -17,17 +17,14 @@ function isWebhookDefinition(
 
 export type OpenAPIObjectConfigV31 = Omit<
   OpenAPIObject,
-  'paths' | 'components' | 'webhooks' | 'openapi'
+  'paths' | 'components' | 'webhooks'
 >;
 
 export class OpenApiGeneratorV31 {
   private generator;
   private webhookRefs: Record<string, PathItemObject> = {};
 
-  constructor(
-    private definitions: (OpenAPIDefinitions | ZodSchema)[],
-    private openAPIVersion: OpenApiVersion
-  ) {
+  constructor(private definitions: (OpenAPIDefinitions | ZodSchema)[]) {
     const specifics = new OpenApiGeneratorV31Specifics();
     this.generator = new OpenAPIGenerator(this.definitions, specifics);
   }
@@ -41,7 +38,6 @@ export class OpenApiGeneratorV31 {
 
     return {
       ...config,
-      openapi: this.openAPIVersion,
       ...baseDocument,
       webhooks: this.webhookRefs,
     };

@@ -7,7 +7,7 @@ import { OpenAPIDefinitions } from '../openapi-registry';
 
 export type OpenAPIObjectConfig = Omit<
   OpenAPIObject,
-  'paths' | 'components' | 'webhooks' | 'openapi'
+  'paths' | 'components' | 'webhooks'
 >;
 
 export class OpenApiGeneratorV3 {
@@ -26,8 +26,6 @@ export class OpenApiGeneratorV3 {
 
     return {
       ...config,
-      // TODO: Should we move this into the config instead? Probably yes and maybe a warning :thinking:
-      openapi: this.openAPIVersion,
       ...baseData,
     };
   }
