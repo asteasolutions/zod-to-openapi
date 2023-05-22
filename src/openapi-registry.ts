@@ -17,7 +17,7 @@ import {
   SchemaObject,
   SecuritySchemeObject,
 } from 'openapi3-ts/oas30';
-import type { AnyZodObject, ZodSchema, ZodType } from 'zod';
+import type { AnyZodObject, ZodType, ZodTypeAny } from 'zod';
 
 type Method =
   | 'get'
@@ -91,8 +91,8 @@ export type OpenAPIDefinitions =
       name: string;
       component: OpenAPIComponentObject;
     }
-  | { type: 'schema'; schema: ZodSchema<any> }
-  | { type: 'parameter'; schema: ZodSchema<any> }
+  | { type: 'schema'; schema: ZodTypeAny }
+  | { type: 'parameter'; schema: ZodTypeAny }
   | { type: 'route'; route: RouteConfig }
   | { type: 'webhook'; webhook: RouteConfig };
 
@@ -111,7 +111,7 @@ export class OpenAPIRegistry {
   /**
    * Registers a new component schema under /components/schemas/${name}
    */
-  register<T extends ZodSchema<any>>(refId: string, zodSchema: T): T {
+  register<T extends ZodTypeAny>(refId: string, zodSchema: T): T {
     const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
     this._definitions.push({ type: 'schema', schema: schemaWithRefId });
@@ -122,7 +122,7 @@ export class OpenAPIRegistry {
   /**
    * Registers a new parameter schema under /components/parameters/${name}
    */
-  registerParameter<T extends ZodSchema<any>>(refId: string, zodSchema: T) {
+  registerParameter<T extends ZodTypeAny>(refId: string, zodSchema: T) {
     const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
     const currentMetadata = schemaWithRefId._def.openapi?.metadata;
@@ -189,7 +189,7 @@ export class OpenAPIRegistry {
     };
   }
 
-  private schemaWithRefId<T extends ZodSchema<any>>(
+  private schemaWithRefId<T extends ZodTypeAny>(
     refId: string,
     zodSchema: T
   ): T {
