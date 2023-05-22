@@ -3,7 +3,7 @@ import type {
   OperationObject,
   SchemasObject,
 } from 'openapi3-ts/oas30';
-import type { ZodSchema } from 'zod';
+import type { ZodTypeAny } from 'zod';
 import {
   OpenAPIDefinitions,
   OpenAPIRegistry,
@@ -17,7 +17,7 @@ import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 import { OpenApiVersion } from '../../src/openapi-generator';
 
 export function createSchemas(
-  zodSchemas: ZodSchema<any>[],
+  zodSchemas: ZodTypeAny[],
   openApiVersion: OpenApiVersion = '3.0.0'
 ) {
   const definitions = zodSchemas.map(schema => ({
@@ -37,7 +37,7 @@ export function createSchemas(
 }
 
 export function expectSchema(
-  zodSchemas: ZodSchema<any>[],
+  zodSchemas: ZodTypeAny[],
   openAPISchemas: SchemasObject,
   openApiVersion: OpenApiVersion = '3.0.0'
 ) {
@@ -46,7 +46,7 @@ export function expectSchema(
   expect(components?.['schemas']).toEqual(openAPISchemas);
 }
 
-export function registerParameter<T extends ZodSchema<any>>(
+export function registerParameter<T extends ZodTypeAny>(
   refId: string,
   zodSchema: T
 ) {
