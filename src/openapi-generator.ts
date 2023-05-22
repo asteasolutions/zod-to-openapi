@@ -735,7 +735,6 @@ export class OpenAPIGenerator {
     objects: (SchemaObject | ReferenceObject)[],
     isNullable: boolean
   ): (SchemaObject | ReferenceObject)[] {
-    isNullable;
     return this.versionSpecifics.mapNullableOfArray(objects, isNullable);
   }
 
