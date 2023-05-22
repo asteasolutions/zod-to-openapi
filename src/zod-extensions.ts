@@ -6,7 +6,7 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { z, ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
 type ExampleValue<T> = T extends Date ? string : T;
