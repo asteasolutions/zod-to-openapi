@@ -28,10 +28,7 @@ export function createSchemas(
   const OpenApiGenerator =
     openApiVersion === '3.1.0' ? OpenApiGeneratorV31 : OpenApiGeneratorV3;
 
-  const { components } = new OpenApiGenerator(
-    definitions,
-    openApiVersion
-  ).generateComponents();
+  const { components } = new OpenApiGenerator(definitions).generateComponents();
 
   return components;
 }
@@ -99,10 +96,10 @@ export function generateDataForRoute(
     route,
   };
 
-  const { paths, components } = new OpenApiGeneratorV3(
-    [...additionalDefinitions, routeDefinition],
-    '3.0.0'
-  ).generateDocument(testDocConfig);
+  const { paths, components } = new OpenApiGeneratorV3([
+    ...additionalDefinitions,
+    routeDefinition,
+  ]).generateDocument(testDocConfig);
 
   const routeDoc = paths[route.path]?.[route.method] as OperationObject;
 
