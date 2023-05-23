@@ -1,27 +1,12 @@
-import {
-  OpenAPIGenerator,
-  OpenAPIObjectConfig,
-} from '../src/openapi-generator';
 import { OpenAPIRegistry } from '../src/openapi-registry';
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
+import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator';
+import { testDocConfig } from './lib/helpers';
 
 extendZodWithOpenApi(z);
 
-const testDocConfig: OpenAPIObjectConfig = {
-  info: {
-    version: '1.0.0',
-    title: 'Swagger Petstore',
-    description: 'A sample API',
-    termsOfService: 'http://swagger.io/terms/',
-    license: {
-      name: 'Apache 2.0',
-      url: 'https://www.apache.org/licenses/LICENSE-2.0.html',
-    },
-  },
-  servers: [{ url: 'v1' }],
-};
-
+// TODO: Tests with both generators
 describe('Custom components', () => {
   it('can register and generate security schemes', () => {
     const registry = new OpenAPIRegistry();
@@ -52,7 +37,7 @@ describe('Custom components', () => {
       },
     });
 
-    const builder = new OpenAPIGenerator(registry.definitions, '3.0.0');
+    const builder = new OpenApiGeneratorV3(registry.definitions);
     const document = builder.generateDocument(testDocConfig);
 
     expect(document.paths['/units']?.get?.security).toEqual([
@@ -93,7 +78,7 @@ describe('Custom components', () => {
       },
     });
 
-    const builder = new OpenAPIGenerator(registry.definitions, '3.0.0');
+    const builder = new OpenApiGeneratorV3(registry.definitions);
     const document = builder.generateDocument(testDocConfig);
 
     expect(document.paths['/units']?.get?.responses['200'].headers).toEqual({

@@ -1,22 +1,63 @@
 import {
-  CallbackObject,
-  ComponentsObject,
-  EncodingObject,
-  ExampleObject,
-  ExamplesObject,
-  HeaderObject,
-  HeadersObject,
-  ISpecificationExtension,
-  LinkObject,
-  LinksObject,
-  OperationObject,
-  ParameterObject,
-  ReferenceObject,
-  RequestBodyObject,
-  ResponseObject,
-  SchemaObject,
-  SecuritySchemeObject,
+  CallbackObject as CallbackObject30,
+  ComponentsObject as ComponentsObject30,
+  EncodingObject as EncodingObject30,
+  ExampleObject as ExampleObject30,
+  ExamplesObject as ExamplesObject30,
+  HeaderObject as HeaderObject30,
+  HeadersObject as HeadersObject30,
+  ISpecificationExtension as ISpecificationExtension30,
+  LinkObject as LinkObject30,
+  LinksObject as LinksObject30,
+  OperationObject as OperationObject30,
+  ParameterObject as ParameterObject30,
+  ReferenceObject as ReferenceObject30,
+  RequestBodyObject as RequestBodyObject30,
+  ResponseObject as ResponseObject30,
+  SchemaObject as SchemaObject30,
+  SecuritySchemeObject as SecuritySchemeObject30,
 } from 'openapi3-ts/oas30';
+
+import {
+  CallbackObject as CallbackObject31,
+  ComponentsObject as ComponentsObject31,
+  EncodingObject as EncodingObject31,
+  ExampleObject as ExampleObject31,
+  ExamplesObject as ExamplesObject31,
+  HeaderObject as HeaderObject31,
+  HeadersObject as HeadersObject31,
+  ISpecificationExtension as ISpecificationExtension31,
+  LinkObject as LinkObject31,
+  LinksObject as LinksObject31,
+  OperationObject as OperationObject31,
+  ParameterObject as ParameterObject31,
+  ReferenceObject as ReferenceObject31,
+  RequestBodyObject as RequestBodyObject31,
+  ResponseObject as ResponseObject31,
+  SchemaObject as SchemaObject31,
+  SecuritySchemeObject as SecuritySchemeObject31,
+} from 'openapi3-ts/oas31';
+
+type CallbackObject = CallbackObject30 | CallbackObject31;
+type ComponentsObject = ComponentsObject30 | ComponentsObject31;
+type EncodingObject = EncodingObject30 | EncodingObject31;
+type ExampleObject = ExampleObject30 | ExampleObject31;
+type ExamplesObject = ExamplesObject30 | ExamplesObject31;
+type HeaderObject = HeaderObject30 | HeaderObject31;
+type HeadersObject = HeadersObject30 | HeadersObject31;
+type ISpecificationExtension =
+  | ISpecificationExtension30
+  | ISpecificationExtension31;
+type LinkObject = LinkObject30 | LinkObject31;
+type LinksObject = LinksObject30 | LinksObject31;
+type OperationObject = OperationObject30 | OperationObject31;
+type ParameterObject = ParameterObject30 | ParameterObject31;
+type ReferenceObject = ReferenceObject30 | ReferenceObject31;
+type RequestBodyObject = RequestBodyObject30 | RequestBodyObject31;
+type ResponseObject = ResponseObject30 | ResponseObject31;
+type SchemaObject = SchemaObject30 | SchemaObject31;
+type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
+
 import type { AnyZodObject, ZodType, ZodTypeAny } from 'zod';
 
 type Method =
@@ -53,7 +94,7 @@ export interface ResponseConfig {
   content?: ZodContentObject;
 }
 
-export interface RouteConfig extends OperationObject {
+export type RouteConfig = OperationObject & {
   method: Method;
   path: string;
   request?: {
@@ -65,7 +106,7 @@ export interface RouteConfig extends OperationObject {
   responses: {
     [statusCode: string]: ResponseConfig;
   };
-}
+};
 
 export type OpenAPIComponentObject =
   | SchemaObject
@@ -84,6 +125,8 @@ export type ComponentTypeOf<K extends ComponentTypeKey> = NonNullable<
   ComponentsObject[K]
 >[string];
 
+export type WebhookDefinition = { type: 'webhook'; webhook: RouteConfig };
+
 export type OpenAPIDefinitions =
   | {
       type: 'component';
@@ -94,7 +137,7 @@ export type OpenAPIDefinitions =
   | { type: 'schema'; schema: ZodTypeAny }
   | { type: 'parameter'; schema: ZodTypeAny }
   | { type: 'route'; route: RouteConfig }
-  | { type: 'webhook'; webhook: RouteConfig };
+  | WebhookDefinition;
 
 export class OpenAPIRegistry {
   private _definitions: OpenAPIDefinitions[] = [];

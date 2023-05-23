@@ -1,8 +1,3 @@
-import {
-  OpenAPIGenerator,
-  OpenAPIObjectConfig,
-  OpenApiVersion,
-} from '../../src/openapi-generator';
 import type {
   ComponentsObject,
   OperationObject,
@@ -14,6 +9,12 @@ import {
   OpenAPIRegistry,
   RouteConfig,
 } from '../../src/openapi-registry';
+import {
+  OpenApiGeneratorV3,
+  OpenAPIObjectConfig,
+} from '../../src/v3.0/openapi-generator';
+import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
+import { OpenApiVersion } from '../../src/openapi-generator';
 
 export function createSchemas(
   zodSchemas: ZodTypeAny[],
@@ -24,10 +25,10 @@ export function createSchemas(
     schema,
   }));
 
-  const { components } = new OpenAPIGenerator(
-    definitions,
-    openApiVersion
-  ).generateComponents();
+  const OpenApiGenerator =
+    openApiVersion === '3.1.0' ? OpenApiGeneratorV31 : OpenApiGeneratorV3;
+
+  const { components } = new OpenApiGenerator(definitions).generateComponents();
 
   return components;
 }
@@ -67,6 +68,7 @@ export function createTestRoute(props: Partial<RouteConfig> = {}): RouteConfig {
 }
 
 export const testDocConfig: OpenAPIObjectConfig = {
+  openapi: '3.0.0',
   info: {
     version: '1.0.0',
     title: 'Swagger Petstore',
@@ -94,10 +96,10 @@ export function generateDataForRoute(
     route,
   };
 
-  const { paths, components } = new OpenAPIGenerator(
-    [...additionalDefinitions, routeDefinition],
-    '3.0.0'
-  ).generateDocument(testDocConfig);
+  const { paths, components } = new OpenApiGeneratorV3([
+    ...additionalDefinitions,
+    routeDefinition,
+  ]).generateDocument(testDocConfig);
 
   const routeDoc = paths[route.path]?.[route.method] as OperationObject;
 

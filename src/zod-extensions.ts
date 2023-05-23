@@ -1,16 +1,28 @@
-import { ParameterObject, SchemaObject } from 'openapi3-ts/oas30';
-import type { z, ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
+import {
+  ParameterObject as ParameterObject30,
+  SchemaObject as SchemaObject30,
+} from 'openapi3-ts/oas30';
+import {
+  ParameterObject as ParameterObject31,
+  SchemaObject as SchemaObject31,
+} from 'openapi3-ts/oas31';
+import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
 type ExampleValue<T> = T extends Date ? string : T;
 
-export interface ZodOpenAPIMetadata<T = any, E = ExampleValue<T>>
-  extends SchemaObject {
+type ParameterObject = ParameterObject30 | ParameterObject31;
+type SchemaObject = SchemaObject30 | SchemaObject31;
+
+export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
+  SchemaObject,
+  'example' | 'examples' | 'default'
+> & {
   param?: Partial<ParameterObject> & { example?: E };
   example?: E;
   examples?: E[];
   default?: T;
-}
+};
 
 export interface ZodOpenAPIInternalMetadata {
   refId?: string;

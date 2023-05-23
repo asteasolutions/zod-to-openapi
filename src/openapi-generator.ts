@@ -1,18 +1,47 @@
 import type {
-  BaseParameterObject,
-  ComponentsObject,
-  ContentObject,
-  DiscriminatorObject,
-  HeadersObject,
-  OpenAPIObject,
-  ParameterLocation,
-  ParameterObject,
-  PathItemObject,
-  ReferenceObject,
-  RequestBodyObject,
-  ResponseObject,
-  SchemaObject,
+  ReferenceObject as ReferenceObject30,
+  ParameterObject as ParameterObject30,
+  RequestBodyObject as RequestBodyObject30,
+  PathItemObject as PathItemObject30,
+  OpenAPIObject as OpenAPIObject30,
+  ComponentsObject as ComponentsObject30,
+  ParameterLocation as ParameterLocation30,
+  ResponseObject as ResponseObject30,
+  ContentObject as ContentObject30,
+  DiscriminatorObject as DiscriminatorObject30,
+  SchemaObject as SchemaObject30,
+  BaseParameterObject as BaseParameterObject30,
+  HeadersObject as HeadersObject30,
 } from 'openapi3-ts/oas30';
+import type {
+  ReferenceObject as ReferenceObject31,
+  ParameterObject as ParameterObject31,
+  RequestBodyObject as RequestBodyObject31,
+  PathItemObject as PathItemObject31,
+  OpenAPIObject as OpenAPIObject31,
+  ComponentsObject as ComponentsObject31,
+  ParameterLocation as ParameterLocation31,
+  ResponseObject as ResponseObject31,
+  ContentObject as ContentObject31,
+  DiscriminatorObject as DiscriminatorObject31,
+  SchemaObject as SchemaObject31,
+  BaseParameterObject as BaseParameterObject31,
+  HeadersObject as HeadersObject31,
+} from 'openapi3-ts/oas31';
+
+type ReferenceObject = ReferenceObject30 & ReferenceObject31;
+type ParameterObject = ParameterObject30 & ParameterObject31;
+type RequestBodyObject = RequestBodyObject30 & RequestBodyObject31;
+type PathItemObject = PathItemObject30 & PathItemObject31;
+type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31;
+type ComponentsObject = ComponentsObject30 & ComponentsObject31;
+type ParameterLocation = ParameterLocation30 & ParameterLocation31;
+type ResponseObject = ResponseObject30 & ResponseObject31;
+type ContentObject = ContentObject30 & ContentObject31;
+type DiscriminatorObject = DiscriminatorObject30 & DiscriminatorObject31;
+type SchemaObject = SchemaObject30 & SchemaObject31;
+type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31;
+type HeadersObject = HeadersObject30 & HeadersObject31;
 
 import type {
   AnyZodObject,
@@ -60,21 +89,26 @@ const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
 
 export type OpenApiVersion = typeof openApiVersions[number];
 
-export type OpenAPIObjectConfig = Omit<
-  OpenAPIObject,
-  'paths' | 'components' | 'webhooks' | 'openapi'
->;
-
 interface ParameterData {
   in?: ParameterLocation;
   name?: string;
+}
+
+export interface OpenApiVersionSpecifics {
+  mapNullableOfArray(objects: any[], isNullable: boolean): any[];
+
+  mapNullableType(
+    type: NonNullable<SchemaObject['type']>,
+    isNullable: boolean
+  ): Pick<SchemaObject, 'type' | 'nullable'>;
+
+  getNumberChecks(checks: ZodNumberDef['checks']): any;
 }
 
 export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
-  private webhookRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
     componentType: keyof ComponentsObject;
     name: string;
@@ -83,23 +117,17 @@ export class OpenAPIGenerator {
 
   constructor(
     private definitions: (OpenAPIDefinitions | ZodTypeAny)[],
-    private openAPIVersion: OpenApiVersion
+    private versionSpecifics: OpenApiVersionSpecifics
   ) {
     this.sortDefinitions();
   }
 
-  generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {
+  generateDocumentData() {
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
-      ...config,
-      openapi: this.openAPIVersion,
       components: this.buildComponents(),
       paths: this.pathRefs,
-      // As the `webhooks` key is invalid in Open API 3.0.x we need to optionally set it
-      ...(Object.keys(this.webhookRefs).length && {
-        webhooks: this.webhookRefs,
-      }),
     };
   }
 
@@ -139,7 +167,6 @@ export class OpenAPIGenerator {
       'parameter',
       'component',
       'route',
-      'webhook',
     ];
 
     this.definitions.sort((left, right) => {
@@ -179,10 +206,6 @@ export class OpenAPIGenerator {
 
       case 'route':
         this.generateSingleRoute(definition.route);
-        return;
-
-      case 'webhook':
-        this.generateSingleWebhook(definition.webhook);
         return;
 
       case 'component':
@@ -536,7 +559,7 @@ export class OpenAPIGenerator {
     return [...pathParameters, ...queryParameters, ...headerParameters];
   }
 
-  private generatePath(route: RouteConfig): PathItemObject {
+  generatePath(route: RouteConfig): PathItemObject {
     const { method, path, request, responses, ...pathItemConfig } = route;
 
     const generatedResponses = mapValues(responses, response => {
@@ -574,15 +597,6 @@ export class OpenAPIGenerator {
     return routeDoc;
   }
 
-  private generateSingleWebhook(route: RouteConfig): PathItemObject {
-    const routeDoc = this.generatePath(route);
-    this.webhookRefs[route.path] = {
-      ...this.webhookRefs[route.path],
-      ...routeDoc,
-    };
-    return routeDoc;
-  }
-
   private getResponse({
     content,
     headers,
@@ -599,7 +613,11 @@ export class OpenAPIGenerator {
       };
     }
 
-    const responseHeaders = this.getResponseHeaders(headers);
+    const responseHeaders = isZodType(headers, 'ZodObject')
+      ? this.getResponseHeaders(headers)
+      : // This is input data so it is okay to cast in the common generator
+        // since this is the user's responsibility to keep it correct
+        (headers as ResponseObject['headers']);
 
     return {
       ...rest,
@@ -608,13 +626,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getResponseHeaders(
-    headers: HeadersObject | AnyZodObject
-  ): HeadersObject {
-    if (!isZodType(headers, 'ZodObject')) {
-      return headers;
-    }
-
+  private getResponseHeaders(headers: AnyZodObject): HeadersObject {
     const schemaShape = headers._def.shape();
 
     const responseHeaders = mapValues(schemaShape, _ =>
@@ -717,44 +729,18 @@ export class OpenAPIGenerator {
     };
   }
 
-  private openApiVersionSatisfies = (
-    inputVersion: OpenApiVersion,
-    comparison: OpenApiVersion
-  ): boolean =>
-    openApiVersions.indexOf(inputVersion) >=
-    openApiVersions.indexOf(comparison);
-
   private mapNullableOfArray(
     objects: (SchemaObject | ReferenceObject)[],
     isNullable: boolean
   ): (SchemaObject | ReferenceObject)[] {
-    if (isNullable) {
-      if (this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')) {
-        return [...objects, { type: 'null' }];
-      }
-      return [...objects, { nullable: true }];
-    }
-    return objects;
+    return this.versionSpecifics.mapNullableOfArray(objects, isNullable);
   }
 
   private mapNullableType(
     type: NonNullable<SchemaObject['type']>,
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'> {
-    // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
-    if (
-      isNullable &&
-      this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-    ) {
-      return {
-        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
-      };
-    }
-
-    return {
-      type,
-      nullable: isNullable ? true : undefined,
-    };
+    return this.versionSpecifics.mapNullableType(type, isNullable);
   }
 
   private getNumberChecks(
@@ -763,33 +749,7 @@ export class OpenAPIGenerator {
     SchemaObject,
     'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
   > {
-    return Object.assign(
-      {},
-      ...checks.map<SchemaObject>(check => {
-        switch (check.kind) {
-          case 'min':
-            return (
-              check.inclusive
-                ? { minimum: check.value }
-                : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-                ? { exclusiveMinimum: check.value }
-                : { minimum: check.value, exclusiveMinimum: true }
-            ) as any; // TODO: Fix in a separate PR
-
-          case 'max':
-            return (
-              check.inclusive
-                ? { maximum: check.value }
-                : this.openApiVersionSatisfies(this.openAPIVersion, '3.1.0')
-                ? { exclusiveMaximum: check.value }
-                : { maximum: check.value, exclusiveMaximum: true }
-            ) as any; // TODO: Fix in a separate PR
-
-          default:
-            return {};
-        }
-      })
-    );
+    return this.versionSpecifics.getNumberChecks(checks);
   }
 
   private constructReferencedOpenAPISchema<T>(

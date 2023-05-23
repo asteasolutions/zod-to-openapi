@@ -1,5 +1,4 @@
 import { ZodSchema, z } from 'zod';
-import { OpenAPIGenerator, OpenApiVersion } from '../../src/openapi-generator';
 import {
   OpenAPIDefinitions,
   OpenAPIRegistry,
@@ -9,17 +8,17 @@ import {
   generateDataForRoute,
   testDocConfig,
 } from '../lib/helpers';
-import { OpenAPIObject as OpenAPIObject31 } from 'openapi3-ts/dist/oas31';
+import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 
 // We need OpenAPIObject31 because of the webhooks property.
 // All tests can probably be refactored to use generateDataForRoute instead
 function generateDocumentWithPossibleWebhooks(
-  definitions: (OpenAPIDefinitions | ZodSchema)[],
-  openAPIVersion: OpenApiVersion
+  definitions: (OpenAPIDefinitions | ZodSchema)[]
 ) {
-  return new OpenAPIGenerator(definitions, openAPIVersion).generateDocument(
-    testDocConfig
-  ) as OpenAPIObject31;
+  return new OpenApiGeneratorV31(definitions).generateDocument({
+    ...testDocConfig,
+    openapi: '3.1.0',
+  });
 }
 
 const routeTests = ({
@@ -58,8 +57,7 @@ const routeTests = ({
       });
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
       const responses = document[rootDocPath]?.['/']?.get?.responses;
 
@@ -97,11 +95,10 @@ const routeTests = ({
             },
           },
         },
-      });
+      } as const);
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
       const responses = document[rootDocPath]?.['/']?.get?.responses;
 
@@ -141,8 +138,7 @@ const routeTests = ({
       });
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
       const responses = document[rootDocPath]?.['/']?.get?.responses;
 
@@ -169,8 +165,7 @@ const routeTests = ({
       });
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
       const responses = document[rootDocPath]?.['/']?.get?.responses;
 
@@ -200,8 +195,7 @@ const routeTests = ({
       });
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
       const responses = document[rootDocPath]?.['/']?.get?.responses;
 
@@ -287,10 +281,7 @@ const routeTests = ({
       },
     });
 
-    const document = generateDocumentWithPossibleWebhooks(
-      registry.definitions,
-      '3.0.0'
-    );
+    const document = generateDocumentWithPossibleWebhooks(registry.definitions);
     const responses = document[rootDocPath]?.['/']?.get?.responses;
 
     expect(responses?.['400']).toEqual(
@@ -330,8 +321,7 @@ const routeTests = ({
       registry[registerFunction](route);
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
 
       const requestBody = document[rootDocPath]?.['/']?.get?.requestBody;
@@ -367,8 +357,7 @@ const routeTests = ({
       registry[registerFunction](route);
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
 
       const requestBody = (
@@ -410,8 +399,7 @@ const routeTests = ({
       registry[registerFunction](route);
 
       const document = generateDocumentWithPossibleWebhooks(
-        registry.definitions,
-        '3.0.0'
+        registry.definitions
       );
 
       const requestBody = (
