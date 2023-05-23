@@ -149,7 +149,7 @@ const registry = new OpenAPIRegistry();
 
 // Register definitions here
 
-const generator = new OpenAPIGeneratorV3(registry.definitions, '3.0.0');
+const generator = new OpenAPIGeneratorV3(registry.definitions);
 
 return generator.generateComponents();
 ```
