@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { expectSchema } from '../lib/helpers';
 
+// Based on the "Any Type" section of https://swagger.io/docs/specification/data-models/data-types/
+
 describe('unknown', () => {
   it('supports unknown for 3.0.0 ', () => {
     expectSchema(

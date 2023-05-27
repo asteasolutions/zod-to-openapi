@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
 type ZodTypes = {
+  ZodAny: z.ZodAny;
   ZodArray: z.ZodArray<any>;
   ZodBoolean: z.ZodBoolean;
   ZodBranded: z.ZodBranded<any, any>;

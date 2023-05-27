@@ -987,7 +987,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    if (isZodType(zodSchema, 'ZodUnknown')) {
+    if (isZodType(zodSchema, 'ZodUnknown') || isZodType(zodSchema, 'ZodAny')) {
       return this.mapNullableType(undefined, isNullable);
     }
 
