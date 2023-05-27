@@ -100,7 +100,7 @@ export interface OpenApiVersionSpecifics {
   mapNullableOfArray(objects: any[], isNullable: boolean): any[];
 
   mapNullableType(
-    type: NonNullable<SchemaObject['type']>,
+    type: NonNullable<SchemaObject['type']> | undefined,
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'>;
 
@@ -739,7 +739,7 @@ export class OpenAPIGenerator {
   }
 
   private mapNullableType(
-    type: NonNullable<SchemaObject['type']>,
+    type: NonNullable<SchemaObject['type']> | undefined,
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'> {
     return this.versionSpecifics.mapNullableType(type, isNullable);
@@ -992,7 +992,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodUnknown')) {
-      return {};
+      return this.mapNullableType(undefined, isNullable);
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {

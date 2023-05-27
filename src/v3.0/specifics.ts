@@ -18,11 +18,11 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
   }
 
   mapNullableType(
-    type: NonNullable<SchemaObject['type']>,
+    type: NonNullable<SchemaObject['type']> | undefined,
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'> {
     return {
-      type,
+      ...(type ? { type } : undefined),
       ...(isNullable ? this.nullType : undefined),
     };
   }
