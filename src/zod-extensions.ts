@@ -8,6 +8,7 @@ import {
 } from 'openapi3-ts/oas31';
 import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
 import { isZodType } from './lib/zod-is-type';
+import mod from 'zod/lib';
 
 type ExampleValue<T> = T extends Date ? string : T;
 
@@ -55,6 +56,22 @@ declare module 'zod' {
       metadata?: Partial<ZodOpenAPIMetadata<z.infer<T>>>
     ): T;
   }
+}
+
+function preserveMetadataFromModifier(
+  zod: typeof z,
+  modifier: keyof typeof z.ZodType.prototype
+) {
+  const zodModifier = zod.ZodType.prototype[modifier];
+  (zod.ZodType.prototype[modifier] as any) = function (
+    this: any,
+    ...args: any[]
+  ) {
+    const result = zodModifier.apply(this, args);
+    result._def.openapi = this._def.openapi;
+
+    return result;
+  };
 }
 
 export function extendZodWithOpenApi(zod: typeof z) {
@@ -125,41 +142,12 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
-  const zodOptional = zod.ZodType.prototype.optional as any;
-  (zod.ZodType.prototype.optional as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
-    const result = zodOptional.apply(this, args);
+  preserveMetadataFromModifier(zod, 'optional');
+  preserveMetadataFromModifier(zod, 'nullable');
+  preserveMetadataFromModifier(zod, 'default');
 
-    result._def.openapi = this._def.openapi;
-
-    return result;
-  };
-
-  const zodNullable = zod.ZodType.prototype.nullable as any;
-  (zod.ZodType.prototype.nullable as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
-    const result = zodNullable.apply(this, args);
-
-    result._def.openapi = this._def.openapi;
-
-    return result;
-  };
-
-  const zodDefault = zod.ZodType.prototype.default as any;
-  (zod.ZodType.prototype.default as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
-    const result = zodDefault.apply(this, args);
-
-    result._def.openapi = this._def.openapi;
-
-    return result;
-  };
+  preserveMetadataFromModifier(zod, 'transform');
+  preserveMetadataFromModifier(zod, 'refine');
 
   const zodPick = zod.ZodObject.prototype.pick as any;
   zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
