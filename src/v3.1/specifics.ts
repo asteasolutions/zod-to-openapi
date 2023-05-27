@@ -4,12 +4,16 @@ import type { ZodNumberDef } from 'zod';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 
 export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
+  get nullType() {
+    return { type: 'null' } as const;
+  }
+
   mapNullableOfArray(
     objects: (SchemaObject | ReferenceObject)[],
     isNullable: boolean
   ): (SchemaObject | ReferenceObject)[] {
     if (isNullable) {
-      return [...objects, { type: 'null' }];
+      return [...objects, this.nullType];
     }
     return objects;
   }

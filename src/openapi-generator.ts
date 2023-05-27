@@ -95,6 +95,8 @@ interface ParameterData {
 }
 
 export interface OpenApiVersionSpecifics {
+  get nullType(): any;
+
   mapNullableOfArray(objects: any[], isNullable: boolean): any[];
 
   mapNullableType(
@@ -774,7 +776,7 @@ export class OpenAPIGenerator {
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
     if (isZodType(zodSchema, 'ZodNull')) {
-      return { type: 'null' };
+      return this.versionSpecifics.nullType;
     }
 
     if (isZodType(zodSchema, 'ZodString')) {
