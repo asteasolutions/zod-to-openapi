@@ -18,6 +18,24 @@ describe('refine', () => {
     );
   });
 
+  it('does not lose metadata from refine', () => {
+    expectSchema(
+      [
+        z
+          .number()
+          .openapi({ example: 42 })
+          .refine(num => num % 2 === 0)
+          .openapi('RefinedString'),
+      ],
+      {
+        RefinedString: {
+          type: 'number',
+          example: 42,
+        },
+      }
+    );
+  });
+
   it('supports required refined schemas', () => {
     expectSchema(
       [

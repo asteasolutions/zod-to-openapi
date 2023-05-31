@@ -14,8 +14,25 @@ describe('transform', () => {
         Transformed: {
           type: 'number',
         },
-      },
-      '3.1.0'
+      }
+    );
+  });
+
+  it('does not lose metadata from transform', () => {
+    expectSchema(
+      [
+        z
+          .number()
+          .openapi({ example: 42 })
+          .transform(num => num.toString())
+          .openapi('Transformed'),
+      ],
+      {
+        Transformed: {
+          type: 'number',
+          example: 42,
+        },
+      }
     );
   });
 });

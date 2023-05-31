@@ -19,9 +19,14 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
   }
 
   mapNullableType(
-    type: NonNullable<SchemaObject['type']>,
+    type: NonNullable<SchemaObject['type']> | undefined,
     isNullable: boolean
-  ): { type: SchemaObject['type'] } {
+  ): { type?: SchemaObject['type'] } {
+    if (!type) {
+      // 'null' is considered a type in Open API 3.1.0 => not providing a type includes null
+      return {};
+    }
+
     // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
     if (isNullable) {
       return {

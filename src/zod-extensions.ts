@@ -57,6 +57,22 @@ declare module 'zod' {
   }
 }
 
+function preserveMetadataFromModifier(
+  zod: typeof z,
+  modifier: keyof typeof z.ZodType.prototype
+) {
+  const zodModifier = zod.ZodType.prototype[modifier];
+  (zod.ZodType.prototype[modifier] as any) = function (
+    this: any,
+    ...args: any[]
+  ) {
+    const result = zodModifier.apply(this, args);
+    result._def.openapi = this._def.openapi;
+
+    return result;
+  };
+}
+
 export function extendZodWithOpenApi(zod: typeof z) {
   if (typeof zod.ZodType.prototype.openapi !== 'undefined') {
     // This zod instance is already extended with the required methods,
@@ -125,6 +141,13 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
+  preserveMetadataFromModifier(zod, 'optional');
+  preserveMetadataFromModifier(zod, 'nullable');
+  preserveMetadataFromModifier(zod, 'default');
+
+  preserveMetadataFromModifier(zod, 'transform');
+  preserveMetadataFromModifier(zod, 'refine');
+
   const zodDeepPartial = zod.ZodObject.prototype.deepPartial;
   zod.ZodObject.prototype.deepPartial = function (this: any) {
     const initialShape = this._def.shape();
@@ -136,42 +159,6 @@ export function extendZodWithOpenApi(zod: typeof z) {
     Object.entries(resultShape).forEach(([key, value]) => {
       value._def.openapi = initialShape[key]?._def?.openapi;
     });
-
-    return result;
-  };
-
-  const zodOptional = zod.ZodType.prototype.optional as any;
-  (zod.ZodType.prototype.optional as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
-    const result = zodOptional.apply(this, args);
-
-    result._def.openapi = this._def.openapi;
-
-    return result;
-  };
-
-  const zodNullable = zod.ZodType.prototype.nullable as any;
-  (zod.ZodType.prototype.nullable as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
-    const result = zodNullable.apply(this, args);
-
-    result._def.openapi = this._def.openapi;
-
-    return result;
-  };
-
-  const zodDefault = zod.ZodType.prototype.default as any;
-  (zod.ZodType.prototype.default as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
-    const result = zodDefault.apply(this, args);
-
-    result._def.openapi = this._def.openapi;
 
     return result;
   };

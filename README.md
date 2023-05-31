@@ -490,6 +490,7 @@ Then you can create a script that executes the exported `generateOpenAPI` functi
 
 The list of all supported types as of now is:
 
+- `ZodAny`
 - `ZodArray`
 - `ZodBoolean`
 - `ZodDate`
