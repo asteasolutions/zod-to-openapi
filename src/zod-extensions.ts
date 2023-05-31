@@ -125,6 +125,21 @@ export function extendZodWithOpenApi(zod: typeof z) {
     return result;
   };
 
+  const zodDeepPartial = zod.ZodObject.prototype.deepPartial;
+  zod.ZodObject.prototype.deepPartial = function (this: any) {
+    const initialShape = this._def.shape();
+
+    const result = zodDeepPartial.apply(this);
+
+    const resultShape = result._def.shape();
+
+    Object.entries(resultShape).forEach(([key, value]) => {
+      value._def.openapi = initialShape[key]?._def?.openapi;
+    });
+
+    return result;
+  };
+
   const zodOptional = zod.ZodType.prototype.optional as any;
   (zod.ZodType.prototype.optional as any) = function (
     this: any,
