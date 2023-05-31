@@ -134,7 +134,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
     const resultShape = result._def.shape();
 
     Object.entries(resultShape).forEach(([key, value]) => {
-      value._def.openapi = initialShape[key]._def.openapi;
+      value._def.openapi = initialShape[key]?._def?.openapi;
     });
 
     return result;
