@@ -18,7 +18,7 @@ describe('refine', () => {
     );
   });
 
-  it('does not loose metadata from refine', () => {
+  it('does not lose metadata from refine', () => {
     expectSchema(
       [
         z

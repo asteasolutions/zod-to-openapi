@@ -18,7 +18,7 @@ describe('transform', () => {
     );
   });
 
-  it('does not loose metadata from transform', () => {
+  it('does not lose metadata from transform', () => {
     expectSchema(
       [
         z
