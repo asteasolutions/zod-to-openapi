@@ -8,7 +8,6 @@ import {
 } from 'openapi3-ts/oas31';
 import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
 import { isZodType } from './lib/zod-is-type';
-import mod from 'zod/lib';
 
 type ExampleValue<T> = T extends Date ? string : T;
 
@@ -148,6 +147,21 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
   preserveMetadataFromModifier(zod, 'transform');
   preserveMetadataFromModifier(zod, 'refine');
+
+  const zodDeepPartial = zod.ZodObject.prototype.deepPartial;
+  zod.ZodObject.prototype.deepPartial = function (this: any) {
+    const initialShape = this._def.shape();
+
+    const result = zodDeepPartial.apply(this);
+
+    const resultShape = result._def.shape();
+
+    Object.entries(resultShape).forEach(([key, value]) => {
+      value._def.openapi = initialShape[key]?._def?.openapi;
+    });
+
+    return result;
+  };
 
   const zodPick = zod.ZodObject.prototype.pick as any;
   zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
