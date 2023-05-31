@@ -21,7 +21,7 @@ describe('parameters', () => {
       ]);
     });
 
-    fit('generates a deepPartial object query parameter for route', () => {
+    it('generates a deepPartial object query parameter for route', () => {
       const { parameters } = generateDataForRoute({
         request: {
           query: z
