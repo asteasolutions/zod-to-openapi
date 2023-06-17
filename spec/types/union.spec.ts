@@ -65,4 +65,34 @@ describe('union', () => {
       '3.1.0'
     );
   });
+
+  it('supports inner nullable union types', () => {
+    // adding to .nullable() for the recursive check
+    const test = z
+      .union([z.string(), z.number().nullable().nullable()])
+      .openapi('Test');
+
+    expectSchema([test], {
+      Test: {
+        anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
+      },
+    });
+  });
+
+  it('supports inner nullable union types in 3.1.-', () => {
+    // adding to .nullable() for the recursive check
+    const test = z
+      .union([z.string(), z.number().nullable().nullable()])
+      .openapi('Test');
+
+    expectSchema(
+      [test],
+      {
+        Test: {
+          anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
+        },
+      },
+      '3.1.0'
+    );
+  });
 });

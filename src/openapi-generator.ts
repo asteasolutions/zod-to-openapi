@@ -927,11 +927,18 @@ export class OpenAPIGenerator {
     if (isZodType(zodSchema, 'ZodUnion')) {
       const options = this.flattenUnionTypes(zodSchema);
 
+      const schemas = options.map(schema => {
+        // If any of the underlying schemas of a union is .nullable then the whole union
+        // would be nullable. `mapNullableOfArray` would place it where it belongs.
+        // Therefor we are stripping the additional nullables from the inner schemas
+        // See https://github.com/asteasolutions/zod-to-openapi/issues/149
+        const optionToGenerate = this.unwrapNullable(schema);
+
+        return this.generateSchemaWithRef(optionToGenerate);
+      });
+
       return {
-        anyOf: this.mapNullableOfArray(
-          options.map(schema => this.generateSchemaWithRef(schema)),
-          isNullable
-        ),
+        anyOf: this.mapNullableOfArray(schemas, isNullable),
         default: defaultValue,
       };
     }
@@ -1137,6 +1144,13 @@ export class OpenAPIGenerator {
     const rightSubTypes = this.flattenIntersectionTypes(schema._def.right);
 
     return [...leftSubTypes, ...rightSubTypes];
+  }
+
+  private unwrapNullable(schema: ZodTypeAny): ZodTypeAny {
+    if (isZodType(schema, 'ZodNullable')) {
+      return this.unwrapNullable(schema.unwrap());
+    }
+    return schema;
   }
 
   private unwrapChained(schema: ZodTypeAny): ZodTypeAny {
