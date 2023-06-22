@@ -137,19 +137,19 @@ z.string().openapi({ description: 'Some string' });
 
 ### The Registry
 
-The `OpenAPIRegistry` is a utility that can be used to collect definitions which would later be passed to a `OpenAPIGeneratorV3` or `OpenAPIGeneratorV31` instance.
+The `OpenAPIRegistry` is a utility that can be used to collect definitions which would later be passed to a `OpenApiGeneratorV3` or `OpenApiGeneratorV31` instance.
 
 ```ts
 import {
   OpenAPIRegistry,
-  OpenAPIGeneratorV3,
+  OpenApiGeneratorV3,
 } from '@asteasolutions/zod-to-openapi';
 
 const registry = new OpenAPIRegistry();
 
 // Register definitions here
 
-const generator = new OpenAPIGeneratorV3(registry.definitions);
+const generator = new OpenApiGeneratorV3(registry.definitions);
 
 return generator.generateComponents();
 ```
@@ -199,7 +199,7 @@ const UserSchema = z
   })
   .openapi('User');
 
-const generator = new OpenAPIGeneratorV3([UserSchema]);
+const generator = new OpenApiGeneratorV3([UserSchema]);
 ```
 
 The same can be achieved by using the `register` method of an `OpenAPIRegistry` instance. For more check the ["Using schemas vs a registry"](#using-schemas-vs-a-registry) section
@@ -214,7 +214,7 @@ const UserSchema = registry.register(
   })
 );
 
-const generator = new OpenAPIGeneratorV3(registry.definitions);
+const generator = new OpenApiGeneratorV3(registry.definitions);
 ```
 
 If run now, `generator.generateComponents()` will generate the following structure:
@@ -370,7 +370,7 @@ Note: In order to define properties that apply to the parameter itself, use the 
 
 #### Generating the full document
 
-A full OpenAPI document can be generated using the `generateDocument` method of an `OpenAPIGeneratorV3` or `OpenAPIGeneratorV31` instance. It takes one argument - the document config. It may look something like this:
+A full OpenAPI document can be generated using the `generateDocument` method of an `OpenApiGeneratorV3` or `OpenApiGeneratorV31` instance. It takes one argument - the document config. It may look something like this:
 
 ```ts
 return generator.generateDocument({
@@ -438,7 +438,7 @@ export const Schema1 = ...
 // file2.ts
 export const Schema2 = ...
 
-new OpenAPIGeneratorV3([Schema1, Schema2])
+new OpenApiGeneratorV3([Schema1, Schema2])
 ```
 
 Adding a `NewSchema` into `file3.ts` would require you to pass that schema manually into the array of the generator constructor.
@@ -456,7 +456,7 @@ export const Schema1 = registry.register(...)
 // file2.ts
 export const Schema2 = registry.register(...)
 
-new OpenAPIGeneratorV3(registry.definitions)
+new OpenApiGeneratorV3(registry.definitions)
 ```
 
 Adding a `NewSchema` into `file3.ts` and using `registry.register` would NOT require you to do any changes to the generator constructor.
@@ -476,7 +476,7 @@ export const registry = new OpenAPIRegistry();
 export function generateOpenAPI() {
   const config = {...}; // your config comes here
 
-  return new OpenAPIGeneratorV3(schemas.definitions).generateDocument(config);
+  return new OpenApiGeneratorV3(schemas.definitions).generateDocument(config);
 }
 ```
 
