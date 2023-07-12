@@ -11,6 +11,7 @@ type ZodTypes = {
   ZodIntersection: z.ZodIntersection<any, any>;
   ZodLiteral: z.ZodLiteral<any>;
   ZodNativeEnum: z.ZodNativeEnum<any>;
+  ZodNever: z.ZodNever;
   ZodNull: z.ZodNull;
   ZodNullable: z.ZodNullable<any>;
   ZodNumber: z.ZodNumber;

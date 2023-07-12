@@ -506,6 +506,7 @@ The list of all supported types as of now is:
 - `ZodNumber`
   - including `z.number().int()` being inferred as `type: 'integer'`
 - `ZodObject`
+  - including `.catchall` resulting in the respective `additionalProperties` schema
 - `ZodOptional`
 - `ZodPipeline`
 - `ZodRecord`

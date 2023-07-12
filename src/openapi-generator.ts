@@ -1068,8 +1068,6 @@ export class OpenAPIGenerator {
       this.generateSchemaWithRef(_)
     );
 
-    const unknownKeysOption = zodSchema._def.unknownKeys;
-
     if (!extendedFrom) {
       return {
         ...this.mapNullableType('object', isNullable),
@@ -1078,9 +1076,7 @@ export class OpenAPIGenerator {
 
         ...(required.length > 0 ? { required } : {}),
 
-        ...(unknownKeysOption === 'strict'
-          ? { additionalProperties: false }
-          : {}),
+        ...this.generateAdditionalProperties(zodSchema),
       };
     }
 
@@ -1093,7 +1089,7 @@ export class OpenAPIGenerator {
       this.generateSchemaWithRef(_)
     );
 
-    const additionalProperties = Object.fromEntries(
+    const propertiesToAdd = Object.fromEntries(
       Object.entries(properties).filter(([key, type]) => {
         return !objectEquals(propsOfParent[key], type);
       })
@@ -1106,15 +1102,13 @@ export class OpenAPIGenerator {
     const objectData = {
       ...this.mapNullableType('object', isNullable),
       default: defaultValue,
-      properties: additionalProperties,
+      properties: propertiesToAdd,
 
       ...(additionallyRequired.length > 0
         ? { required: additionallyRequired }
         : {}),
 
-      ...(unknownKeysOption === 'strict'
-        ? { additionalProperties: false }
-        : {}),
+      ...this.generateAdditionalProperties(zodSchema),
     };
 
     return {
@@ -1123,6 +1117,24 @@ export class OpenAPIGenerator {
         objectData,
       ],
     };
+  }
+
+  private generateAdditionalProperties(
+    zodSchema: ZodObject<ZodRawShape, UnknownKeysParam>
+  ) {
+    const unknownKeysOption = zodSchema._def.unknownKeys;
+
+    const catchallSchema = zodSchema._def.catchall;
+
+    if (isZodType(catchallSchema, 'ZodNever')) {
+      if (unknownKeysOption === 'strict') {
+        return { additionalProperties: false };
+      }
+
+      return {};
+    }
+
+    return { additionalProperties: this.generateSchemaWithRef(catchallSchema) };
   }
 
   private flattenUnionTypes(schema: ZodTypeAny): ZodTypeAny[] {
