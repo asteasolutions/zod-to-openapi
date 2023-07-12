@@ -94,7 +94,7 @@ export interface ResponseConfig {
   content?: ZodContentObject;
 }
 
-export type RouteConfig = OperationObject & {
+export type RouteConfig = Omit<OperationObject, 'responses'> & {
   method: Method;
   path: string;
   request?: {
