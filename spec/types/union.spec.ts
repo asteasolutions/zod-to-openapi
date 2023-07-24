@@ -5,7 +5,7 @@ describe('union', () => {
   it('supports union types', () => {
     expectSchema([z.string().or(z.number()).openapi('Test')], {
       Test: {
-        anyOf: [{ type: 'string' }, { type: 'number' }],
+        oneOf: [{ type: 'string' }, { type: 'number' }],
       },
     });
 
@@ -13,7 +13,7 @@ describe('union', () => {
       [z.string().or(z.number()).or(z.array(z.string())).openapi('Test')],
       {
         Test: {
-          anyOf: [
+          oneOf: [
             { type: 'string' },
             { type: 'number' },
             { type: 'array', items: { type: 'string' } },
@@ -38,7 +38,7 @@ describe('union', () => {
       },
 
       Union: {
-        anyOf: [
+        oneOf: [
           { $ref: '#/components/schemas/StringId' },
           { $ref: '#/components/schemas/NumberId' },
         ],
@@ -49,7 +49,7 @@ describe('union', () => {
   it('supports nullable union types', () => {
     expectSchema([z.string().or(z.number()).nullable().openapi('Test')], {
       Test: {
-        anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
+        oneOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
       },
     });
   });
@@ -59,7 +59,7 @@ describe('union', () => {
       [z.string().or(z.number()).nullable().openapi('Test')],
       {
         Test: {
-          anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
+          oneOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
         },
       },
       '3.1.0'
@@ -74,7 +74,7 @@ describe('union', () => {
 
     expectSchema([test], {
       Test: {
-        anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
+        oneOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
       },
     });
   });
@@ -89,7 +89,7 @@ describe('union', () => {
       [test],
       {
         Test: {
-          anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
+          oneOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
         },
       },
       '3.1.0'

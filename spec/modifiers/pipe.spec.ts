@@ -12,7 +12,7 @@ describe('pipe', () => {
       ],
       {
         PipedDate: {
-          anyOf: [{ type: 'string' }, { type: 'string', minLength: 1 }],
+          oneOf: [{ type: 'string' }, { type: 'string', minLength: 1 }],
         },
       },
       '3.1.0'
@@ -29,7 +29,7 @@ describe('pipe', () => {
           .openapi('PipedNumber'),
       ],
       {
-        PipedNumber: { anyOf: [{ type: 'number' }, { type: 'string' }] },
+        PipedNumber: { oneOf: [{ type: 'number' }, { type: 'string' }] },
       }
     );
   });

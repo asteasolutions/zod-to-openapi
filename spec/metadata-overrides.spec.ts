@@ -183,7 +183,7 @@ describe('metadata overrides', () => {
         type: 'object',
       },
       UnionTest: {
-        anyOf: [{ type: 'string' }, { $ref: '#/components/schemas/Empty' }],
+        oneOf: [{ type: 'string' }, { $ref: '#/components/schemas/Empty' }],
         description: 'Union with empty object',
       },
     });

@@ -938,7 +938,7 @@ export class OpenAPIGenerator {
       });
 
       return {
-        anyOf: this.mapNullableOfArray(schemas, isNullable),
+        oneOf: this.mapNullableOfArray(schemas, isNullable),
         default: defaultValue,
       };
     }

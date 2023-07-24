@@ -66,7 +66,7 @@ describe('catchall', () => {
               bonus: { type: 'number' },
             },
             additionalProperties: {
-              anyOf: [
+              oneOf: [
                 { type: 'boolean' },
                 { type: 'number' },
                 { type: 'string' },
