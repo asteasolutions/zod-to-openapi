@@ -212,7 +212,7 @@ describe('parameters', () => {
       ]);
     });
 
-    it('generates a reference path parameter for route', () => {
+    it('generates a reference cookie parameter for route', () => {
       const TestParam = registerParameter(
         'TestParam',
         z.string().openapi({
