@@ -534,7 +534,7 @@ export class OpenAPIGenerator {
       return [];
     }
 
-    const { query, params, headers } = request;
+    const { query, params, headers, cookies } = request;
 
     const queryParameters = this.enhanceMissingParametersError(
       () => (query ? this.generateInlineParameters(query, 'query') : []),
@@ -544,6 +544,11 @@ export class OpenAPIGenerator {
     const pathParameters = this.enhanceMissingParametersError(
       () => (params ? this.generateInlineParameters(params, 'path') : []),
       { location: 'path' }
+    );
+
+    const cookieParameters = this.enhanceMissingParametersError(
+      () => (cookies ? this.generateInlineParameters(cookies, 'cookie') : []),
+      { location: 'cookie' }
     );
 
     const headerParameters = this.enhanceMissingParametersError(
@@ -558,7 +563,12 @@ export class OpenAPIGenerator {
       { location: 'header' }
     );
 
-    return [...pathParameters, ...queryParameters, ...headerParameters];
+    return [
+      ...pathParameters,
+      ...queryParameters,
+      ...headerParameters,
+      ...cookieParameters,
+    ];
   }
 
   generatePath(route: RouteConfig): PathItemObject {

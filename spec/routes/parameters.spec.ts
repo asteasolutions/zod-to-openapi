@@ -194,6 +194,85 @@ describe('parameters', () => {
     });
   });
 
+  describe('cookies', () => {
+    it('generates a cookie parameter for route', () => {
+      const { parameters } = generateDataForRoute({
+        request: { cookies: z.object({ test: z.string() }) },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'cookie',
+          name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
+    it('generates a reference cookie parameter for route', () => {
+      const TestParam = registerParameter(
+        'TestParam',
+        z.string().openapi({
+          param: { name: 'test', in: 'cookie' },
+        })
+      );
+
+      const { parameters, documentParameters } = generateDataForRoute(
+        { request: { cookies: z.object({ test: TestParam.schema }) } },
+        [TestParam]
+      );
+
+      expect(documentParameters).toEqual({
+        TestParam: {
+          in: 'cookie',
+          name: 'test',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/TestParam',
+          },
+        },
+      });
+
+      expect(parameters).toEqual([
+        { $ref: '#/components/parameters/TestParam' },
+      ]);
+    });
+
+    it('can automatically register request cookie parameters', () => {
+      const cookieId = z.string().openapi('cookieId').length(6);
+
+      const { documentSchemas, parameters } = generateDataForRoute({
+        request: {
+          cookies: z.object({
+            id: cookieId,
+          }),
+        },
+      });
+
+      expect(documentSchemas).toEqual({
+        cookieId: {
+          type: 'string',
+          minLength: 6,
+          maxLength: 6,
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'cookie',
+          name: 'id',
+          required: true,
+          schema: {
+            $ref: '#/components/schemas/cookieId',
+          },
+        },
+      ]);
+    });
+  });
+
   describe('header', () => {
     it('generates a header parameter with array for route', () => {
       const { parameters } = generateDataForRoute({
