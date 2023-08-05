@@ -589,7 +589,11 @@ export class OpenAPIGenerator {
       [method]: {
         ...pathItemConfig,
 
-        ...(parameters.length > 0 ? { parameters } : {}),
+        ...(parameters.length > 0
+          ? {
+              parameters: [...(pathItemConfig.parameters || []), ...parameters],
+            }
+          : {}),
 
         ...(requestBody ? { requestBody } : {}),
 

@@ -373,6 +373,36 @@ describe('parameters', () => {
     });
   });
 
+  it('combines parameter definitions', () => {
+    const { parameters } = generateDataForRoute({
+      request: {
+        query: z.object({ request_queryId: z.string() }),
+        params: z.object({ request_paramsId: z.string() }),
+      },
+      parameters: [
+        { in: 'query', name: 'params_queryId' },
+        { in: 'path', name: 'params_pathId' },
+      ],
+    });
+
+    expect(parameters).toEqual([
+      { in: 'query', name: 'params_queryId' },
+      { in: 'path', name: 'params_pathId' },
+      {
+        schema: { type: 'string' },
+        required: true,
+        name: 'request_paramsId',
+        in: 'path',
+      },
+      {
+        schema: { type: 'string' },
+        required: true,
+        name: 'request_queryId',
+        in: 'query',
+      },
+    ]);
+  });
+
   it('generates required based on inner schema', () => {
     const { parameters } = generateDataForRoute({
       request: {
