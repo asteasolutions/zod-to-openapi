@@ -524,6 +524,12 @@ In case you try to create an OpenAPI schema from a zod schema that is not one of
 
 You can still register such schemas on your own by providing a `type` via the `.openapi` method. In case you think that the desired behavior can be achieved automatically do not hesitate to reach out to us by describing your case via Github Issues.
 
+#### Known issues
+
+1. `z.nullable(schema)` [does not generate a $ref for underlying registered schemas](https://github.com/asteasolutions/zod-to-openapi/issues/141).
+  - This is an implementation limitation.
+  - However you can simply use `schema.nullable()` which has the exact same effect `zod` wise but it is also fully supported on our end. 
+
 ## Technologies
 
 - [Typescript](https://www.typescriptlang.org/)
