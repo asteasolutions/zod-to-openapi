@@ -1188,7 +1188,7 @@ export class OpenAPIGenerator {
       return this.unwrapChained(schema.unwrap());
     }
 
-    if (isZodType(schema, 'ZodDefault')) {
+    if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
       return this.unwrapChained(schema._def.innerType);
     }
 

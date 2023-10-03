@@ -509,6 +509,7 @@ The list of all supported types as of now is:
   - including `.catchall` resulting in the respective `additionalProperties` schema
 - `ZodOptional`
 - `ZodPipeline`
+- `ZodReadonly`
 - `ZodRecord`
 - `ZodString`
   - adding `format` for `.datetime()`, `.uuid()`, `.email()` and `.url()` and `pattern` for `.regex()` is also supported
@@ -528,7 +529,7 @@ You can still register such schemas on your own by providing a `type` via the `.
 
 1. `z.nullable(schema)` [does not generate a $ref for underlying registered schemas](https://github.com/asteasolutions/zod-to-openapi/issues/141).
   - This is an implementation limitation.
-  - However you can simply use `schema.nullable()` which has the exact same effect `zod` wise but it is also fully supported on our end. 
+  - However you can simply use `schema.nullable()` which has the exact same effect `zod` wise but it is also fully supported on our end.
 
 ## Technologies
 
