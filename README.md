@@ -492,6 +492,7 @@ The list of all supported types as of now is:
 
 - `ZodAny`
 - `ZodArray`
+- `ZodBigInt`
 - `ZodBoolean`
 - `ZodDate`
 - `ZodDefault`

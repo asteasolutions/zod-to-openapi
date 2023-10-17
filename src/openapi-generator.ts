@@ -45,7 +45,6 @@ type HeadersObject = HeadersObject30 & HeadersObject31;
 
 import type {
   AnyZodObject,
-  ZodNumberDef,
   ZodObject,
   ZodRawShape,
   ZodString,
@@ -80,6 +79,7 @@ import {
   ZodRequestBody,
 } from './openapi-registry';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
+import { ZodNumericCheck } from './types';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -104,7 +104,7 @@ export interface OpenApiVersionSpecifics {
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'>;
 
-  getNumberChecks(checks: ZodNumberDef['checks']): any;
+  getNumberChecks(checks: ZodNumericCheck[]): any;
 }
 
 export class OpenAPIGenerator {
@@ -359,7 +359,7 @@ export class OpenAPIGenerator {
   }
 
   private generateSimpleParameter(zodSchema: ZodTypeAny): BaseParameterObject {
-    const metadata = this.getMetadata(zodSchema);
+    const metadata = this.getParamMetadata(zodSchema);
     const paramMetadata = metadata?.metadata?.param;
 
     const required =
@@ -760,7 +760,7 @@ export class OpenAPIGenerator {
   }
 
   private getNumberChecks(
-    checks: ZodNumberDef['checks']
+    checks: ZodNumericCheck[]
   ): Pick<
     SchemaObject,
     'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
@@ -824,6 +824,15 @@ export class OpenAPIGenerator {
           isNullable
         ),
         ...this.getNumberChecks(zodSchema._def.checks),
+        default: defaultValue,
+      };
+    }
+
+    if (isZodType(zodSchema, 'ZodBigInt')) {
+      return {
+        ...this.mapNullableType('integer', isNullable),
+        ...this.getNumberChecks(zodSchema._def.checks),
+        format: 'int64',
         default: defaultValue,
       };
     }
@@ -1211,6 +1220,37 @@ export class OpenAPIGenerator {
     metadata: Required<ZodOpenAPIMetadata>['param']
   ) {
     return omitBy(metadata, isNil);
+  }
+
+  private getParamMetadata<T extends any>(
+    zodSchema: ZodType<T>
+  ): ZodOpenApiFullMetadata<T> | undefined {
+    const innerSchema = this.unwrapChained(zodSchema);
+
+    const metadata = zodSchema._def.openapi
+      ? zodSchema._def.openapi
+      : innerSchema._def.openapi;
+
+    /**
+     * Every zod schema can receive a `description` by using the .describe method.
+     * That description should be used when generating an OpenApi schema.
+     * The `??` bellow makes sure we can handle both:
+     * - schema.describe('Test').optional()
+     * - schema.optional().describe('Test')
+     */
+    const zodDescription = zodSchema.description ?? innerSchema.description;
+
+    return {
+      _internal: metadata?._internal,
+      metadata: {
+        ...metadata?.metadata,
+        // A description provided from .openapi() should be taken with higher precedence
+        param: {
+          description: zodDescription,
+          ...metadata?.metadata.param,
+        },
+      },
+    };
   }
 
   private getMetadata<T extends any>(

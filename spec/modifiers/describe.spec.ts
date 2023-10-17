@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { expectSchema } from '../lib/helpers';
+import { expectSchema, generateDataForRoute } from '../lib/helpers';
 
 describe('describe', () => {
   it('generates OpenAPI schema with description when the .describe method is used', () => {
@@ -77,5 +77,79 @@ describe('describe', () => {
         description: 'Whole object',
       },
     });
+  });
+
+  it('generates an optional query parameter with a provided description', () => {
+    const { parameters } = generateDataForRoute({
+      request: {
+        query: z.object({
+          test: z.string().optional().describe('Some parameter'),
+        }),
+      },
+    });
+
+    expect(parameters).toEqual([
+      {
+        in: 'query',
+        name: 'test',
+        description: 'Some parameter',
+        required: false,
+        schema: {
+          description: 'Some parameter',
+          type: 'string',
+        },
+      },
+    ]);
+  });
+
+  it('generates a query parameter with a description made optional', () => {
+    const { parameters } = generateDataForRoute({
+      request: {
+        query: z.object({
+          test: z.string().describe('Some parameter').optional(),
+        }),
+      },
+    });
+
+    expect(parameters).toEqual([
+      {
+        in: 'query',
+        name: 'test',
+        description: 'Some parameter',
+        required: false,
+        schema: {
+          description: 'Some parameter',
+          type: 'string',
+        },
+      },
+    ]);
+  });
+
+  it('generates a query parameter with description from a registered schema', () => {
+    const schema = z.string().describe('Some parameter').openapi('SomeString');
+    const { parameters, documentSchemas } = generateDataForRoute({
+      request: {
+        query: z.object({ test: schema }),
+      },
+    });
+
+    expect(documentSchemas).toEqual({
+      SomeString: {
+        type: 'string',
+        description: 'Some parameter',
+      },
+    });
+
+    expect(parameters).toEqual([
+      {
+        in: 'query',
+        name: 'test',
+        description: 'Some parameter',
+        required: true,
+        schema: {
+          $ref: '#/components/schemas/SomeString',
+        },
+      },
+    ]);
   });
 });
