@@ -1,6 +1,6 @@
 import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
-import { ZodNumberDef } from 'zod';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
+import { ZodNumericCheck } from '../types';
 
 export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
   get nullType() {
@@ -28,7 +28,7 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
   }
 
   getNumberChecks(
-    checks: ZodNumberDef['checks']
+    checks: ZodNumericCheck[]
   ): Pick<
     SchemaObject,
     'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
@@ -39,13 +39,13 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
         switch (check.kind) {
           case 'min':
             return check.inclusive
-              ? { minimum: check.value }
-              : { minimum: check.value, exclusiveMinimum: true };
+              ? { minimum: Number(check.value) }
+              : { minimum: Number(check.value), exclusiveMinimum: true };
 
           case 'max':
             return check.inclusive
-              ? { maximum: check.value }
-              : { maximum: check.value, exclusiveMaximum: true };
+              ? { maximum: Number(check.value) }
+              : { maximum: Number(check.value), exclusiveMaximum: true };
 
           default:
             return {};

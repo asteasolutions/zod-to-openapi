@@ -45,7 +45,6 @@ type HeadersObject = HeadersObject30 & HeadersObject31;
 
 import type {
   AnyZodObject,
-  ZodNumberDef,
   ZodObject,
   ZodRawShape,
   ZodString,
@@ -80,6 +79,7 @@ import {
   ZodRequestBody,
 } from './openapi-registry';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
+import { ZodNumericCheck } from './types';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -104,7 +104,7 @@ export interface OpenApiVersionSpecifics {
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'>;
 
-  getNumberChecks(checks: ZodNumberDef['checks']): any;
+  getNumberChecks(checks: ZodNumericCheck[]): any;
 }
 
 export class OpenAPIGenerator {
@@ -760,7 +760,7 @@ export class OpenAPIGenerator {
   }
 
   private getNumberChecks(
-    checks: ZodNumberDef['checks']
+    checks: ZodNumericCheck[]
   ): Pick<
     SchemaObject,
     'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
@@ -824,6 +824,15 @@ export class OpenAPIGenerator {
           isNullable
         ),
         ...this.getNumberChecks(zodSchema._def.checks),
+        default: defaultValue,
+      };
+    }
+
+    if (isZodType(zodSchema, 'ZodBigInt')) {
+      return {
+        ...this.mapNullableType('integer', isNullable),
+        ...this.getNumberChecks(zodSchema._def.checks),
+        format: 'int64',
         default: defaultValue,
       };
     }
