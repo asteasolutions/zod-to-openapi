@@ -359,7 +359,7 @@ export class OpenAPIGenerator {
   }
 
   private generateSimpleParameter(zodSchema: ZodTypeAny): BaseParameterObject {
-    const metadata = this.getMetadata(zodSchema);
+    const metadata = this.getParamMetadata(zodSchema);
     const paramMetadata = metadata?.metadata?.param;
 
     const required =
@@ -1220,6 +1220,37 @@ export class OpenAPIGenerator {
     metadata: Required<ZodOpenAPIMetadata>['param']
   ) {
     return omitBy(metadata, isNil);
+  }
+
+  private getParamMetadata<T extends any>(
+    zodSchema: ZodType<T>
+  ): ZodOpenApiFullMetadata<T> | undefined {
+    const innerSchema = this.unwrapChained(zodSchema);
+
+    const metadata = zodSchema._def.openapi
+      ? zodSchema._def.openapi
+      : innerSchema._def.openapi;
+
+    /**
+     * Every zod schema can receive a `description` by using the .describe method.
+     * That description should be used when generating an OpenApi schema.
+     * The `??` bellow makes sure we can handle both:
+     * - schema.describe('Test').optional()
+     * - schema.optional().describe('Test')
+     */
+    const zodDescription = zodSchema.description ?? innerSchema.description;
+
+    return {
+      _internal: metadata?._internal,
+      metadata: {
+        ...metadata?.metadata,
+        // A description provided from .openapi() should be taken with higher precedence
+        param: {
+          description: zodDescription,
+          ...metadata?.metadata.param,
+        },
+      },
+    };
   }
 
   private getMetadata<T extends any>(
