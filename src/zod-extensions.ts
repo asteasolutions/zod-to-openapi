@@ -27,11 +27,16 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
 export interface ZodOpenAPIInternalMetadata {
   refId?: string;
   extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
+  options?: ZodToOpenAPIOptions;
 }
 
 export interface ZodOpenApiFullMetadata<T = any> {
   _internal?: ZodOpenAPIInternalMetadata;
   metadata?: ZodOpenAPIMetadata<T>;
+}
+
+export interface ZodToOpenAPIOptions {
+  forceOneOf?: boolean;
 }
 
 declare module 'zod' {
@@ -53,6 +58,13 @@ declare module 'zod' {
       this: T,
       refId: string,
       metadata?: Partial<ZodOpenAPIMetadata<z.infer<T>>>
+    ): T;
+
+    openapi<T extends ZodTypeAny>(
+      this: T,
+      refId: string,
+      metadata?: Partial<ZodOpenAPIMetadata<z.infer<T>>>,
+      options?: ZodToOpenAPIOptions,
     ): T;
   }
 }
@@ -83,9 +95,12 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
   zod.ZodType.prototype.openapi = function (
     refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
-    metadata?: Partial<ZodOpenAPIMetadata<any>>
+    metadataOrOptions?: Partial<ZodOpenAPIMetadata<any>> | ZodToOpenAPIOptions,
+    options?: ZodToOpenAPIOptions,
   ) {
-    const openapi = typeof refOrOpenapi === 'string' ? metadata : refOrOpenapi;
+    const usingRef = typeof refOrOpenapi === 'string';
+    const openapi = (usingRef ? metadataOrOptions : refOrOpenapi) as Partial<ZodOpenAPIMetadata<any>> | undefined;
+    const resolvedOptions = (usingRef ? options : metadataOrOptions) as ZodToOpenAPIOptions | undefined;
 
     const { param, ...restOfOpenApi } = openapi ?? {};
 
@@ -94,6 +109,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
       ...(typeof refOrOpenapi === 'string'
         ? { refId: refOrOpenapi }
         : undefined),
+      ...({ options: resolvedOptions } ?? {}),
     };
 
     const resultMetadata = {

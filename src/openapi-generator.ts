@@ -960,6 +960,14 @@ export class OpenAPIGenerator {
         return this.generateSchemaWithRef(optionToGenerate);
       });
 
+      const internalOptions = this.getOptions(zodSchema);
+      if (internalOptions.forceOneOf) {
+        return {
+          oneOf: this.mapNullableOfArray(schemas, isNullable),
+          default: defaultValue,
+        };
+      }
+
       return {
         anyOf: this.mapNullableOfArray(schemas, isNullable),
         default: defaultValue,
@@ -1292,6 +1300,10 @@ export class OpenAPIGenerator {
 
   private getRefId<T extends any>(zodSchema: ZodType<T>) {
     return this.getInternalMetadata(zodSchema)?.refId;
+  }
+
+  private getOptions<T extends any>(zodSchema: ZodType<T>) {
+    return this.getInternalMetadata(zodSchema)?.options;
   }
 
   private applySchemaMetadata(
