@@ -1045,10 +1045,6 @@ export class OpenAPIGenerator {
       return this.isOptionalSchema(zodSchema._def.schema);
     }
 
-    if (isZodType(zodSchema, 'ZodDefault')) {
-      return this.isOptionalSchema(zodSchema._def.innerType);
-    }
-
     return zodSchema.isOptional();
   }
 

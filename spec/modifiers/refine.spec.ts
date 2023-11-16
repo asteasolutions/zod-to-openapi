@@ -107,7 +107,7 @@ describe('refine', () => {
     );
   });
 
-  it('supports required refined schemas with default', () => {
+  it('supports required type schemas with refine and default', () => {
     expectSchema(
       [
         z
@@ -128,7 +128,6 @@ describe('refine', () => {
               default: 42,
             },
           },
-          required: ['test'],
         },
       }
     );

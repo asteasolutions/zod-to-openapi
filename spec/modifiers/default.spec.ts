@@ -56,7 +56,7 @@ describe('default', () => {
     });
   });
 
-  it('supports required defaults', () => {
+  it('supports required types with defaults', () => {
     const schema = z
       .object({
         test: z.string().default('test'),
@@ -72,7 +72,6 @@ describe('default', () => {
             default: 'test',
           },
         },
-        required: ['test'],
       },
     });
   });
@@ -103,7 +102,7 @@ describe('default', () => {
     );
   });
 
-  it('supports required default schemas with refine', () => {
+  it('supports required types with default and refine', () => {
     expectSchema(
       [
         z
@@ -124,7 +123,6 @@ describe('default', () => {
               default: 42,
             },
           },
-          required: ['test'],
         },
       }
     );
