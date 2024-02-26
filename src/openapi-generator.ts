@@ -727,6 +727,13 @@ export class OpenAPIGenerator {
         return;
       }
 
+      if (isZodType(value, 'ZodNativeEnum')) {
+        Object.values(value._def.values).forEach((enumValue: string) => {
+          mapping[enumValue] = this.generateSchemaRef(refId);
+        });
+        return;
+      }
+
       const literalValue = value?._def.value;
 
       // This should never happen because Zod checks the disciminator type but to keep the types happy
