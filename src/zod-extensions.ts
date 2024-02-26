@@ -160,6 +160,8 @@ export function extendZodWithOpenApi(zod: typeof z) {
       value._def.openapi = initialShape[key]?._def?.openapi;
     });
 
+    result._def.openapi = undefined;
+
     return result;
   };
 
