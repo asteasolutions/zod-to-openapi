@@ -1032,7 +1032,6 @@ export class OpenAPIGenerator {
       return {
         ...this.mapNullableType('string', isNullable),
         default: defaultValue,
-        format: 'date-time',
       };
     }
 
