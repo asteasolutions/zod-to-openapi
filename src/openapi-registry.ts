@@ -77,9 +77,10 @@ export interface ZodMediaTypeObject {
   encoding?: EncodingObject;
 }
 
-export interface ZodContentObject {
-  [mediaType: string]: ZodMediaTypeObject;
-}
+// Provide autocompletion on media type with most common one without restricting to anything.
+export type ZodMediaType = 'application/json' | 'text/html' | 'text/plain' | 'application/xml' | string & {};
+
+export type ZodContentObject = Partial<Record<ZodMediaType, ZodMediaTypeObject>>;
 
 export interface ZodRequestBody {
   description?: string;
