@@ -654,7 +654,7 @@ export class OpenAPIGenerator {
 
   private getBodyContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
-      if (!isAnyZodType(config.schema)) {
+      if (!config || !isAnyZodType(config.schema)) {
         return config;
       }
 
