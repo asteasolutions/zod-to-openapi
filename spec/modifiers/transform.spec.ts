@@ -35,4 +35,18 @@ describe('transform', () => {
       }
     );
   });
+
+  it('supports input type examples with transform', () => {
+    const schema = z
+      .string()
+      .transform(val => val.length)
+      .openapi('TestTypescriptExample', { example: '123' });
+
+    expectSchema([schema], {
+      TestTypescriptExample: {
+        type: 'string',
+        example: '123',
+      },
+    });
+  });
 });

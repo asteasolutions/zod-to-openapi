@@ -146,4 +146,37 @@ describe('default', () => {
       }
     );
   });
+
+  it('supports input type examples with default', () => {
+    const example = {
+      requiredField: 'required',
+    };
+
+    const schema = z
+      .object({
+        optionalField: z.string().default('defaultValue'),
+        requiredField: z.string(),
+      })
+      // This throws an error if z.infer was used (as before)
+      .openapi('TestTypescriptExample', { example });
+
+    expectSchema([schema], {
+      TestTypescriptExample: {
+        type: 'object',
+        properties: {
+          optionalField: {
+            type: 'string',
+            default: 'defaultValue',
+          },
+          requiredField: {
+            type: 'string',
+          },
+        },
+        example: {
+          requiredField: 'required',
+        },
+        required: ['requiredField'],
+      },
+    });
+  });
 });

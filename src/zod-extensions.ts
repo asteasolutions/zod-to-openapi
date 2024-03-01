@@ -46,13 +46,13 @@ declare module 'zod' {
   > {
     openapi<T extends ZodTypeAny>(
       this: T,
-      metadata: Partial<ZodOpenAPIMetadata<z.input<T> | z.output<T>>>
+      metadata: Partial<ZodOpenAPIMetadata<z.input<T>>>
     ): T;
 
     openapi<T extends ZodTypeAny>(
       this: T,
       refId: string,
-      metadata?: Partial<ZodOpenAPIMetadata<z.input<T> | z.output<T>>>
+      metadata?: Partial<ZodOpenAPIMetadata<z.input<T>>>
     ): T;
   }
 }
