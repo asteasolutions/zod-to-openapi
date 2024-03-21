@@ -88,6 +88,7 @@ import { LiteralTransformer } from './transformers/literal';
 import { EnumTransformer } from './transformers/enum';
 import { NativeEnumTransformer } from './transformers/native-enum';
 import { ArrayTransformer } from './transformers/array';
+import { TupleTransformer } from './transformers/tuple';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -861,30 +862,13 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodTuple')) {
-      const { items } = zodSchema._def;
-
-      const tupleLength = items.length;
-
-      const schemas = items.map(schema => this.generateSchemaWithRef(schema));
-
-      const uniqueSchemas = uniq(schemas);
-
-      if (uniqueSchemas.length === 1) {
-        return {
-          type: 'array',
-          items: uniqueSchemas[0],
-          minItems: tupleLength,
-          maxItems: tupleLength,
-        };
-      }
-
       return {
-        ...this.mapNullableType('array', isNullable),
-        items: {
-          anyOf: uniqueSchemas,
-        },
-        minItems: tupleLength,
-        maxItems: tupleLength,
+        ...new TupleTransformer().transform(
+          zodSchema,
+          _ => this.mapNullableType(_, isNullable),
+          _ => this.generateSchemaWithRef(_)
+        ),
+        default: defaultValue,
       };
     }
 
