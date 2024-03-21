@@ -85,6 +85,8 @@ import { StringTransformer } from './transformers/string';
 import { NumberTransformer } from './transformers/number';
 import { BigIntTransformer } from './transformers/big-int';
 import { LiteralTransformer } from './transformers/literal';
+import { EnumTransformer } from './transformers/enum';
+import { NativeEnumTransformer } from './transformers/native-enum';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -821,39 +823,19 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodEnum')) {
-      // ZodEnum only accepts strings
       return {
-        ...this.mapNullableType('string', isNullable),
-        enum: zodSchema._def.values,
+        ...new EnumTransformer().transform(zodSchema, schema =>
+          this.mapNullableType(schema, isNullable)
+        ),
         default: defaultValue,
       };
     }
 
     if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      const { type, values } = enumInfo(zodSchema._def.values);
-
-      console.log('GENERATING HERE', 'ZodNativeEnum', { type, values });
-
-      if (type === 'mixed') {
-        // enum Test {
-        //   A = 42,
-        //   B = 'test',
-        // }
-        //
-        // const result = z.nativeEnum(Test).parse('42');
-        //
-        // This is an error, so we can't just say it's a 'string'
-        throw new ZodToOpenAPIError(
-          'Enum has mixed string and number values, please specify the OpenAPI type manually'
-        );
-      }
-
       return {
-        ...this.mapNullableType(
-          type === 'numeric' ? 'integer' : 'string',
-          isNullable
+        ...new NativeEnumTransformer().transform(zodSchema, schema =>
+          this.mapNullableType(schema, isNullable)
         ),
-        enum: values,
         default: defaultValue,
       };
     }
