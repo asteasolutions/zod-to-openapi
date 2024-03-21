@@ -94,6 +94,7 @@ import { DiscriminatedUnionTransformer } from './transformers/discriminated-unio
 import { Metadata } from './metadata';
 import { IntersectionTransformer } from './transformers/intersection';
 import { RecordTransformer } from './transformers/record';
+import { ObjectTransformer } from './transformers/object';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -376,8 +377,9 @@ export class OpenAPIGenerator {
     const metadata = Metadata.getParamMetadata(zodSchema);
     const paramMetadata = metadata?.metadata?.param;
 
+    // TODO: Why are we not unwrapping here for isNullable as well?
     const required =
-      !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
+      !Metadata.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
 
     const schema = this.generateSchemaWithRef(zodSchema);
 
@@ -801,11 +803,14 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
-      return this.toOpenAPIObjectSchema(
-        zodSchema,
-        isNullable,
-        defaultValue as ZodRawShape | undefined
-      );
+      return {
+        ...new ObjectTransformer().transform(
+          zodSchema,
+          _ => this.mapNullableType(_, isNullable),
+          _ => this.generateSchemaWithRef(_)
+        ),
+        default: defaultValue,
+      };
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
@@ -900,14 +905,6 @@ export class OpenAPIGenerator {
     });
   }
 
-  private isOptionalSchema(zodSchema: ZodTypeAny): boolean {
-    if (isZodType(zodSchema, 'ZodEffects')) {
-      return this.isOptionalSchema(zodSchema._def.schema);
-    }
-
-    return zodSchema.isOptional();
-  }
-
   private getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
     if (
       isZodType(zodSchema, 'ZodOptional') ||
@@ -925,95 +922,6 @@ export class OpenAPIGenerator {
     }
 
     return undefined;
-  }
-
-  private requiredKeysOf(
-    objectSchema: ZodObject<ZodRawShape, UnknownKeysParam>
-  ) {
-    return Object.entries(objectSchema._def.shape())
-      .filter(([_key, type]) => !this.isOptionalSchema(type))
-      .map(([key, _type]) => key);
-  }
-
-  private toOpenAPIObjectSchema(
-    zodSchema: ZodObject<ZodRawShape, UnknownKeysParam>,
-    isNullable: boolean,
-    defaultValue?: ZodRawShape
-  ): SchemaObject {
-    const extendedFrom = Metadata.getInternalMetadata(zodSchema)?.extendedFrom;
-
-    const required = this.requiredKeysOf(zodSchema);
-    const properties = mapValues(zodSchema._def.shape(), _ =>
-      this.generateSchemaWithRef(_)
-    );
-
-    if (!extendedFrom) {
-      return {
-        ...this.mapNullableType('object', isNullable),
-        default: defaultValue,
-        properties,
-
-        ...(required.length > 0 ? { required } : {}),
-
-        ...this.generateAdditionalProperties(zodSchema),
-      };
-    }
-
-    const parent = extendedFrom.schema;
-    // We want to generate the parent schema so that it can be referenced down the line
-    this.generateSchema(parent);
-
-    const keysRequiredByParent = this.requiredKeysOf(parent);
-    const propsOfParent = mapValues(parent?._def.shape(), _ =>
-      this.generateSchemaWithRef(_)
-    );
-
-    const propertiesToAdd = Object.fromEntries(
-      Object.entries(properties).filter(([key, type]) => {
-        return !objectEquals(propsOfParent[key], type);
-      })
-    );
-
-    const additionallyRequired = required.filter(
-      prop => !keysRequiredByParent.includes(prop)
-    );
-
-    const objectData = {
-      ...this.mapNullableType('object', isNullable),
-      default: defaultValue,
-      properties: propertiesToAdd,
-
-      ...(additionallyRequired.length > 0
-        ? { required: additionallyRequired }
-        : {}),
-
-      ...this.generateAdditionalProperties(zodSchema),
-    };
-
-    return {
-      allOf: [
-        { $ref: `#/components/schemas/${extendedFrom.refId}` },
-        objectData,
-      ],
-    };
-  }
-
-  private generateAdditionalProperties(
-    zodSchema: ZodObject<ZodRawShape, UnknownKeysParam>
-  ) {
-    const unknownKeysOption = zodSchema._def.unknownKeys;
-
-    const catchallSchema = zodSchema._def.catchall;
-
-    if (isZodType(catchallSchema, 'ZodNever')) {
-      if (unknownKeysOption === 'strict') {
-        return { additionalProperties: false };
-      }
-
-      return {};
-    }
-
-    return { additionalProperties: this.generateSchemaWithRef(catchallSchema) };
   }
 
   /**
