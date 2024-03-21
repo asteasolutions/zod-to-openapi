@@ -92,6 +92,7 @@ import { TupleTransformer } from './transformers/tuple';
 import { UnionTransformer } from './transformers/union';
 import { DiscriminatedUnionTransformer } from './transformers/discriminated-union';
 import { Metadata } from './metadata';
+import { IntersectionTransformer } from './transformers/intersection';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -853,21 +854,13 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodIntersection')) {
-      const subtypes = this.flattenIntersectionTypes(zodSchema);
-
-      const allOfSchema: SchemaObject = {
-        allOf: subtypes.map(schema => this.generateSchemaWithRef(schema)),
-      };
-
-      if (isNullable) {
-        return {
-          anyOf: this.mapNullableOfArray([allOfSchema], isNullable),
-          default: defaultValue,
-        };
-      }
-
       return {
-        ...allOfSchema,
+        ...new IntersectionTransformer().transform(
+          zodSchema,
+          isNullable,
+          _ => this.mapNullableOfArray(_, isNullable),
+          _ => this.generateSchemaWithRef(_)
+        ),
         default: defaultValue,
       };
     }
@@ -1045,17 +1038,6 @@ export class OpenAPIGenerator {
     }
 
     return { additionalProperties: this.generateSchemaWithRef(catchallSchema) };
-  }
-
-  private flattenIntersectionTypes(schema: ZodTypeAny): ZodTypeAny[] {
-    if (!isZodType(schema, 'ZodIntersection')) {
-      return [schema];
-    }
-
-    const leftSubTypes = this.flattenIntersectionTypes(schema._def.left);
-    const rightSubTypes = this.flattenIntersectionTypes(schema._def.right);
-
-    return [...leftSubTypes, ...rightSubTypes];
   }
 
   /**

@@ -20,12 +20,12 @@ export class DiscriminatedUnionTransformer {
     >,
     isNullable: boolean,
     mapNullableOfArray: MapNullableOfArrayWithNullable,
-    mapItems: MapSubSchema,
+    mapItem: MapSubSchema,
     generateSchemaRef: (schema: string) => string
   ) {
     const options = [...zodSchema.options.values()];
 
-    const optionSchema = options.map(schema => mapItems(schema));
+    const optionSchema = options.map(mapItem);
 
     if (isNullable) {
       return {
