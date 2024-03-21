@@ -93,6 +93,7 @@ import { UnionTransformer } from './transformers/union';
 import { DiscriminatedUnionTransformer } from './transformers/discriminated-union';
 import { Metadata } from './metadata';
 import { IntersectionTransformer } from './transformers/intersection';
+import { RecordTransformer } from './transformers/record';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -866,37 +867,12 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodRecord')) {
-      const propertiesType = zodSchema._def.valueType;
-      const keyType = zodSchema._def.keyType;
-
-      const propertiesSchema = this.generateSchemaWithRef(propertiesType);
-
-      if (
-        isZodType(keyType, 'ZodEnum') ||
-        isZodType(keyType, 'ZodNativeEnum')
-      ) {
-        // Native enums have their keys as both number and strings however the number is an
-        // internal representation and the string is the access point for a documentation
-        const keys = Object.values(keyType.enum).filter(isString);
-
-        const properties = keys.reduce(
-          (acc, curr) => ({
-            ...acc,
-            [curr]: propertiesSchema,
-          }),
-          {} as SchemaObject['properties']
-        );
-
-        return {
-          ...this.mapNullableType('object', isNullable),
-          properties,
-          default: defaultValue,
-        };
-      }
-
       return {
-        ...this.mapNullableType('object', isNullable),
-        additionalProperties: propertiesSchema,
+        ...new RecordTransformer().transform(
+          zodSchema,
+          _ => this.mapNullableType(_, isNullable),
+          _ => this.generateSchemaWithRef(_)
+        ),
         default: defaultValue,
       };
     }
