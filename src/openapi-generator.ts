@@ -81,6 +81,7 @@ import {
 } from './openapi-registry';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
 import { ZodNumericCheck } from './types';
+import { StringTransformer } from './transformers/string';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -667,46 +668,6 @@ export class OpenAPIGenerator {
     });
   }
 
-  private getZodStringCheck<T extends ZodStringDef['checks'][number]['kind']>(
-    zodString: ZodString,
-    kind: T
-  ) {
-    return zodString._def.checks.find(
-      (
-        check
-      ): check is Extract<
-        ZodStringDef['checks'][number],
-        { kind: typeof kind }
-      > => {
-        return check.kind === kind;
-      }
-    );
-  }
-
-  /**
-   * Attempts to map Zod strings to known formats
-   * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
-   */
-  private mapStringFormat(zodString: ZodString): string | undefined {
-    if (zodString.isUUID) {
-      return 'uuid';
-    }
-
-    if (zodString.isEmail) {
-      return 'email';
-    }
-
-    if (zodString.isURL) {
-      return 'uri';
-    }
-
-    if (zodString.isDatetime) {
-      return 'date-time';
-    }
-
-    return undefined;
-  }
-
   private mapDiscriminator(
     zodObjects: AnyZodObject[],
     discriminator: string
@@ -721,14 +682,22 @@ export class OpenAPIGenerator {
       const refId = this.getRefId(obj) as string; // type-checked earlier
       const value = obj.shape?.[discriminator];
 
-      if (isZodType(value, 'ZodEnum')) {
-        value._def.values.forEach((enumValue: string) => {
+      if (isZodType(value, 'ZodEnum') || isZodType(value, 'ZodNativeEnum')) {
+        // Native enums have their keys as both number and strings however the number is an
+        // internal representation and the string is the access point for a documentation
+        const keys = Object.values(value.enum).filter(isString);
+
+        console.log('ZodNativeEnum', keys);
+        keys.forEach((enumValue: string) => {
+          console.log('Adding mapping:', enumValue);
           mapping[enumValue] = this.generateSchemaRef(refId);
         });
         return;
       }
 
       const literalValue = value?._def.value;
+
+      console.log({ literalValue, discriminator, type: typeof literalValue });
 
       // This should never happen because Zod checks the disciminator type but to keep the types happy
       if (typeof literalValue !== 'string') {
@@ -795,25 +764,10 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodString')) {
-      const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
-
-      const length = this.getZodStringCheck(zodSchema, 'length')?.value;
-
-      const maxLength = Number.isFinite(zodSchema.minLength)
-        ? zodSchema.minLength ?? undefined
-        : undefined;
-
-      const minLength = Number.isFinite(zodSchema.maxLength)
-        ? zodSchema.maxLength ?? undefined
-        : undefined;
-
       return {
-        ...this.mapNullableType('string', isNullable),
-        // FIXME: https://github.com/colinhacks/zod/commit/d78047e9f44596a96d637abb0ce209cd2732d88c
-        minLength: length ?? maxLength,
-        maxLength: length ?? minLength,
-        format: this.mapStringFormat(zodSchema),
-        pattern: regexCheck?.regex.source,
+        ...new StringTransformer().transform(zodSchema, schema =>
+          this.mapNullableType(schema, isNullable)
+        ),
         default: defaultValue,
       };
     }
@@ -874,6 +828,8 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodNativeEnum')) {
       const { type, values } = enumInfo(zodSchema._def.values);
+
+      console.log('GENERATING HERE', 'ZodNativeEnum', { type, values });
 
       if (type === 'mixed') {
         // enum Test {
