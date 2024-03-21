@@ -87,6 +87,7 @@ import { BigIntTransformer } from './transformers/big-int';
 import { LiteralTransformer } from './transformers/literal';
 import { EnumTransformer } from './transformers/enum';
 import { NativeEnumTransformer } from './transformers/native-enum';
+import { ArrayTransformer } from './transformers/array';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -849,14 +850,12 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
-      const itemType = zodSchema._def.type as ZodTypeAny;
-
       return {
-        ...this.mapNullableType('array', isNullable),
-        items: this.generateSchemaWithRef(itemType),
-
-        minItems: zodSchema._def.minLength?.value,
-        maxItems: zodSchema._def.maxLength?.value,
+        ...new ArrayTransformer().transform(
+          zodSchema,
+          _ => this.mapNullableType(_, isNullable),
+          _ => this.generateSchemaWithRef(_)
+        ),
         default: defaultValue,
       };
     }
