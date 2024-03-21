@@ -89,6 +89,7 @@ import { EnumTransformer } from './transformers/enum';
 import { NativeEnumTransformer } from './transformers/native-enum';
 import { ArrayTransformer } from './transformers/array';
 import { TupleTransformer } from './transformers/tuple';
+import { UnionTransformer } from './transformers/union';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -873,20 +874,12 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodUnion')) {
-      const options = this.flattenUnionTypes(zodSchema);
-
-      const schemas = options.map(schema => {
-        // If any of the underlying schemas of a union is .nullable then the whole union
-        // would be nullable. `mapNullableOfArray` would place it where it belongs.
-        // Therefor we are stripping the additional nullables from the inner schemas
-        // See https://github.com/asteasolutions/zod-to-openapi/issues/149
-        const optionToGenerate = this.unwrapNullable(schema);
-
-        return this.generateSchemaWithRef(optionToGenerate);
-      });
-
       return {
-        anyOf: this.mapNullableOfArray(schemas, isNullable),
+        ...new UnionTransformer().transform(
+          zodSchema,
+          _ => this.mapNullableOfArray(_, isNullable),
+          _ => this.generateSchemaWithRef(_)
+        ),
         default: defaultValue,
       };
     }
@@ -1107,16 +1100,6 @@ export class OpenAPIGenerator {
     return { additionalProperties: this.generateSchemaWithRef(catchallSchema) };
   }
 
-  private flattenUnionTypes(schema: ZodTypeAny): ZodTypeAny[] {
-    if (!isZodType(schema, 'ZodUnion')) {
-      return [schema];
-    }
-
-    const options = schema._def.options as ZodTypeAny[];
-
-    return options.flatMap(option => this.flattenUnionTypes(option));
-  }
-
   private flattenIntersectionTypes(schema: ZodTypeAny): ZodTypeAny[] {
     if (!isZodType(schema, 'ZodIntersection')) {
       return [schema];
@@ -1126,13 +1109,6 @@ export class OpenAPIGenerator {
     const rightSubTypes = this.flattenIntersectionTypes(schema._def.right);
 
     return [...leftSubTypes, ...rightSubTypes];
-  }
-
-  private unwrapNullable(schema: ZodTypeAny): ZodTypeAny {
-    if (isZodType(schema, 'ZodNullable')) {
-      return this.unwrapNullable(schema.unwrap());
-    }
-    return schema;
   }
 
   private unwrapChained(schema: ZodTypeAny): ZodTypeAny {
