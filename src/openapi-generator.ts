@@ -1,48 +1,3 @@
-import type {
-  ReferenceObject as ReferenceObject30,
-  ParameterObject as ParameterObject30,
-  RequestBodyObject as RequestBodyObject30,
-  PathItemObject as PathItemObject30,
-  OpenAPIObject as OpenAPIObject30,
-  ComponentsObject as ComponentsObject30,
-  ParameterLocation as ParameterLocation30,
-  ResponseObject as ResponseObject30,
-  ContentObject as ContentObject30,
-  DiscriminatorObject as DiscriminatorObject30,
-  SchemaObject as SchemaObject30,
-  BaseParameterObject as BaseParameterObject30,
-  HeadersObject as HeadersObject30,
-} from 'openapi3-ts/oas30';
-import type {
-  ReferenceObject as ReferenceObject31,
-  ParameterObject as ParameterObject31,
-  RequestBodyObject as RequestBodyObject31,
-  PathItemObject as PathItemObject31,
-  OpenAPIObject as OpenAPIObject31,
-  ComponentsObject as ComponentsObject31,
-  ParameterLocation as ParameterLocation31,
-  ResponseObject as ResponseObject31,
-  ContentObject as ContentObject31,
-  DiscriminatorObject as DiscriminatorObject31,
-  SchemaObject as SchemaObject31,
-  BaseParameterObject as BaseParameterObject31,
-  HeadersObject as HeadersObject31,
-} from 'openapi3-ts/oas31';
-
-type ReferenceObject = ReferenceObject30 & ReferenceObject31;
-type ParameterObject = ParameterObject30 & ParameterObject31;
-type RequestBodyObject = RequestBodyObject30 & RequestBodyObject31;
-type PathItemObject = PathItemObject30 & PathItemObject31;
-type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31;
-type ComponentsObject = ComponentsObject30 & ComponentsObject31;
-type ParameterLocation = ParameterLocation30 & ParameterLocation31;
-type ResponseObject = ResponseObject30 & ResponseObject31;
-type ContentObject = ContentObject30 & ContentObject31;
-type DiscriminatorObject = DiscriminatorObject30 & DiscriminatorObject31;
-type SchemaObject = SchemaObject30 & SchemaObject31;
-type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31;
-type HeadersObject = HeadersObject30 & HeadersObject31;
-
 import type { AnyZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
 import {
   ConflictError,
@@ -67,7 +22,21 @@ import {
   ZodRequestBody,
 } from './openapi-registry';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
-import { ZodNumericCheck } from './types';
+import {
+  BaseParameterObject,
+  ComponentsObject,
+  ContentObject,
+  HeadersObject,
+  OpenAPIObject,
+  ParameterLocation,
+  ParameterObject,
+  PathItemObject,
+  ReferenceObject,
+  RequestBodyObject,
+  ResponseObject,
+  SchemaObject,
+  ZodNumericCheck,
+} from './types';
 import { Metadata } from './metadata';
 import { OpenApiTransformer } from './transformers';
 
