@@ -82,6 +82,7 @@ import {
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
 import { ZodNumericCheck } from './types';
 import { StringTransformer } from './transformers/string';
+import { NumberTransformer } from './transformers/number';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -774,11 +775,11 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodNumber')) {
       return {
-        ...this.mapNullableType(
-          zodSchema.isInt ? 'integer' : 'number',
-          isNullable
+        ...new NumberTransformer().transform(
+          zodSchema,
+          schema => this.mapNullableType(schema, isNullable),
+          _ => this.getNumberChecks(_)
         ),
-        ...this.getNumberChecks(zodSchema._def.checks),
         default: defaultValue,
       };
     }
