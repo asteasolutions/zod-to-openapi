@@ -43,32 +43,19 @@ type SchemaObject = SchemaObject30 & SchemaObject31;
 type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31;
 type HeadersObject = HeadersObject30 & HeadersObject31;
 
-import type {
-  AnyZodObject,
-  ZodObject,
-  ZodRawShape,
-  ZodString,
-  ZodStringDef,
-  ZodType,
-  ZodTypeAny,
-} from 'zod';
+import type { AnyZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
-  MissingParameterDataErrorProps,
-  UnknownZodTypeError,
-  ZodToOpenAPIError,
+  enhanceMissingParametersError,
 } from './errors';
-import { enumInfo } from './lib/enum-info';
 import {
   compact,
   isNil,
-  isString,
   mapValues,
   objectEquals,
   omit,
   omitBy,
-  uniq,
 } from './lib/lodash';
 import { isAnyZodType, isZodType } from './lib/zod-is-type';
 import {
@@ -81,23 +68,8 @@ import {
 } from './openapi-registry';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
 import { ZodNumericCheck } from './types';
-import { StringTransformer } from './transformers/string';
-import { NumberTransformer } from './transformers/number';
-import { BigIntTransformer } from './transformers/big-int';
-import { LiteralTransformer } from './transformers/literal';
-import { EnumTransformer } from './transformers/enum';
-import { NativeEnumTransformer } from './transformers/native-enum';
-import { ArrayTransformer } from './transformers/array';
-import { TupleTransformer } from './transformers/tuple';
-import { UnionTransformer } from './transformers/union';
-import { DiscriminatedUnionTransformer } from './transformers/discriminated-union';
 import { Metadata } from './metadata';
-import { IntersectionTransformer } from './transformers/intersection';
-import { RecordTransformer } from './transformers/record';
-import { ObjectTransformer } from './transformers/object';
-
-// See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
-type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
+import { OpenApiTransformer } from './transformers';
 
 // List of Open API Versions. Please make sure these are in ascending order
 const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
@@ -208,7 +180,7 @@ export class OpenAPIGenerator {
 
   private generateSingle(definition: OpenAPIDefinitions | ZodTypeAny): void {
     if (!('type' in definition)) {
-      this.generateSchema(definition);
+      this.generateSchemaWithRef(definition);
       return;
     }
 
@@ -218,7 +190,7 @@ export class OpenAPIGenerator {
         return;
 
       case 'schema':
-        this.generateSchema(definition.schema);
+        this.generateSchemaWithRef(definition.schema);
         return;
 
       case 'route':
@@ -433,6 +405,28 @@ export class OpenAPIGenerator {
   }
 
   /**
+   * Same as above but applies nullable
+   */
+  private constructReferencedOpenAPISchema<T>(
+    zodSchema: ZodType<T>
+  ): SchemaObject | ReferenceObject {
+    const metadata = Metadata.getMetadata(zodSchema);
+    const innerSchema = Metadata.unwrapChained(zodSchema);
+
+    const defaultValue = this.getDefaultValue(zodSchema);
+    const isNullableSchema = zodSchema.isNullable();
+
+    if (metadata?.metadata?.type) {
+      return this.versionSpecifics.mapNullableType(
+        metadata.metadata.type,
+        isNullableSchema
+      );
+    }
+
+    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
+  }
+
+  /**
    * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
    */
   private generateSimpleSchema<T>(
@@ -486,22 +480,6 @@ export class OpenAPIGenerator {
   }
 
   /**
-   * Generates a whole OpenApi schema and saves it into
-   * schemaRefs if a `refId` is provided.
-   */
-  private generateSchema(zodSchema: ZodTypeAny) {
-    const refId = Metadata.getRefId(zodSchema);
-
-    const result = this.generateSimpleSchema(zodSchema);
-
-    if (refId && this.schemaRefs[refId] === undefined) {
-      this.schemaRefs[refId] = result;
-    }
-
-    return result;
-  }
-
-  /**
    * Same as `generateSchema` but if the new schema is added into the
    * referenced schemas, it would return a ReferenceObject and not the
    * whole result.
@@ -552,22 +530,22 @@ export class OpenAPIGenerator {
 
     const { query, params, headers, cookies } = request;
 
-    const queryParameters = this.enhanceMissingParametersError(
+    const queryParameters = enhanceMissingParametersError(
       () => (query ? this.generateInlineParameters(query, 'query') : []),
       { location: 'query' }
     );
 
-    const pathParameters = this.enhanceMissingParametersError(
+    const pathParameters = enhanceMissingParametersError(
       () => (params ? this.generateInlineParameters(params, 'path') : []),
       { location: 'path' }
     );
 
-    const cookieParameters = this.enhanceMissingParametersError(
+    const cookieParameters = enhanceMissingParametersError(
       () => (cookies ? this.generateInlineParameters(cookies, 'cookie') : []),
       { location: 'cookie' }
     );
 
-    const headerParameters = this.enhanceMissingParametersError(
+    const headerParameters = enhanceMissingParametersError(
       () =>
         headers
           ? isZodType(headers, 'ZodObject')
@@ -594,7 +572,7 @@ export class OpenAPIGenerator {
       return this.getResponse(response);
     });
 
-    const parameters = this.enhanceMissingParametersError(
+    const parameters = enhanceMissingParametersError(
       () => this.getParameters(request),
       { route: `${method} ${path}` }
     );
@@ -682,227 +660,18 @@ export class OpenAPIGenerator {
     });
   }
 
-  private mapNullableOfArray(
-    objects: (SchemaObject | ReferenceObject)[],
-    isNullable: boolean
-  ): (SchemaObject | ReferenceObject)[] {
-    return this.versionSpecifics.mapNullableOfArray(objects, isNullable);
-  }
-
-  private mapNullableType(
-    type: NonNullable<SchemaObject['type']> | undefined,
-    isNullable: boolean
-  ): Pick<SchemaObject, 'type' | 'nullable'> {
-    return this.versionSpecifics.mapNullableType(type, isNullable);
-  }
-
-  private getNumberChecks(
-    checks: ZodNumericCheck[]
-  ): Pick<
-    SchemaObject,
-    'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
-  > {
-    return this.versionSpecifics.getNumberChecks(checks);
-  }
-
-  private constructReferencedOpenAPISchema<T>(
-    zodSchema: ZodType<T>
-  ): SchemaObject | ReferenceObject {
-    const metadata = Metadata.getMetadata(zodSchema);
-    const innerSchema = Metadata.unwrapChained(zodSchema);
-
-    const defaultValue = this.getDefaultValue(zodSchema);
-    const isNullableSchema = zodSchema.isNullable();
-
-    if (metadata?.metadata?.type) {
-      return this.mapNullableType(metadata.metadata.type, isNullableSchema);
-    }
-
-    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
-  }
-
   private toOpenAPISchema<T>(
     zodSchema: ZodType<T>,
     isNullable: boolean,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
-    if (isZodType(zodSchema, 'ZodNull')) {
-      return this.versionSpecifics.nullType;
-    }
-
-    if (isZodType(zodSchema, 'ZodString')) {
-      return {
-        ...new StringTransformer().transform(zodSchema, schema =>
-          this.mapNullableType(schema, isNullable)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodNumber')) {
-      return {
-        ...new NumberTransformer().transform(
-          zodSchema,
-          schema => this.mapNullableType(schema, isNullable),
-          _ => this.getNumberChecks(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodBigInt')) {
-      return {
-        ...new BigIntTransformer().transform(
-          zodSchema,
-          schema => this.mapNullableType(schema, isNullable),
-          _ => this.getNumberChecks(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodBoolean')) {
-      return {
-        ...this.mapNullableType('boolean', isNullable),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodEffects')) {
-      const innerSchema = zodSchema._def.schema as ZodTypeAny;
-      // Here we want to register any underlying schemas, however we do not want to
-      // reference it, hence why `generateSchema` is used instead of `generateSchemaWithRef`
-      return this.generateSchema(innerSchema);
-    }
-
-    if (isZodType(zodSchema, 'ZodLiteral')) {
-      return {
-        ...new LiteralTransformer().transform(zodSchema, schema =>
-          this.mapNullableType(schema, isNullable)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodEnum')) {
-      return {
-        ...new EnumTransformer().transform(zodSchema, schema =>
-          this.mapNullableType(schema, isNullable)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      return {
-        ...new NativeEnumTransformer().transform(zodSchema, schema =>
-          this.mapNullableType(schema, isNullable)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodObject')) {
-      return {
-        ...new ObjectTransformer().transform(
-          zodSchema,
-          _ => this.mapNullableType(_, isNullable),
-          _ => this.generateSchemaWithRef(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodArray')) {
-      return {
-        ...new ArrayTransformer().transform(
-          zodSchema,
-          _ => this.mapNullableType(_, isNullable),
-          _ => this.generateSchemaWithRef(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodTuple')) {
-      return {
-        ...new TupleTransformer().transform(
-          zodSchema,
-          _ => this.mapNullableType(_, isNullable),
-          _ => this.generateSchemaWithRef(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodUnion')) {
-      return {
-        ...new UnionTransformer().transform(
-          zodSchema,
-          _ => this.mapNullableOfArray(_, isNullable),
-          _ => this.generateSchemaWithRef(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
-      return {
-        ...new DiscriminatedUnionTransformer().transform(
-          zodSchema,
-          isNullable,
-          _ => this.mapNullableOfArray(_, isNullable),
-          _ => this.generateSchemaWithRef(_),
-          _ => this.generateSchemaRef(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodIntersection')) {
-      return {
-        ...new IntersectionTransformer().transform(
-          zodSchema,
-          isNullable,
-          _ => this.mapNullableOfArray(_, isNullable),
-          _ => this.generateSchemaWithRef(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodRecord')) {
-      return {
-        ...new RecordTransformer().transform(
-          zodSchema,
-          _ => this.mapNullableType(_, isNullable),
-          _ => this.generateSchemaWithRef(_)
-        ),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodUnknown') || isZodType(zodSchema, 'ZodAny')) {
-      return this.mapNullableType(undefined, isNullable);
-    }
-
-    if (isZodType(zodSchema, 'ZodDate')) {
-      return {
-        ...this.mapNullableType('string', isNullable),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodPipeline')) {
-      return this.toOpenAPISchema(zodSchema._def.in, isNullable, defaultValue);
-    }
-
-    const refId = Metadata.getRefId(zodSchema);
-
-    throw new UnknownZodTypeError({
-      currentSchema: zodSchema._def,
-      schemaName: refId,
-    });
+    return new OpenApiTransformer(this.versionSpecifics).transform(
+      zodSchema,
+      isNullable,
+      _ => this.generateSchemaWithRef(_),
+      _ => this.generateSchemaRef(_),
+      defaultValue
+    );
   }
 
   private getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
@@ -949,22 +718,5 @@ export class OpenAPIGenerator {
       },
       isNil
     );
-  }
-
-  private enhanceMissingParametersError<T>(
-    action: () => T,
-    paramsToAdd: Partial<MissingParameterDataErrorProps>
-  ) {
-    try {
-      return action();
-    } catch (error) {
-      if (error instanceof MissingParameterDataError) {
-        throw new MissingParameterDataError({
-          ...error.data,
-          ...paramsToAdd,
-        });
-      }
-      throw error;
-    }
   }
 }

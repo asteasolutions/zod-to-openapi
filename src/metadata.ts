@@ -68,7 +68,7 @@ export class Metadata {
         // A description provided from .openapi() should be taken with higher precedence
         param: {
           description: zodDescription,
-          ...metadata?.metadata.param,
+          ...metadata?.metadata?.param,
         },
       },
     };
@@ -78,7 +78,7 @@ export class Metadata {
     return this.getInternalMetadata(zodSchema)?.refId;
   }
 
-  static unwrapChained(schema: ZodTypeAny): ZodTypeAny {
+  static unwrapChained(schema: ZodType): ZodType {
     if (
       isZodType(schema, 'ZodOptional') ||
       isZodType(schema, 'ZodNullable') ||
@@ -93,6 +93,10 @@ export class Metadata {
 
     if (isZodType(schema, 'ZodEffects')) {
       return this.unwrapChained(schema._def.schema);
+    }
+
+    if (isZodType(schema, 'ZodPipeline')) {
+      return this.unwrapChained(schema._def.in);
     }
 
     return schema;

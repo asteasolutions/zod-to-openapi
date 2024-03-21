@@ -50,6 +50,11 @@ export type MapNullableType = (
   type: NonNullable<SchemaObject['type']> | undefined
 ) => Pick<SchemaObject, 'type' | 'nullable'>;
 
+export type MapNullableTypeWithNullable = (
+  type: NonNullable<SchemaObject['type']> | undefined,
+  isNullable: boolean
+) => Pick<SchemaObject, 'type' | 'nullable'>;
+
 export type MapNullableOfArray = (
   objects: (SchemaObject | ReferenceObject)[]
 ) => (SchemaObject | ReferenceObject)[];

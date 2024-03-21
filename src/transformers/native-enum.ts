@@ -10,8 +10,6 @@ export class NativeEnumTransformer {
   ) {
     const { type, values } = enumInfo(zodSchema._def.values);
 
-    console.log('GENERATING HERE', 'ZodNativeEnum', { type, values });
-
     if (type === 'mixed') {
       // enum Test {
       //   A = 42,
