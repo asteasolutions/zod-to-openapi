@@ -84,6 +84,7 @@ import { ZodNumericCheck } from './types';
 import { StringTransformer } from './transformers/string';
 import { NumberTransformer } from './transformers/number';
 import { BigIntTransformer } from './transformers/big-int';
+import { LiteralTransformer } from './transformers/literal';
 
 // See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
 type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
@@ -812,11 +813,9 @@ export class OpenAPIGenerator {
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
       return {
-        ...this.mapNullableType(
-          typeof zodSchema._def.value as NonNullable<SchemaObject['type']>,
-          isNullable
+        ...new LiteralTransformer().transform(zodSchema, schema =>
+          this.mapNullableType(schema, isNullable)
         ),
-        enum: [zodSchema._def.value],
         default: defaultValue,
       };
     }
