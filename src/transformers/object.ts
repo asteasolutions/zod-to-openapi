@@ -1,5 +1,5 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { UnknownKeysParam, ZodObject, ZodRawShape } from 'zod';
+import { UnknownKeysParam, ZodObject, ZodRawShape, z } from 'zod';
 import { isZodType } from '../lib/zod-is-type';
 import { mapValues, objectEquals } from '../lib/lodash';
 import { Metadata } from '../metadata';
@@ -7,6 +7,7 @@ import { Metadata } from '../metadata';
 export class ObjectTransformer {
   transform(
     zodSchema: ZodObject<ZodRawShape>,
+    defaultValue: object,
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
@@ -19,6 +20,8 @@ export class ObjectTransformer {
       return {
         ...mapNullableType('object'),
         properties,
+
+        default: defaultValue,
 
         ...(required.length > 0 ? { required } : {}),
 
@@ -45,8 +48,7 @@ export class ObjectTransformer {
 
     const objectData = {
       ...mapNullableType('object'),
-      // TODO: Where would the default come in this scenario
-      // default: defaultValue,
+      default: defaultValue,
       properties: propertiesToAdd,
 
       ...(additionallyRequired.length > 0

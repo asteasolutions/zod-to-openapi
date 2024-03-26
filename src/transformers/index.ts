@@ -41,7 +41,16 @@ export class OpenApiTransformer {
       return this.versionSpecifics.mapNullableType(undefined, isNullable);
     }
 
-    const schema = this.transformSchema(
+    if (isZodType(zodSchema, 'ZodObject')) {
+      return new ObjectTransformer().transform(
+        zodSchema,
+        defaultValue as object, // verified on TS level from input
+        _ => this.versionSpecifics.mapNullableType(_, isNullable),
+        mapItem
+      );
+    }
+
+    const schema = this.transformSchemaWithoutDefault(
       zodSchema,
       isNullable,
       mapItem,
@@ -51,7 +60,7 @@ export class OpenApiTransformer {
     return { ...schema, default: defaultValue };
   }
 
-  private transformSchema<T>(
+  private transformSchemaWithoutDefault<T>(
     zodSchema: ZodType<T>,
     isNullable: boolean,
     mapItem: MapSubSchema,
@@ -102,14 +111,6 @@ export class OpenApiTransformer {
     if (isZodType(zodSchema, 'ZodNativeEnum')) {
       return new NativeEnumTransformer().transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
-      );
-    }
-
-    if (isZodType(zodSchema, 'ZodObject')) {
-      return new ObjectTransformer().transform(
-        zodSchema,
-        _ => this.versionSpecifics.mapNullableType(_, isNullable),
-        mapItem
       );
     }
 
