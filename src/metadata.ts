@@ -1,10 +1,9 @@
 import { ZodType, ZodTypeAny } from 'zod';
-import { isZodType } from './lib/zod-is-type';
-import { ZodOpenApiFullMetadata } from './zod-extensions';
+import { ZodTypes, isZodType } from './lib/zod-is-type';
+import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
+import { isNil, omit, omitBy } from './lib/lodash';
+import { ParameterObject, ReferenceObject, SchemaObject } from './types';
 
-/**
- * TODO: This is not a perfect abstraction
- */
 export class Metadata {
   static getMetadata<T extends any>(
     zodSchema: ZodType<T>
@@ -74,32 +73,81 @@ export class Metadata {
     };
   }
 
+  /**
+   * A method that omits all custom keys added to the regular OpenAPI
+   * metadata properties
+   */
+  static buildSchemaMetadata(metadata: ZodOpenAPIMetadata) {
+    return omitBy(omit(metadata, ['param']), isNil);
+  }
+
+  static buildParameterMetadata(
+    metadata: Required<ZodOpenAPIMetadata>['param']
+  ) {
+    return omitBy(metadata, isNil);
+  }
+
+  static applySchemaMetadata(
+    initialData: SchemaObject | ParameterObject | ReferenceObject,
+    metadata: Partial<ZodOpenAPIMetadata>
+  ): SchemaObject | ReferenceObject {
+    return omitBy(
+      {
+        ...initialData,
+        ...this.buildSchemaMetadata(metadata),
+      },
+      isNil
+    );
+  }
+
   static getRefId<T extends any>(zodSchema: ZodType<T>) {
     return this.getInternalMetadata(zodSchema)?.refId;
   }
 
   static unwrapChained(schema: ZodType): ZodType {
+    return this.unwrapUntil(schema);
+  }
+
+  static getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
+    const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
+
+    return unwrapped?._def.defaultValue();
+  }
+
+  private static unwrapUntil(schema: ZodType): ZodType;
+  private static unwrapUntil<TypeName extends keyof ZodTypes>(
+    schema: ZodType,
+    typeName: TypeName | undefined
+  ): ZodTypes[TypeName] | undefined;
+  private static unwrapUntil<TypeName extends keyof ZodTypes>(
+    schema: ZodType,
+    typeName?: TypeName
+  ): ZodType | undefined {
+    if (typeName && isZodType(schema, typeName)) {
+      return schema;
+    }
+
     if (
       isZodType(schema, 'ZodOptional') ||
       isZodType(schema, 'ZodNullable') ||
       isZodType(schema, 'ZodBranded')
     ) {
-      return this.unwrapChained(schema.unwrap());
+      return this.unwrapUntil(schema.unwrap(), typeName);
     }
 
     if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.unwrapChained(schema._def.innerType);
+      return this.unwrapUntil(schema._def.innerType, typeName);
     }
 
     if (isZodType(schema, 'ZodEffects')) {
-      return this.unwrapChained(schema._def.schema);
+      return this.unwrapUntil(schema._def.schema, typeName);
     }
 
     if (isZodType(schema, 'ZodPipeline')) {
-      return this.unwrapChained(schema._def.in);
+      return this.unwrapUntil(schema._def.in, typeName);
     }
 
-    return schema;
+    return typeName ? undefined : schema;
   }
 
   static isOptionalSchema(zodSchema: ZodTypeAny): boolean {

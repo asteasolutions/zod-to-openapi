@@ -327,7 +327,7 @@ export class OpenAPIGenerator {
     return {
       schema,
       required,
-      ...(paramMetadata ? this.buildParameterMetadata(paramMetadata) : {}),
+      ...(paramMetadata ? Metadata.buildParameterMetadata(paramMetadata) : {}),
     };
   }
 
@@ -362,14 +362,14 @@ export class OpenAPIGenerator {
   private generateSchemaWithMetadata<T>(zodSchema: ZodType<T>) {
     const innerSchema = Metadata.unwrapChained(zodSchema);
     const metadata = Metadata.getMetadata(zodSchema);
-    const defaultValue = this.getDefaultValue(zodSchema);
+    const defaultValue = Metadata.getDefaultValue(zodSchema);
 
     const result = metadata?.metadata?.type
       ? { type: metadata?.metadata.type }
       : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
 
     return metadata?.metadata
-      ? this.applySchemaMetadata(result, metadata.metadata)
+      ? Metadata.applySchemaMetadata(result, metadata.metadata)
       : omitBy(result, isNil);
   }
 
@@ -382,7 +382,7 @@ export class OpenAPIGenerator {
     const metadata = Metadata.getMetadata(zodSchema);
     const innerSchema = Metadata.unwrapChained(zodSchema);
 
-    const defaultValue = this.getDefaultValue(zodSchema);
+    const defaultValue = Metadata.getDefaultValue(zodSchema);
     const isNullableSchema = zodSchema.isNullable();
 
     if (metadata?.metadata?.type) {
@@ -416,7 +416,7 @@ export class OpenAPIGenerator {
 
     // Metadata provided from .openapi() that is new to what we had already registered
     const newMetadata = omitBy(
-      this.buildSchemaMetadata(metadata?.metadata ?? {}),
+      Metadata.buildSchemaMetadata(metadata?.metadata ?? {}),
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
     );
 
@@ -434,7 +434,7 @@ export class OpenAPIGenerator {
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
     );
 
-    const appliedMetadata = this.applySchemaMetadata(
+    const appliedMetadata = Metadata.applySchemaMetadata(
       newSchemaMetadata,
       newMetadata
     );
@@ -640,52 +640,6 @@ export class OpenAPIGenerator {
       _ => this.generateSchemaWithRef(_),
       _ => this.generateSchemaRef(_),
       defaultValue
-    );
-  }
-
-  private getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
-    if (
-      isZodType(zodSchema, 'ZodOptional') ||
-      isZodType(zodSchema, 'ZodNullable')
-    ) {
-      return this.getDefaultValue(zodSchema.unwrap());
-    }
-
-    if (isZodType(zodSchema, 'ZodEffects')) {
-      return this.getDefaultValue(zodSchema._def.schema);
-    }
-
-    if (isZodType(zodSchema, 'ZodDefault')) {
-      return zodSchema._def.defaultValue();
-    }
-
-    return undefined;
-  }
-
-  /**
-   * A method that omits all custom keys added to the regular OpenAPI
-   * metadata properties
-   */
-  private buildSchemaMetadata(metadata: ZodOpenAPIMetadata) {
-    return omitBy(omit(metadata, ['param']), isNil);
-  }
-
-  private buildParameterMetadata(
-    metadata: Required<ZodOpenAPIMetadata>['param']
-  ) {
-    return omitBy(metadata, isNil);
-  }
-
-  private applySchemaMetadata(
-    initialData: SchemaObject | ParameterObject | ReferenceObject,
-    metadata: Partial<ZodOpenAPIMetadata>
-  ): SchemaObject | ReferenceObject {
-    return omitBy(
-      {
-        ...initialData,
-        ...this.buildSchemaMetadata(metadata),
-      },
-      isNil
     );
   }
 }
