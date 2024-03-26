@@ -27,6 +27,23 @@ export class MissingParameterDataError extends ZodToOpenAPIError {
   }
 }
 
+export function enhanceMissingParametersError<T>(
+  action: () => T,
+  paramsToAdd: Partial<MissingParameterDataErrorProps>
+) {
+  try {
+    return action();
+  } catch (error) {
+    if (error instanceof MissingParameterDataError) {
+      throw new MissingParameterDataError({
+        ...error.data,
+        ...paramsToAdd,
+      });
+    }
+    throw error;
+  }
+}
+
 interface UnknownZodTypeErrorProps {
   schemaName?: string;
   currentSchema: any;

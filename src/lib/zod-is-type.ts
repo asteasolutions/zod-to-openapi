@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-type ZodTypes = {
+export type ZodTypes = {
   ZodAny: z.ZodAny;
   ZodArray: z.ZodArray<any>;
   ZodBigInt: z.ZodBigInt;
