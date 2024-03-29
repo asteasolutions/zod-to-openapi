@@ -1,8 +1,15 @@
 {
   "name": "@asteasolutions/zod-to-openapi",
-  "version": "6.4.0",
+  "version": "7.0.0",
   "description": "Builds OpenAPI schemas from Zod schemas",
-  "main": "dist/index.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -23,7 +30,7 @@
   },
   "homepage": "https://github.com/asteasolutions/zod-to-openapi",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && tsc -p tsconfig.esm.json && ./fixup",
     "prepare": "npm run build",
     "test": "jest",
     "prettier": "prettier --write .",
