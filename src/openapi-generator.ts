@@ -73,10 +73,13 @@ export class OpenAPIGenerator {
     component: OpenAPIComponentObject;
   }[] = [];
 
+  private openApiTransformer: OpenApiTransformer;
+
   constructor(
     private definitions: (OpenAPIDefinitions | ZodTypeAny)[],
     private versionSpecifics: OpenApiVersionSpecifics
   ) {
+    this.openApiTransformer = new OpenApiTransformer(versionSpecifics);
     this.sortDefinitions();
   }
 
@@ -634,7 +637,7 @@ export class OpenAPIGenerator {
     isNullable: boolean,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
-    return new OpenApiTransformer(this.versionSpecifics).transform(
+    return this.openApiTransformer.transform(
       zodSchema,
       isNullable,
       _ => this.generateSchemaWithRef(_),

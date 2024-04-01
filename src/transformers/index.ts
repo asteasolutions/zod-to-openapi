@@ -24,6 +24,20 @@ import { UnionTransformer } from './union';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 
 export class OpenApiTransformer {
+  private objectTransformer = new ObjectTransformer();
+  private stringTransformer = new StringTransformer();
+  private numberTransformer = new NumberTransformer();
+  private bigIntTransformer = new BigIntTransformer();
+  private literalTransformer = new LiteralTransformer();
+  private enumTransformer = new EnumTransformer();
+  private nativeEnumTransformer = new NativeEnumTransformer();
+  private arrayTransformer = new ArrayTransformer();
+  private tupleTransformer = new TupleTransformer();
+  private unionTransformer = new UnionTransformer();
+  private discriminatedUnionTransformer = new DiscriminatedUnionTransformer();
+  private intersectionTransformer = new IntersectionTransformer();
+  private recordTransformer = new RecordTransformer();
+
   constructor(private versionSpecifics: OpenApiVersionSpecifics) {}
 
   transform<T>(
@@ -42,7 +56,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
-      return new ObjectTransformer().transform(
+      return this.objectTransformer.transform(
         zodSchema,
         defaultValue as object, // verified on TS level from input
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
@@ -71,13 +85,13 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodString')) {
-      return new StringTransformer().transform(zodSchema, schema =>
+      return this.stringTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
 
     if (isZodType(zodSchema, 'ZodNumber')) {
-      return new NumberTransformer().transform(
+      return this.numberTransformer.transform(
         zodSchema,
         schema => this.versionSpecifics.mapNullableType(schema, isNullable),
         _ => this.versionSpecifics.getNumberChecks(_)
@@ -85,7 +99,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodBigInt')) {
-      return new BigIntTransformer().transform(
+      return this.bigIntTransformer.transform(
         zodSchema,
         schema => this.versionSpecifics.mapNullableType(schema, isNullable),
         _ => this.versionSpecifics.getNumberChecks(_)
@@ -97,25 +111,25 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
-      return new LiteralTransformer().transform(zodSchema, schema =>
+      return this.literalTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
 
     if (isZodType(zodSchema, 'ZodEnum')) {
-      return new EnumTransformer().transform(zodSchema, schema =>
+      return this.enumTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
 
     if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      return new NativeEnumTransformer().transform(zodSchema, schema =>
+      return this.nativeEnumTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
-      return new ArrayTransformer().transform(
+      return this.arrayTransformer.transform(
         zodSchema,
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
         mapItem
@@ -123,7 +137,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodTuple')) {
-      return new TupleTransformer().transform(
+      return this.tupleTransformer.transform(
         zodSchema,
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
         mapItem
@@ -131,7 +145,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodUnion')) {
-      return new UnionTransformer().transform(
+      return this.unionTransformer.transform(
         zodSchema,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
         mapItem
@@ -139,7 +153,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
-      return new DiscriminatedUnionTransformer().transform(
+      return this.discriminatedUnionTransformer.transform(
         zodSchema,
         isNullable,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
@@ -149,7 +163,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodIntersection')) {
-      return new IntersectionTransformer().transform(
+      return this.intersectionTransformer.transform(
         zodSchema,
         isNullable,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
@@ -158,7 +172,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodRecord')) {
-      return new RecordTransformer().transform(
+      return this.recordTransformer.transform(
         zodSchema,
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
         mapItem
