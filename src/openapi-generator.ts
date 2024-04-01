@@ -1,74 +1,16 @@
-import type {
-  ReferenceObject as ReferenceObject30,
-  ParameterObject as ParameterObject30,
-  RequestBodyObject as RequestBodyObject30,
-  PathItemObject as PathItemObject30,
-  OpenAPIObject as OpenAPIObject30,
-  ComponentsObject as ComponentsObject30,
-  ParameterLocation as ParameterLocation30,
-  ResponseObject as ResponseObject30,
-  ContentObject as ContentObject30,
-  DiscriminatorObject as DiscriminatorObject30,
-  SchemaObject as SchemaObject30,
-  BaseParameterObject as BaseParameterObject30,
-  HeadersObject as HeadersObject30,
-} from 'openapi3-ts/oas30';
-import type {
-  ReferenceObject as ReferenceObject31,
-  ParameterObject as ParameterObject31,
-  RequestBodyObject as RequestBodyObject31,
-  PathItemObject as PathItemObject31,
-  OpenAPIObject as OpenAPIObject31,
-  ComponentsObject as ComponentsObject31,
-  ParameterLocation as ParameterLocation31,
-  ResponseObject as ResponseObject31,
-  ContentObject as ContentObject31,
-  DiscriminatorObject as DiscriminatorObject31,
-  SchemaObject as SchemaObject31,
-  BaseParameterObject as BaseParameterObject31,
-  HeadersObject as HeadersObject31,
-} from 'openapi3-ts/oas31';
-
-type ReferenceObject = ReferenceObject30 & ReferenceObject31;
-type ParameterObject = ParameterObject30 & ParameterObject31;
-type RequestBodyObject = RequestBodyObject30 & RequestBodyObject31;
-type PathItemObject = PathItemObject30 & PathItemObject31;
-type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31;
-type ComponentsObject = ComponentsObject30 & ComponentsObject31;
-type ParameterLocation = ParameterLocation30 & ParameterLocation31;
-type ResponseObject = ResponseObject30 & ResponseObject31;
-type ContentObject = ContentObject30 & ContentObject31;
-type DiscriminatorObject = DiscriminatorObject30 & DiscriminatorObject31;
-type SchemaObject = SchemaObject30 & SchemaObject31;
-type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31;
-type HeadersObject = HeadersObject30 & HeadersObject31;
-
-import type {
-  AnyZodObject,
-  ZodObject,
-  ZodRawShape,
-  ZodString,
-  ZodStringDef,
-  ZodType,
-  ZodTypeAny,
-} from 'zod';
+import type { AnyZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
-  MissingParameterDataErrorProps,
-  UnknownZodTypeError,
-  ZodToOpenAPIError,
+  enhanceMissingParametersError,
 } from './errors';
-import { enumInfo } from './lib/enum-info';
 import {
   compact,
   isNil,
-  isString,
   mapValues,
   objectEquals,
   omit,
   omitBy,
-  uniq,
 } from './lib/lodash';
 import { isAnyZodType, isZodType } from './lib/zod-is-type';
 import {
@@ -80,10 +22,23 @@ import {
   ZodRequestBody,
 } from './openapi-registry';
 import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
-import { ZodNumericCheck } from './types';
-
-// See https://github.com/colinhacks/zod/blob/9eb7eb136f3e702e86f030e6984ef20d4d8521b6/src/types.ts#L1370
-type UnknownKeysParam = 'passthrough' | 'strict' | 'strip';
+import {
+  BaseParameterObject,
+  ComponentsObject,
+  ContentObject,
+  HeadersObject,
+  OpenAPIObject,
+  ParameterLocation,
+  ParameterObject,
+  PathItemObject,
+  ReferenceObject,
+  RequestBodyObject,
+  ResponseObject,
+  SchemaObject,
+  ZodNumericCheck,
+} from './types';
+import { Metadata } from './metadata';
+import { OpenApiTransformer } from './transformers';
 
 // List of Open API Versions. Please make sure these are in ascending order
 const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
@@ -118,10 +73,13 @@ export class OpenAPIGenerator {
     component: OpenAPIComponentObject;
   }[] = [];
 
+  private openApiTransformer: OpenApiTransformer;
+
   constructor(
     private definitions: (OpenAPIDefinitions | ZodTypeAny)[],
     private versionSpecifics: OpenApiVersionSpecifics
   ) {
+    this.openApiTransformer = new OpenApiTransformer(versionSpecifics);
     this.sortDefinitions();
   }
 
@@ -194,7 +152,7 @@ export class OpenAPIGenerator {
 
   private generateSingle(definition: OpenAPIDefinitions | ZodTypeAny): void {
     if (!('type' in definition)) {
-      this.generateSchema(definition);
+      this.generateSchemaWithRef(definition);
       return;
     }
 
@@ -204,7 +162,7 @@ export class OpenAPIGenerator {
         return;
 
       case 'schema':
-        this.generateSchema(definition.schema);
+        this.generateSchemaWithRef(definition.schema);
         return;
 
       case 'route':
@@ -220,7 +178,7 @@ export class OpenAPIGenerator {
   private generateParameterDefinition(
     zodSchema: ZodTypeAny
   ): ParameterObject | ReferenceObject {
-    const refId = this.getRefId(zodSchema);
+    const refId = Metadata.getRefId(zodSchema);
 
     const result = this.generateParameter(zodSchema);
 
@@ -285,7 +243,7 @@ export class OpenAPIGenerator {
     zodSchema: ZodTypeAny,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
-    const metadata = this.getMetadata(zodSchema);
+    const metadata = Metadata.getMetadata(zodSchema);
     const parameterMetadata = metadata?.metadata?.param;
 
     const referencedSchema = this.getParameterRef(metadata, { in: location });
@@ -298,7 +256,7 @@ export class OpenAPIGenerator {
       const propTypes = zodSchema._def.shape() as ZodRawShape;
 
       const parameters = Object.entries(propTypes).map(([key, schema]) => {
-        const innerMetadata = this.getMetadata(schema);
+        const innerMetadata = Metadata.getMetadata(schema);
 
         const referencedSchema = this.getParameterRef(innerMetadata, {
           in: location,
@@ -360,23 +318,24 @@ export class OpenAPIGenerator {
   }
 
   private generateSimpleParameter(zodSchema: ZodTypeAny): BaseParameterObject {
-    const metadata = this.getParamMetadata(zodSchema);
+    const metadata = Metadata.getParamMetadata(zodSchema);
     const paramMetadata = metadata?.metadata?.param;
 
+    // TODO: Why are we not unwrapping here for isNullable as well?
     const required =
-      !this.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
+      !Metadata.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
 
     const schema = this.generateSchemaWithRef(zodSchema);
 
     return {
       schema,
       required,
-      ...(paramMetadata ? this.buildParameterMetadata(paramMetadata) : {}),
+      ...(paramMetadata ? Metadata.buildParameterMetadata(paramMetadata) : {}),
     };
   }
 
   private generateParameter(zodSchema: ZodTypeAny): ParameterObject {
-    const metadata = this.getMetadata(zodSchema);
+    const metadata = Metadata.getMetadata(zodSchema);
 
     const paramMetadata = metadata?.metadata?.param;
 
@@ -404,17 +363,39 @@ export class OpenAPIGenerator {
   }
 
   private generateSchemaWithMetadata<T>(zodSchema: ZodType<T>) {
-    const innerSchema = this.unwrapChained(zodSchema);
-    const metadata = this.getMetadata(zodSchema);
-    const defaultValue = this.getDefaultValue(zodSchema);
+    const innerSchema = Metadata.unwrapChained(zodSchema);
+    const metadata = Metadata.getMetadata(zodSchema);
+    const defaultValue = Metadata.getDefaultValue(zodSchema);
 
     const result = metadata?.metadata?.type
       ? { type: metadata?.metadata.type }
       : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
 
     return metadata?.metadata
-      ? this.applySchemaMetadata(result, metadata.metadata)
+      ? Metadata.applySchemaMetadata(result, metadata.metadata)
       : omitBy(result, isNil);
+  }
+
+  /**
+   * Same as above but applies nullable
+   */
+  private constructReferencedOpenAPISchema<T>(
+    zodSchema: ZodType<T>
+  ): SchemaObject | ReferenceObject {
+    const metadata = Metadata.getMetadata(zodSchema);
+    const innerSchema = Metadata.unwrapChained(zodSchema);
+
+    const defaultValue = Metadata.getDefaultValue(zodSchema);
+    const isNullableSchema = zodSchema.isNullable();
+
+    if (metadata?.metadata?.type) {
+      return this.versionSpecifics.mapNullableType(
+        metadata.metadata.type,
+        isNullableSchema
+      );
+    }
+
+    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
   }
 
   /**
@@ -423,9 +404,9 @@ export class OpenAPIGenerator {
   private generateSimpleSchema<T>(
     zodSchema: ZodType<T>
   ): SchemaObject | ReferenceObject {
-    const metadata = this.getMetadata(zodSchema);
+    const metadata = Metadata.getMetadata(zodSchema);
 
-    const refId = this.getRefId(zodSchema);
+    const refId = Metadata.getRefId(zodSchema);
 
     if (!refId || !this.schemaRefs[refId]) {
       return this.generateSchemaWithMetadata(zodSchema);
@@ -438,7 +419,7 @@ export class OpenAPIGenerator {
 
     // Metadata provided from .openapi() that is new to what we had already registered
     const newMetadata = omitBy(
-      this.buildSchemaMetadata(metadata?.metadata ?? {}),
+      Metadata.buildSchemaMetadata(metadata?.metadata ?? {}),
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
     );
 
@@ -456,7 +437,7 @@ export class OpenAPIGenerator {
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
     );
 
-    const appliedMetadata = this.applySchemaMetadata(
+    const appliedMetadata = Metadata.applySchemaMetadata(
       newSchemaMetadata,
       newMetadata
     );
@@ -471,22 +452,6 @@ export class OpenAPIGenerator {
   }
 
   /**
-   * Generates a whole OpenApi schema and saves it into
-   * schemaRefs if a `refId` is provided.
-   */
-  private generateSchema(zodSchema: ZodTypeAny) {
-    const refId = this.getRefId(zodSchema);
-
-    const result = this.generateSimpleSchema(zodSchema);
-
-    if (refId && this.schemaRefs[refId] === undefined) {
-      this.schemaRefs[refId] = result;
-    }
-
-    return result;
-  }
-
-  /**
    * Same as `generateSchema` but if the new schema is added into the
    * referenced schemas, it would return a ReferenceObject and not the
    * whole result.
@@ -494,7 +459,7 @@ export class OpenAPIGenerator {
    * Should be used for nested objects, arrays, etc.
    */
   private generateSchemaWithRef(zodSchema: ZodTypeAny) {
-    const refId = this.getRefId(zodSchema);
+    const refId = Metadata.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
 
@@ -537,22 +502,22 @@ export class OpenAPIGenerator {
 
     const { query, params, headers, cookies } = request;
 
-    const queryParameters = this.enhanceMissingParametersError(
+    const queryParameters = enhanceMissingParametersError(
       () => (query ? this.generateInlineParameters(query, 'query') : []),
       { location: 'query' }
     );
 
-    const pathParameters = this.enhanceMissingParametersError(
+    const pathParameters = enhanceMissingParametersError(
       () => (params ? this.generateInlineParameters(params, 'path') : []),
       { location: 'path' }
     );
 
-    const cookieParameters = this.enhanceMissingParametersError(
+    const cookieParameters = enhanceMissingParametersError(
       () => (cookies ? this.generateInlineParameters(cookies, 'cookie') : []),
       { location: 'cookie' }
     );
 
-    const headerParameters = this.enhanceMissingParametersError(
+    const headerParameters = enhanceMissingParametersError(
       () =>
         headers
           ? isZodType(headers, 'ZodObject')
@@ -579,7 +544,7 @@ export class OpenAPIGenerator {
       return this.getResponse(response);
     });
 
-    const parameters = this.enhanceMissingParametersError(
+    const parameters = enhanceMissingParametersError(
       () => this.getParameters(request),
       { route: `${method} ${path}` }
     );
@@ -667,683 +632,17 @@ export class OpenAPIGenerator {
     });
   }
 
-  private getZodStringCheck<T extends ZodStringDef['checks'][number]['kind']>(
-    zodString: ZodString,
-    kind: T
-  ) {
-    return zodString._def.checks.find(
-      (
-        check
-      ): check is Extract<
-        ZodStringDef['checks'][number],
-        { kind: typeof kind }
-      > => {
-        return check.kind === kind;
-      }
-    );
-  }
-
-  /**
-   * Attempts to map Zod strings to known formats
-   * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
-   */
-  private mapStringFormat(zodString: ZodString): string | undefined {
-    if (zodString.isUUID) {
-      return 'uuid';
-    }
-
-    if (zodString.isEmail) {
-      return 'email';
-    }
-
-    if (zodString.isURL) {
-      return 'uri';
-    }
-
-    if (zodString.isDatetime) {
-      return 'date-time';
-    }
-
-    return undefined;
-  }
-
-  private mapDiscriminator(
-    zodObjects: AnyZodObject[],
-    discriminator: string
-  ): DiscriminatorObject | undefined {
-    // All schemas must be registered to use a discriminator
-    if (zodObjects.some(obj => this.getRefId(obj) === undefined)) {
-      return undefined;
-    }
-
-    const mapping: Record<string, string> = {};
-    zodObjects.forEach(obj => {
-      const refId = this.getRefId(obj) as string; // type-checked earlier
-      const value = obj.shape?.[discriminator];
-
-      if (isZodType(value, 'ZodEnum')) {
-        value._def.values.forEach((enumValue: string) => {
-          mapping[enumValue] = this.generateSchemaRef(refId);
-        });
-        return;
-      }
-
-      const literalValue = value?._def.value;
-
-      // This should never happen because Zod checks the disciminator type but to keep the types happy
-      if (typeof literalValue !== 'string') {
-        throw new Error(
-          `Discriminator ${discriminator} could not be found in one of the values of a discriminated union`
-        );
-      }
-
-      mapping[literalValue] = this.generateSchemaRef(refId);
-    });
-
-    return {
-      propertyName: discriminator,
-      mapping,
-    };
-  }
-
-  private mapNullableOfArray(
-    objects: (SchemaObject | ReferenceObject)[],
-    isNullable: boolean
-  ): (SchemaObject | ReferenceObject)[] {
-    return this.versionSpecifics.mapNullableOfArray(objects, isNullable);
-  }
-
-  private mapNullableType(
-    type: NonNullable<SchemaObject['type']> | undefined,
-    isNullable: boolean
-  ): Pick<SchemaObject, 'type' | 'nullable'> {
-    return this.versionSpecifics.mapNullableType(type, isNullable);
-  }
-
-  private getNumberChecks(
-    checks: ZodNumericCheck[]
-  ): Pick<
-    SchemaObject,
-    'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
-  > {
-    return this.versionSpecifics.getNumberChecks(checks);
-  }
-
-  private constructReferencedOpenAPISchema<T>(
-    zodSchema: ZodType<T>
-  ): SchemaObject | ReferenceObject {
-    const metadata = this.getMetadata(zodSchema);
-    const innerSchema = this.unwrapChained(zodSchema);
-
-    const defaultValue = this.getDefaultValue(zodSchema);
-    const isNullableSchema = zodSchema.isNullable();
-
-    if (metadata?.metadata?.type) {
-      return this.mapNullableType(metadata.metadata.type, isNullableSchema);
-    }
-
-    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
-  }
-
   private toOpenAPISchema<T>(
     zodSchema: ZodType<T>,
     isNullable: boolean,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
-    if (isZodType(zodSchema, 'ZodNull')) {
-      return this.versionSpecifics.nullType;
-    }
-
-    if (isZodType(zodSchema, 'ZodString')) {
-      const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
-
-      const length = this.getZodStringCheck(zodSchema, 'length')?.value;
-
-      const maxLength = Number.isFinite(zodSchema.minLength)
-        ? zodSchema.minLength ?? undefined
-        : undefined;
-
-      const minLength = Number.isFinite(zodSchema.maxLength)
-        ? zodSchema.maxLength ?? undefined
-        : undefined;
-
-      return {
-        ...this.mapNullableType('string', isNullable),
-        // FIXME: https://github.com/colinhacks/zod/commit/d78047e9f44596a96d637abb0ce209cd2732d88c
-        minLength: length ?? maxLength,
-        maxLength: length ?? minLength,
-        format: this.mapStringFormat(zodSchema),
-        pattern: regexCheck?.regex.source,
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodNumber')) {
-      return {
-        ...this.mapNullableType(
-          zodSchema.isInt ? 'integer' : 'number',
-          isNullable
-        ),
-        ...this.getNumberChecks(zodSchema._def.checks),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodBigInt')) {
-      return {
-        ...this.mapNullableType('integer', isNullable),
-        ...this.getNumberChecks(zodSchema._def.checks),
-        format: 'int64',
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodBoolean')) {
-      return {
-        ...this.mapNullableType('boolean', isNullable),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodEffects')) {
-      const innerSchema = zodSchema._def.schema as ZodTypeAny;
-      // Here we want to register any underlying schemas, however we do not want to
-      // reference it, hence why `generateSchema` is used instead of `generateSchemaWithRef`
-      return this.generateSchema(innerSchema);
-    }
-
-    if (isZodType(zodSchema, 'ZodLiteral')) {
-      return {
-        ...this.mapNullableType(
-          typeof zodSchema._def.value as NonNullable<SchemaObject['type']>,
-          isNullable
-        ),
-        enum: [zodSchema._def.value],
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodEnum')) {
-      // ZodEnum only accepts strings
-      return {
-        ...this.mapNullableType('string', isNullable),
-        enum: zodSchema._def.values,
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      const { type, values } = enumInfo(zodSchema._def.values);
-
-      if (type === 'mixed') {
-        // enum Test {
-        //   A = 42,
-        //   B = 'test',
-        // }
-        //
-        // const result = z.nativeEnum(Test).parse('42');
-        //
-        // This is an error, so we can't just say it's a 'string'
-        throw new ZodToOpenAPIError(
-          'Enum has mixed string and number values, please specify the OpenAPI type manually'
-        );
-      }
-
-      return {
-        ...this.mapNullableType(
-          type === 'numeric' ? 'integer' : 'string',
-          isNullable
-        ),
-        enum: values,
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodObject')) {
-      return this.toOpenAPIObjectSchema(
-        zodSchema,
-        isNullable,
-        defaultValue as ZodRawShape | undefined
-      );
-    }
-
-    if (isZodType(zodSchema, 'ZodArray')) {
-      const itemType = zodSchema._def.type as ZodTypeAny;
-
-      return {
-        ...this.mapNullableType('array', isNullable),
-        items: this.generateSchemaWithRef(itemType),
-
-        minItems: zodSchema._def.minLength?.value,
-        maxItems: zodSchema._def.maxLength?.value,
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodTuple')) {
-      const { items } = zodSchema._def;
-
-      const tupleLength = items.length;
-
-      const schemas = items.map(schema => this.generateSchemaWithRef(schema));
-
-      const uniqueSchemas = uniq(schemas);
-
-      if (uniqueSchemas.length === 1) {
-        return {
-          type: 'array',
-          items: uniqueSchemas[0],
-          minItems: tupleLength,
-          maxItems: tupleLength,
-        };
-      }
-
-      return {
-        ...this.mapNullableType('array', isNullable),
-        items: {
-          anyOf: uniqueSchemas,
-        },
-        minItems: tupleLength,
-        maxItems: tupleLength,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodUnion')) {
-      const options = this.flattenUnionTypes(zodSchema);
-
-      const schemas = options.map(schema => {
-        // If any of the underlying schemas of a union is .nullable then the whole union
-        // would be nullable. `mapNullableOfArray` would place it where it belongs.
-        // Therefor we are stripping the additional nullables from the inner schemas
-        // See https://github.com/asteasolutions/zod-to-openapi/issues/149
-        const optionToGenerate = this.unwrapNullable(schema);
-
-        return this.generateSchemaWithRef(optionToGenerate);
-      });
-
-      return {
-        anyOf: this.mapNullableOfArray(schemas, isNullable),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
-      const options = [...zodSchema.options.values()];
-
-      const optionSchema = options.map(schema =>
-        this.generateSchemaWithRef(schema)
-      );
-
-      if (isNullable) {
-        return {
-          oneOf: this.mapNullableOfArray(optionSchema, isNullable),
-          default: defaultValue,
-        };
-      }
-
-      return {
-        oneOf: optionSchema,
-        discriminator: this.mapDiscriminator(options, zodSchema.discriminator),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodIntersection')) {
-      const subtypes = this.flattenIntersectionTypes(zodSchema);
-
-      const allOfSchema: SchemaObject = {
-        allOf: subtypes.map(schema => this.generateSchemaWithRef(schema)),
-      };
-
-      if (isNullable) {
-        return {
-          anyOf: this.mapNullableOfArray([allOfSchema], isNullable),
-          default: defaultValue,
-        };
-      }
-
-      return {
-        ...allOfSchema,
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodRecord')) {
-      const propertiesType = zodSchema._def.valueType;
-      const keyType = zodSchema._def.keyType;
-
-      const propertiesSchema = this.generateSchemaWithRef(propertiesType);
-
-      if (
-        isZodType(keyType, 'ZodEnum') ||
-        isZodType(keyType, 'ZodNativeEnum')
-      ) {
-        // Native enums have their keys as both number and strings however the number is an
-        // internal representation and the string is the access point for a documentation
-        const keys = Object.values(keyType.enum).filter(isString);
-
-        const properties = keys.reduce(
-          (acc, curr) => ({
-            ...acc,
-            [curr]: propertiesSchema,
-          }),
-          {} as SchemaObject['properties']
-        );
-
-        return {
-          ...this.mapNullableType('object', isNullable),
-          properties,
-          default: defaultValue,
-        };
-      }
-
-      return {
-        ...this.mapNullableType('object', isNullable),
-        additionalProperties: propertiesSchema,
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodUnknown') || isZodType(zodSchema, 'ZodAny')) {
-      return this.mapNullableType(undefined, isNullable);
-    }
-
-    if (isZodType(zodSchema, 'ZodDate')) {
-      return {
-        ...this.mapNullableType('string', isNullable),
-        default: defaultValue,
-      };
-    }
-
-    if (isZodType(zodSchema, 'ZodPipeline')) {
-      return this.toOpenAPISchema(zodSchema._def.in, isNullable, defaultValue);
-    }
-
-    const refId = this.getRefId(zodSchema);
-
-    throw new UnknownZodTypeError({
-      currentSchema: zodSchema._def,
-      schemaName: refId,
-    });
-  }
-
-  private isOptionalSchema(zodSchema: ZodTypeAny): boolean {
-    if (isZodType(zodSchema, 'ZodEffects')) {
-      return this.isOptionalSchema(zodSchema._def.schema);
-    }
-
-    return zodSchema.isOptional();
-  }
-
-  private getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
-    if (
-      isZodType(zodSchema, 'ZodOptional') ||
-      isZodType(zodSchema, 'ZodNullable')
-    ) {
-      return this.getDefaultValue(zodSchema.unwrap());
-    }
-
-    if (isZodType(zodSchema, 'ZodEffects')) {
-      return this.getDefaultValue(zodSchema._def.schema);
-    }
-
-    if (isZodType(zodSchema, 'ZodDefault')) {
-      return zodSchema._def.defaultValue();
-    }
-
-    return undefined;
-  }
-
-  private requiredKeysOf(
-    objectSchema: ZodObject<ZodRawShape, UnknownKeysParam>
-  ) {
-    return Object.entries(objectSchema._def.shape())
-      .filter(([_key, type]) => !this.isOptionalSchema(type))
-      .map(([key, _type]) => key);
-  }
-
-  private toOpenAPIObjectSchema(
-    zodSchema: ZodObject<ZodRawShape, UnknownKeysParam>,
-    isNullable: boolean,
-    defaultValue?: ZodRawShape
-  ): SchemaObject {
-    const extendedFrom = this.getInternalMetadata(zodSchema)?.extendedFrom;
-
-    const required = this.requiredKeysOf(zodSchema);
-    const properties = mapValues(zodSchema._def.shape(), _ =>
-      this.generateSchemaWithRef(_)
+    return this.openApiTransformer.transform(
+      zodSchema,
+      isNullable,
+      _ => this.generateSchemaWithRef(_),
+      _ => this.generateSchemaRef(_),
+      defaultValue
     );
-
-    if (!extendedFrom) {
-      return {
-        ...this.mapNullableType('object', isNullable),
-        default: defaultValue,
-        properties,
-
-        ...(required.length > 0 ? { required } : {}),
-
-        ...this.generateAdditionalProperties(zodSchema),
-      };
-    }
-
-    const parent = extendedFrom.schema;
-    // We want to generate the parent schema so that it can be referenced down the line
-    this.generateSchema(parent);
-
-    const keysRequiredByParent = this.requiredKeysOf(parent);
-    const propsOfParent = mapValues(parent?._def.shape(), _ =>
-      this.generateSchemaWithRef(_)
-    );
-
-    const propertiesToAdd = Object.fromEntries(
-      Object.entries(properties).filter(([key, type]) => {
-        return !objectEquals(propsOfParent[key], type);
-      })
-    );
-
-    const additionallyRequired = required.filter(
-      prop => !keysRequiredByParent.includes(prop)
-    );
-
-    const objectData = {
-      ...this.mapNullableType('object', isNullable),
-      default: defaultValue,
-      properties: propertiesToAdd,
-
-      ...(additionallyRequired.length > 0
-        ? { required: additionallyRequired }
-        : {}),
-
-      ...this.generateAdditionalProperties(zodSchema),
-    };
-
-    return {
-      allOf: [
-        { $ref: `#/components/schemas/${extendedFrom.refId}` },
-        objectData,
-      ],
-    };
-  }
-
-  private generateAdditionalProperties(
-    zodSchema: ZodObject<ZodRawShape, UnknownKeysParam>
-  ) {
-    const unknownKeysOption = zodSchema._def.unknownKeys;
-
-    const catchallSchema = zodSchema._def.catchall;
-
-    if (isZodType(catchallSchema, 'ZodNever')) {
-      if (unknownKeysOption === 'strict') {
-        return { additionalProperties: false };
-      }
-
-      return {};
-    }
-
-    return { additionalProperties: this.generateSchemaWithRef(catchallSchema) };
-  }
-
-  private flattenUnionTypes(schema: ZodTypeAny): ZodTypeAny[] {
-    if (!isZodType(schema, 'ZodUnion')) {
-      return [schema];
-    }
-
-    const options = schema._def.options as ZodTypeAny[];
-
-    return options.flatMap(option => this.flattenUnionTypes(option));
-  }
-
-  private flattenIntersectionTypes(schema: ZodTypeAny): ZodTypeAny[] {
-    if (!isZodType(schema, 'ZodIntersection')) {
-      return [schema];
-    }
-
-    const leftSubTypes = this.flattenIntersectionTypes(schema._def.left);
-    const rightSubTypes = this.flattenIntersectionTypes(schema._def.right);
-
-    return [...leftSubTypes, ...rightSubTypes];
-  }
-
-  private unwrapNullable(schema: ZodTypeAny): ZodTypeAny {
-    if (isZodType(schema, 'ZodNullable')) {
-      return this.unwrapNullable(schema.unwrap());
-    }
-    return schema;
-  }
-
-  private unwrapChained(schema: ZodTypeAny): ZodTypeAny {
-    if (
-      isZodType(schema, 'ZodOptional') ||
-      isZodType(schema, 'ZodNullable') ||
-      isZodType(schema, 'ZodBranded')
-    ) {
-      return this.unwrapChained(schema.unwrap());
-    }
-
-    if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.unwrapChained(schema._def.innerType);
-    }
-
-    if (isZodType(schema, 'ZodEffects')) {
-      return this.unwrapChained(schema._def.schema);
-    }
-
-    return schema;
-  }
-
-  /**
-   * A method that omits all custom keys added to the regular OpenAPI
-   * metadata properties
-   */
-  private buildSchemaMetadata(metadata: ZodOpenAPIMetadata) {
-    return omitBy(omit(metadata, ['param']), isNil);
-  }
-
-  private buildParameterMetadata(
-    metadata: Required<ZodOpenAPIMetadata>['param']
-  ) {
-    return omitBy(metadata, isNil);
-  }
-
-  private getParamMetadata<T extends any>(
-    zodSchema: ZodType<T>
-  ): ZodOpenApiFullMetadata<T> | undefined {
-    const innerSchema = this.unwrapChained(zodSchema);
-
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
-
-    /**
-     * Every zod schema can receive a `description` by using the .describe method.
-     * That description should be used when generating an OpenApi schema.
-     * The `??` bellow makes sure we can handle both:
-     * - schema.describe('Test').optional()
-     * - schema.optional().describe('Test')
-     */
-    const zodDescription = zodSchema.description ?? innerSchema.description;
-
-    return {
-      _internal: metadata?._internal,
-      metadata: {
-        ...metadata?.metadata,
-        // A description provided from .openapi() should be taken with higher precedence
-        param: {
-          description: zodDescription,
-          ...metadata?.metadata.param,
-        },
-      },
-    };
-  }
-
-  private getMetadata<T extends any>(
-    zodSchema: ZodType<T>
-  ): ZodOpenApiFullMetadata<T> | undefined {
-    const innerSchema = this.unwrapChained(zodSchema);
-
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
-
-    /**
-     * Every zod schema can receive a `description` by using the .describe method.
-     * That description should be used when generating an OpenApi schema.
-     * The `??` bellow makes sure we can handle both:
-     * - schema.describe('Test').optional()
-     * - schema.optional().describe('Test')
-     */
-    const zodDescription = zodSchema.description ?? innerSchema.description;
-
-    // A description provided from .openapi() should be taken with higher precedence
-    return {
-      _internal: metadata?._internal,
-      metadata: {
-        description: zodDescription,
-        ...metadata?.metadata,
-      },
-    };
-  }
-
-  private getInternalMetadata<T extends any>(zodSchema: ZodType<T>) {
-    const innerSchema = this.unwrapChained(zodSchema);
-    const openapi = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
-
-    return openapi?._internal;
-  }
-
-  private getRefId<T extends any>(zodSchema: ZodType<T>) {
-    return this.getInternalMetadata(zodSchema)?.refId;
-  }
-
-  private applySchemaMetadata(
-    initialData: SchemaObject | ParameterObject | ReferenceObject,
-    metadata: Partial<ZodOpenAPIMetadata>
-  ): SchemaObject | ReferenceObject {
-    return omitBy(
-      {
-        ...initialData,
-        ...this.buildSchemaMetadata(metadata),
-      },
-      isNil
-    );
-  }
-
-  private enhanceMissingParametersError<T>(
-    action: () => T,
-    paramsToAdd: Partial<MissingParameterDataErrorProps>
-  ) {
-    try {
-      return action();
-    } catch (error) {
-      if (error instanceof MissingParameterDataError) {
-        throw new MissingParameterDataError({
-          ...error.data,
-          ...paramsToAdd,
-        });
-      }
-      throw error;
-    }
   }
 }
