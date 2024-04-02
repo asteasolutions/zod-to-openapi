@@ -2,14 +2,21 @@
   "name": "@asteasolutions/zod-to-openapi",
   "version": "6.4.0",
   "description": "Builds OpenAPI schemas from Zod schemas",
-  "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
   "exports": {
     ".": {
-      "import": "./dist/mjs/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": {
+        "types": "./dist/mjs/index.d.ts",
+        "default": "./dist/mjs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
     }
   },
+  "types": "./dist/cjs/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
   "files": [
     "dist",
     "package.json",
