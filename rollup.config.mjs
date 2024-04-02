@@ -11,7 +11,11 @@ export default {
       // Override the module compiler option to ESNext
       tsconfigOverride: {
         include: ['src/**/*'],
-        compilerOptions: { module: 'ESNext', moduleResolution: 'node' },
+        compilerOptions: {
+          module: 'ESNext',
+          moduleResolution: 'node',
+          emitDeclarationOnly: false,
+        },
       },
     }),
   ],
