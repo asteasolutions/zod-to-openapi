@@ -10,7 +10,6 @@
       "require": "./dist/cjs/index.js"
     }
   },
-  "types": "dist/index.d.ts",
   "files": [
     "dist",
     "package.json",
