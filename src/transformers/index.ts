@@ -32,13 +32,15 @@ export class OpenApiTransformer {
   private enumTransformer = new EnumTransformer();
   private nativeEnumTransformer = new NativeEnumTransformer();
   private arrayTransformer = new ArrayTransformer();
-  private tupleTransformer = new TupleTransformer();
+  private tupleTransformer: TupleTransformer;
   private unionTransformer = new UnionTransformer();
   private discriminatedUnionTransformer = new DiscriminatedUnionTransformer();
   private intersectionTransformer = new IntersectionTransformer();
   private recordTransformer = new RecordTransformer();
 
-  constructor(private versionSpecifics: OpenApiVersionSpecifics) {}
+  constructor(private versionSpecifics: OpenApiVersionSpecifics) {
+    this.tupleTransformer = new TupleTransformer(versionSpecifics);
+  }
 
   transform<T>(
     zodSchema: ZodType<T>,
