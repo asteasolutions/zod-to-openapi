@@ -102,15 +102,20 @@ export interface ResponseConfig {
   content?: ZodContentObject;
 }
 
+export type RouteParameter =
+  | AnyZodObject
+  | ZodEffects<AnyZodObject, unknown, unknown>
+  | undefined;
+
 export type RouteConfig = Omit<OperationObject, 'responses'> & {
   method: Method;
   path: string;
   request?: {
     body?: ZodRequestBody;
-    params?: AnyZodObject | ZodEffects<AnyZodObject>;
-    query?: AnyZodObject | ZodEffects<AnyZodObject>;
-    cookies?: AnyZodObject | ZodEffects<AnyZodObject>;
-    headers?: AnyZodObject | ZodEffects<AnyZodObject> | ZodType<unknown>[];
+    params?: RouteParameter;
+    query?: RouteParameter;
+    cookies?: RouteParameter;
+    headers?: RouteParameter | ZodType<unknown>[];
   };
   responses: {
     [statusCode: string]: ResponseConfig;

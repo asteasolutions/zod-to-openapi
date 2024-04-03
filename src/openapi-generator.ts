@@ -17,6 +17,7 @@ import {
   OpenAPIDefinitions,
   ResponseConfig,
   RouteConfig,
+  RouteParameter,
   ZodContentObject,
   ZodRequestBody,
 } from './openapi-registry';
@@ -543,9 +544,7 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private cleanParameter(
-    schema: AnyZodObject | ZodEffects<AnyZodObject> | undefined
-  ) {
+  private cleanParameter(schema: RouteParameter) {
     if (!schema) {
       return undefined;
     }
