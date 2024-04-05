@@ -1,9 +1,4 @@
-import {
-  SchemaObject,
-  ReferenceObject,
-  MapSubSchema,
-  ZodNumericCheck,
-} from '../types';
+import { SchemaObject, ReferenceObject, MapSubSchema } from '../types';
 import { ZodType } from 'zod';
 import { UnknownZodTypeError } from '../errors';
 import { isZodType } from '../lib/zod-is-type';
