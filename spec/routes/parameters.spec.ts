@@ -21,16 +21,14 @@ describe('parameters', () => {
       ]);
     });
 
-    it('generates a deepPartial object query parameter for route', () => {
+    it('generates query parameter for route from object with refine', () => {
       const { parameters } = generateDataForRoute({
         request: {
           query: z
             .object({
-              filter: z
-                .object({ test: z.string() })
-                .openapi({ param: { style: 'deepObject' } }),
+              filter: z.string(),
             })
-            .deepPartial(),
+            .refine(({ filter }) => filter.length > 3),
         },
       });
 
@@ -38,15 +36,26 @@ describe('parameters', () => {
         {
           in: 'query',
           name: 'filter',
-          required: false,
-          style: 'deepObject',
+          required: true,
           schema: {
-            type: 'object',
-            properties: {
-              test: {
-                type: 'string',
-              },
-            },
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
+    it('generates a query parameter for route', () => {
+      const { parameters } = generateDataForRoute({
+        request: { query: z.object({ test: z.string() }) },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'query',
+          name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
           },
         },
       ]);
@@ -133,6 +142,29 @@ describe('parameters', () => {
       ]);
     });
 
+    it('generates path parameter for route from object with refine', () => {
+      const { parameters } = generateDataForRoute({
+        request: {
+          params: z
+            .object({
+              filter: z.string(),
+            })
+            .refine(({ filter }) => filter.length > 3),
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'path',
+          name: 'filter',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
     it('generates a reference path parameter for route', () => {
       const TestParam = registerParameter(
         'TestParam',
@@ -204,6 +236,29 @@ describe('parameters', () => {
         {
           in: 'cookie',
           name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
+    it('generates cookie parameter for route from object with refine', () => {
+      const { parameters } = generateDataForRoute({
+        request: {
+          cookies: z
+            .object({
+              filter: z.string(),
+            })
+            .refine(({ filter }) => filter.length > 3),
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'cookie',
+          name: 'filter',
           required: true,
           schema: {
             type: 'string',
@@ -304,6 +359,29 @@ describe('parameters', () => {
         {
           in: 'header',
           name: 'test',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+        },
+      ]);
+    });
+
+    it('generates header parameter for route from object with refine', () => {
+      const { parameters } = generateDataForRoute({
+        request: {
+          headers: z
+            .object({
+              filter: z.string(),
+            })
+            .refine(({ filter }) => filter.length > 3),
+        },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'header',
+          name: 'filter',
           required: true,
           schema: {
             type: 'string',

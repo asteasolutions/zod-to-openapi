@@ -58,7 +58,7 @@ type ResponseObject = ResponseObject30 | ResponseObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
 
-import type { AnyZodObject, ZodType, ZodTypeAny } from 'zod';
+import type { AnyZodObject, ZodEffects, ZodType, ZodTypeAny } from 'zod';
 
 type Method =
   | 'get'
@@ -102,15 +102,20 @@ export interface ResponseConfig {
   content?: ZodContentObject;
 }
 
+export type RouteParameter =
+  | AnyZodObject
+  | ZodEffects<AnyZodObject, unknown, unknown>
+  | undefined;
+
 export type RouteConfig = Omit<OperationObject, 'responses'> & {
   method: Method;
   path: string;
   request?: {
     body?: ZodRequestBody;
-    params?: AnyZodObject;
-    query?: AnyZodObject;
-    cookies?: AnyZodObject;
-    headers?: AnyZodObject | ZodType<unknown>[];
+    params?: RouteParameter;
+    query?: RouteParameter;
+    cookies?: RouteParameter;
+    headers?: RouteParameter | ZodType<unknown>[];
   };
   responses: {
     [statusCode: string]: ResponseConfig;

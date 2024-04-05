@@ -1,33 +1,21 @@
-import type {
-  AnyZodObject,
-  ZodRawShape,
-  ZodTuple,
-  ZodType,
-  ZodTypeAny,
-} from 'zod';
+import type { AnyZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
   enhanceMissingParametersError,
 } from './errors';
-import {
-  compact,
-  isNil,
-  mapValues,
-  objectEquals,
-  omit,
-  omitBy,
-} from './lib/lodash';
+import { compact, isNil, mapValues, objectEquals, omitBy } from './lib/lodash';
 import { isAnyZodType, isZodType } from './lib/zod-is-type';
 import {
   OpenAPIComponentObject,
   OpenAPIDefinitions,
   ResponseConfig,
   RouteConfig,
+  RouteParameter,
   ZodContentObject,
   ZodRequestBody,
 } from './openapi-registry';
-import { ZodOpenApiFullMetadata, ZodOpenAPIMetadata } from './zod-extensions';
+import { ZodOpenApiFullMetadata } from './zod-extensions';
 import {
   BaseParameterObject,
   ComponentsObject,
@@ -513,7 +501,11 @@ export class OpenAPIGenerator {
       return [];
     }
 
-    const { query, params, headers, cookies } = request;
+    const { headers } = request;
+
+    const query = this.cleanParameter(request.query);
+    const params = this.cleanParameter(request.params);
+    const cookies = this.cleanParameter(request.cookies);
 
     const queryParameters = enhanceMissingParametersError(
       () => (query ? this.generateInlineParameters(query, 'query') : []),
@@ -531,14 +523,17 @@ export class OpenAPIGenerator {
     );
 
     const headerParameters = enhanceMissingParametersError(
-      () =>
-        headers
-          ? isZodType(headers, 'ZodObject')
-            ? this.generateInlineParameters(headers, 'header')
-            : headers.flatMap(header =>
-                this.generateInlineParameters(header, 'header')
-              )
-          : [],
+      () => {
+        if (Array.isArray(headers)) {
+          return headers.flatMap(header =>
+            this.generateInlineParameters(header, 'header')
+          );
+        }
+        const cleanHeaders = this.cleanParameter(headers);
+        return cleanHeaders
+          ? this.generateInlineParameters(cleanHeaders, 'header')
+          : [];
+      },
       { location: 'header' }
     );
 
@@ -548,6 +543,14 @@ export class OpenAPIGenerator {
       ...headerParameters,
       ...cookieParameters,
     ];
+  }
+
+  private cleanParameter(schema: RouteParameter) {
+    if (!schema) {
+      return undefined;
+    }
+
+    return isZodType(schema, 'ZodEffects') ? schema._def.schema : schema;
   }
 
   generatePath(route: RouteConfig): PathItemObject {
