@@ -1,4 +1,10 @@
-import type { AnyZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
+import type {
+  AnyZodObject,
+  ZodRawShape,
+  ZodTuple,
+  ZodType,
+  ZodTypeAny,
+} from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
@@ -59,6 +65,13 @@ export interface OpenApiVersionSpecifics {
     type: NonNullable<SchemaObject['type']> | undefined,
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'>;
+
+  mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {
+    items?: SchemaObject | ReferenceObject;
+    minItems?: number;
+    maxItems?: number;
+    prefixItems?: (SchemaObject | ReferenceObject)[];
+  };
 
   getNumberChecks(checks: ZodNumericCheck[]): any;
 }
