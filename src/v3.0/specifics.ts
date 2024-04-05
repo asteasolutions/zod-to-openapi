@@ -1,6 +1,7 @@
 import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
-import { ZodNumericCheck } from '../types';
+import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
+import { uniq } from '../lib/lodash';
 
 export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
   get nullType() {
@@ -24,6 +25,19 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
     return {
       ...(type ? { type } : undefined),
       ...(isNullable ? this.nullType : undefined),
+    };
+  }
+
+  mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
+    const uniqueSchemas = uniq(schemas);
+
+    return {
+      items:
+        uniqueSchemas.length === 1
+          ? uniqueSchemas[0]
+          : { anyOf: uniqueSchemas },
+      minItems: schemas.length,
+      maxItems: schemas.length,
     };
   }
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { expectSchema } from '../lib/helpers';
 
 describe('tuple', () => {
-  it('supports tuples', () => {
+  it('supports tuples in 3.0.0', () => {
     expectSchema(
       [z.tuple([z.string(), z.number(), z.boolean()]).openapi('Test')],
       {
@@ -18,7 +18,25 @@ describe('tuple', () => {
           minItems: 3,
           maxItems: 3,
         },
-      }
+      },
+      '3.0.0'
+    );
+  });
+
+  it('supports tuples in 3.1.0', () => {
+    expectSchema(
+      [z.tuple([z.string(), z.number(), z.boolean()]).openapi('Test')],
+      {
+        Test: {
+          type: 'array',
+          prefixItems: [
+            { type: 'string' },
+            { type: 'number' },
+            { type: 'boolean' },
+          ],
+        },
+      },
+      '3.1.0'
     );
   });
 
@@ -35,7 +53,7 @@ describe('tuple', () => {
     });
   });
 
-  it('supports tuples of duplicate types', () => {
+  it('supports tuples of duplicate types in 3.0.0', () => {
     expectSchema(
       [z.tuple([z.string(), z.number(), z.string()]).openapi('Test')],
       {
@@ -48,6 +66,23 @@ describe('tuple', () => {
           maxItems: 3,
         },
       }
+    );
+  });
+
+  it('supports tuples of duplicate types in 3.1.0', () => {
+    expectSchema(
+      [z.tuple([z.string(), z.number(), z.string()]).openapi('Test')],
+      {
+        Test: {
+          type: 'array',
+          prefixItems: [
+            { type: 'string' },
+            { type: 'number' },
+            { type: 'string' },
+          ],
+        },
+      },
+      '3.1.0'
     );
   });
 
@@ -134,14 +169,10 @@ describe('tuple', () => {
         {
           Test: {
             type: 'array',
-            items: {
-              anyOf: [
-                { type: ['string', 'null'] },
-                { type: ['number', 'null'] },
-              ],
-            },
-            minItems: 2,
-            maxItems: 2,
+            prefixItems: [
+              { type: ['string', 'null'] },
+              { type: ['number', 'null'] },
+            ],
           },
         },
         '3.1.0'
@@ -172,11 +203,7 @@ describe('tuple', () => {
         {
           Test: {
             type: ['array', 'null'],
-            items: {
-              anyOf: [{ type: 'string' }, { type: 'number' }],
-            },
-            minItems: 2,
-            maxItems: 2,
+            prefixItems: [{ type: 'string' }, { type: 'number' }],
           },
         },
         '3.1.0'

@@ -1,8 +1,9 @@
 import type {
   ComponentsObject,
   OperationObject,
-  SchemasObject,
+  SchemasObject as SchemasObjectV30,
 } from 'openapi3-ts/oas30';
+import type { SchemasObject as SchemasObjectV31 } from 'openapi3-ts/oas31';
 import type { ZodTypeAny } from 'zod';
 import {
   OpenAPIDefinitions,
@@ -33,10 +34,10 @@ export function createSchemas(
   return components;
 }
 
-export function expectSchema(
+export function expectSchema<T extends OpenApiVersion = '3.0.0'>(
   zodSchemas: ZodTypeAny[],
-  openAPISchemas: SchemasObject,
-  openApiVersion: OpenApiVersion = '3.0.0'
+  openAPISchemas: T extends '3.1.0' ? SchemasObjectV31 : SchemasObjectV30,
+  openApiVersion?: T
 ) {
   const components = createSchemas(zodSchemas, openApiVersion);
 

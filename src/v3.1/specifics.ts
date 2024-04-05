@@ -1,7 +1,7 @@
 import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
 
 import { OpenApiVersionSpecifics } from '../openapi-generator';
-import { ZodNumericCheck } from '../types';
+import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
 
 export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
   get nullType() {
@@ -36,6 +36,12 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
 
     return {
       type,
+    };
+  }
+
+  mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
+    return {
+      prefixItems: schemas,
     };
   }
 
