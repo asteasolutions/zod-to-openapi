@@ -96,10 +96,8 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodBigInt')) {
-      return this.bigIntTransformer.transform(
-        zodSchema,
-        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
-        _ => this.versionSpecifics.getNumberChecks(_)
+      return this.bigIntTransformer.transform(schema =>
+        this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
 

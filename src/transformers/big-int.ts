@@ -1,16 +1,10 @@
-import { ZodBigInt } from 'zod';
-import { GetNumberChecks, MapNullableType } from '../types';
+import { MapNullableType } from '../types';
 
 export class BigIntTransformer {
-  transform(
-    zodSchema: ZodBigInt,
-    mapNullableType: MapNullableType,
-    getNumberChecks: GetNumberChecks
-  ) {
+  transform(mapNullableType: MapNullableType) {
     return {
-      ...mapNullableType('integer'),
-      ...getNumberChecks(zodSchema._def.checks),
-      format: 'int64',
+      ...mapNullableType('string'),
+      pattern: `^\d+$`,
     };
   }
 }
