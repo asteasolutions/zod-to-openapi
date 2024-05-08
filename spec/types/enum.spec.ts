@@ -15,4 +15,17 @@ describe('enum', () => {
       },
     });
   });
+
+  it('does not contain multiple nullable values', () => {
+    const schema = z.union([z.enum(['option1', 'option2']), z.null()]).openapi('Enum');
+
+    expectSchema([schema], {
+      Enum: {
+        anyOf: [
+          { enum: ['option1', 'option2'], type: 'string' },
+          { nullable: true },
+        ],
+      },
+    });
+  });
 });
