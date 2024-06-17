@@ -545,12 +545,14 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private cleanParameter(schema: RouteParameter) {
+  private cleanParameter(schema: RouteParameter): AnyZodObject | undefined {
     if (!schema) {
       return undefined;
     }
 
-    return isZodType(schema, 'ZodEffects') ? schema._def.schema : schema;
+    return isZodType(schema, 'ZodEffects')
+      ? this.cleanParameter(schema._def.schema)
+      : schema;
   }
 
   generatePath(route: RouteConfig): PathItemObject {
