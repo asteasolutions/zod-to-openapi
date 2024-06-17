@@ -21,14 +21,15 @@ describe('parameters', () => {
       ]);
     });
 
-    it('generates query parameter for route from object with refine', () => {
+    it('generates query parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
         request: {
           query: z
             .object({
               filter: z.string(),
             })
-            .refine(({ filter }) => filter.length > 3),
+            .refine(({ filter }) => filter.length > 3)
+            .transform(d => d),
         },
       });
 
@@ -142,14 +143,15 @@ describe('parameters', () => {
       ]);
     });
 
-    it('generates path parameter for route from object with refine', () => {
+    it('generates path parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
         request: {
           params: z
             .object({
               filter: z.string(),
             })
-            .refine(({ filter }) => filter.length > 3),
+            .refine(({ filter }) => filter.length > 3)
+            .transform(d => d),
         },
       });
 
@@ -244,14 +246,15 @@ describe('parameters', () => {
       ]);
     });
 
-    it('generates cookie parameter for route from object with refine', () => {
+    it('generates cookie parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
         request: {
           cookies: z
             .object({
               filter: z.string(),
             })
-            .refine(({ filter }) => filter.length > 3),
+            .refine(({ filter }) => filter.length > 3)
+            .transform(d => d),
         },
       });
 
@@ -367,14 +370,15 @@ describe('parameters', () => {
       ]);
     });
 
-    it('generates header parameter for route from object with refine', () => {
+    it('generates header parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
         request: {
           headers: z
             .object({
               filter: z.string(),
             })
-            .refine(({ filter }) => filter.length > 3),
+            .refine(({ filter }) => filter.length > 3)
+            .transform(d => d),
         },
       });
 

@@ -102,10 +102,11 @@ export interface ResponseConfig {
   content?: ZodContentObject;
 }
 
-export type RouteParameter =
+type ZodObjectWithEffect =
   | AnyZodObject
-  | ZodEffects<AnyZodObject, unknown, unknown>
-  | undefined;
+  | ZodEffects<ZodObjectWithEffect, unknown, unknown>;
+
+export type RouteParameter = ZodObjectWithEffect | undefined;
 
 export type RouteConfig = Omit<OperationObject, 'responses'> & {
   method: Method;
