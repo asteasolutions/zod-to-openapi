@@ -128,6 +128,25 @@ describe('default', () => {
     );
   });
 
+  it('supports default of 0', () => {
+    expectSchema(
+      [z.object({ test: z.number().positive().default(0) }).openapi('Object')],
+      {
+        Object: {
+          type: 'object',
+          properties: {
+            test: {
+              type: 'number',
+              default: 0,
+              exclusiveMinimum: true,
+              minimum: 0,
+            },
+          },
+        },
+      }
+    );
+  });
+
   it('supports overriding default with .openapi', () => {
     expectSchema(
       [
