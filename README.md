@@ -246,6 +246,8 @@ Note that `generateComponents` does not return YAML but a JS object - you can th
 
 The resulting schema can then be referenced by using `$ref: #/components/schemas/User` in an existing OpenAPI JSON. This will be done automatically for Routes defined through the registry.
 
+Note by default a Zod object will result in `"additionalProperties": true` as per the Open API spec unless using `strict` or `catchall`, this is in contrast to normal Zod object usage where `zod.parse` is used.
+
 ### Defining routes & webhooks
 
 #### Registering a path or webhook
@@ -508,6 +510,7 @@ The list of all supported types as of now is:
   - including `z.number().int()` being inferred as `type: 'integer'`
 - `ZodObject`
   - including `.catchall` resulting in the respective `additionalProperties` schema
+  - also including `strict` resulting in the respective `additionalProperties` schema
 - `ZodOptional`
 - `ZodPipeline`
 - `ZodReadonly`
