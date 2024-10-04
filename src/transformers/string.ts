@@ -30,21 +30,15 @@ export class StringTransformer {
    * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
    */
   private mapStringFormat(zodString: ZodString): string | undefined {
-    if (zodString.isUUID) {
-      return 'uuid';
-    }
-
-    if (zodString.isEmail) {
-      return 'email';
-    }
-
-    if (zodString.isURL) {
-      return 'uri';
-    }
-
-    if (zodString.isDatetime) {
-      return 'date-time';
-    }
+    if (zodString.isUUID) return 'uuid';
+    if (zodString.isEmail) return 'email';
+    if (zodString.isURL) return 'uri';
+    if (zodString.isDatetime) return 'date-time';
+    if (zodString.isCUID) return 'cuid';
+    if (zodString.isCUID2) return 'cuid2';
+    if (zodString.isULID) return 'ulid';
+    if (zodString.isIP) return 'ip';
+    if (zodString.isEmoji) return 'emoji';
 
     return undefined;
   }
