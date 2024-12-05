@@ -123,7 +123,11 @@ It has three overloads:
 
 For this to work, you need to call `extendZodWithOpenApi` once in your project.
 
-Note: This should be done only once in a common-entrypoint file of your project (for example an `index.ts`/`app.ts`). If you're using tree-shaking with Webpack, mark that file as having side-effects.
+This should be done only once in a common-entrypoint file of your project (for example an `index.ts`/`app.ts`). If you're using tree-shaking with Webpack, mark that file as having side-effects.
+
+It can be bit tricky to achieve this in your codebase, because *require* is synchronous and *import* is a async.
+
+### The basic idea
 
 ```ts
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
@@ -134,6 +138,35 @@ extendZodWithOpenApi(z);
 // We can now use `.openapi()` to specify OpenAPI metadata
 z.string().openapi({ description: 'Some string' });
 ```
+
+### Example 1: Calling the openapi-extension using tsx
+
+```
+//zod-extend.ts
+
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
+
+extendZodWithOpenApi(z);
+
+// package.json
+
+  "scripts": {
+    "start": "tsx --import ./zod-extend.ts ./index.ts",
+```
+
+### Example 2 - require-syntax
+
+```
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
+
+extendZodWithOpenApi(z);
+
+const { startServer } = require('./server/start');
+startServer();
+```
+
 
 ### The Registry
 
