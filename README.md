@@ -555,6 +555,7 @@ The list of all supported types as of now is:
     - `.cuid2()`
     - `.ulid()`
     - `.ip()`
+    - `.date()`
     - `.datetime()`
     - `.uuid()`
     - `.email()`

@@ -49,6 +49,7 @@ describe('string', () => {
     ${'uuid'}     | ${z.string().uuid()}     | ${'uuid'}
     ${'email'}    | ${z.string().email()}    | ${'email'}
     ${'url'}      | ${z.string().url()}      | ${'uri'}
+    ${'date'}     | ${z.string().date()}     | ${'date'}
     ${'datetime'} | ${z.string().datetime()} | ${'date-time'}
   `(
     'maps a ZodString $format to $expected format',

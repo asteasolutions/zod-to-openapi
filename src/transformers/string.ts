@@ -33,13 +33,13 @@ export class StringTransformer {
     if (zodString.isUUID) return 'uuid';
     if (zodString.isEmail) return 'email';
     if (zodString.isURL) return 'uri';
+    if (zodString.isDate) return 'date';
     if (zodString.isDatetime) return 'date-time';
     if (zodString.isCUID) return 'cuid';
     if (zodString.isCUID2) return 'cuid2';
     if (zodString.isULID) return 'ulid';
     if (zodString.isIP) return 'ip';
     if (zodString.isEmoji) return 'emoji';
-    if (zodString.isDate) return 'date';
 
     return undefined;
   }
