@@ -597,11 +597,15 @@ export class OpenAPIGenerator {
     return routeDoc;
   }
 
-  private getResponse({
-    content,
-    headers,
-    ...rest
-  }: ResponseConfig): ResponseObject | ReferenceObject {
+  private getResponse(
+    response: ResponseConfig | ReferenceObject
+  ): ResponseObject | ReferenceObject {
+    if (this.isReferenceObject(response)) {
+      return response;
+    }
+
+    const { content, headers, ...rest } = response;
+
     const responseContent = content
       ? { content: this.getBodyContent(content) }
       : {};
@@ -624,6 +628,12 @@ export class OpenAPIGenerator {
       headers: responseHeaders,
       ...responseContent,
     };
+  }
+
+  private isReferenceObject<T extends object>(
+    schema: T | ReferenceObject
+  ): schema is ReferenceObject {
+    return '$ref' in schema;
   }
 
   private getResponseHeaders(headers: AnyZodObject): HeadersObject {

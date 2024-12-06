@@ -119,7 +119,7 @@ export type RouteConfig = Omit<OperationObject, 'responses'> & {
     headers?: RouteParameter | ZodType<unknown>[];
   };
   responses: {
-    [statusCode: string]: ResponseConfig;
+    [statusCode: string]: ResponseConfig | ReferenceObject;
   };
 };
 

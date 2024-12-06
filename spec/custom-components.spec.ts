@@ -93,4 +93,50 @@ describe('Custom components', () => {
       },
     });
   });
+
+  it('can generate responses', () => {
+    const registry = new OpenAPIRegistry();
+
+    const response = registry.registerComponent('responses', 'BadRequest', {
+      description: 'BadRequest',
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: { name: { type: 'string' } },
+          },
+        },
+      },
+    });
+
+    registry.registerPath({
+      summary: 'Get user of an organization',
+      method: 'get',
+      path: '/test',
+      responses: {
+        '400': response.ref,
+      },
+    });
+
+    const builder = new OpenApiGeneratorV3(registry.definitions);
+    const document = builder.generateDocument(testDocConfig);
+
+    expect(document.paths['/test']?.get?.responses['400']).toEqual({
+      $ref: '#/components/responses/BadRequest',
+    });
+
+    expect(document.components!.responses).toEqual({
+      BadRequest: {
+        description: 'BadRequest',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: { name: { type: 'string' } },
+            },
+          },
+        },
+      },
+    });
+  });
 });
