@@ -151,10 +151,6 @@ export class Metadata {
   }
 
   static isOptionalSchema(zodSchema: ZodTypeAny): boolean {
-    if (isZodType(zodSchema, 'ZodEffects')) {
-      return this.isOptionalSchema(zodSchema._def.schema);
-    }
-
     return zodSchema.isOptional();
   }
 }
