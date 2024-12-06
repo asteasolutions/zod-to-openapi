@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { expectSchema } from '../lib/helpers';
 
+// File as a class is not available on older node versions
+// so I am defining this just for testing purposes
+class File {}
+
 describe('instanceof', () => {
   it('generates OpenAPI schema for instanceof type', () => {
     const FileSchema = z
