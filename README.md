@@ -511,7 +511,7 @@ export const registry = new OpenAPIRegistry();
 export function generateOpenAPI() {
   const config = {...}; // your config comes here
 
-  return new OpenApiGeneratorV3(schemas.definitions).generateDocument(config);
+  return new OpenApiGeneratorV3(registry.definitions).generateDocument(config);
 }
 ```
 
