@@ -39,6 +39,7 @@ export class StringTransformer {
     if (zodString.isULID) return 'ulid';
     if (zodString.isIP) return 'ip';
     if (zodString.isEmoji) return 'emoji';
+    if (zodString.isDate) return 'date';
 
     return undefined;
   }
