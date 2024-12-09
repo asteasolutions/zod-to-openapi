@@ -560,6 +560,8 @@ The list of all supported types as of now is:
     - `.uuid()`
     - `.email()`
     - `.url()`
+    - `.duration()`
+    - `.time()`
   - adding `pattern` for `.regex()` is also supported
 
 
