@@ -42,6 +42,7 @@ export class StringTransformer {
     if (zodString.isEmoji) return 'emoji';
     if (zodString.isTime) return 'time';
     if (zodString.isDuration) return 'duration';
+    if (this.getZodStringCheck(zodString, 'regex')) return 'regex';
 
     return undefined;
   }

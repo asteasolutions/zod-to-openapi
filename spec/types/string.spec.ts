@@ -71,7 +71,7 @@ describe('string', () => {
           .openapi('RegexString'),
       ],
       {
-        RegexString: { type: 'string', pattern: '^hello world' },
+        RegexString: { type: 'string', pattern: '^hello world', format: 'regex' },
       }
     );
   });
