@@ -51,6 +51,8 @@ describe('string', () => {
     ${'url'}      | ${z.string().url()}      | ${'uri'}
     ${'date'}     | ${z.string().date()}     | ${'date'}
     ${'datetime'} | ${z.string().datetime()} | ${'date-time'}
+    ${'duration'} | ${z.string().duration()} | ${'duration'}
+    ${'time'}     | ${z.string().time()}     | ${'time'}
   `(
     'maps a ZodString $format to $expected format',
     ({ zodString, expected }: { zodString: ZodString; expected: string }) => {
@@ -69,7 +71,11 @@ describe('string', () => {
           .openapi('RegexString'),
       ],
       {
-        RegexString: { type: 'string', pattern: '^hello world' },
+        RegexString: {
+          type: 'string',
+          pattern: '^hello world',
+          format: 'regex',
+        },
       }
     );
   });
