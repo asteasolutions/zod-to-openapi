@@ -44,8 +44,6 @@ export class OpenApiTransformer {
     generateSchemaRef: (ref: string) => string,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
-    console.log('transform', zodSchema);
-    
     if (isZodType(zodSchema, 'ZodNull')) {
       return this.versionSpecifics.nullType;
     }

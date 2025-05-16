@@ -1,12 +1,30 @@
 import { ZodString } from 'zod';
 import { MapNullableType } from '../types';
+import { $ZodCheck, $ZodCheckLengthEquals, $ZodCheckRegex } from '@zod/core';
+
+function isZodCheckLengthEquals(
+  check: $ZodCheck<string>
+): check is $ZodCheckLengthEquals {
+  return check instanceof $ZodCheckLengthEquals;
+}
+
+function isZodCheckRegex(check: $ZodCheck<string>): check is $ZodCheckRegex {
+  return check instanceof $ZodCheckRegex;
+}
 
 export class StringTransformer {
   transform(zodSchema: ZodString, mapNullableType: MapNullableType) {
     // const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
 
-    const length = undefined;
-    // const length = this.getZodStringCheck(zodSchema, 'length')?.value;
+    const regexCheck = zodSchema.def.checks?.find(isZodCheckRegex);
+    // toString generates an additional / at the beginning and end of the pattern
+    const pattern = regexCheck?._zod.def.pattern
+      .toString()
+      .replace(/^\/|\/$/g, '');
+
+    const check = zodSchema.def.checks?.find(isZodCheckLengthEquals);
+    const length = check?._zod.def.length;
+    // const length = this.getZodStringCheck(zodSchema, 'length')?.value;`
 
     const maxLength = Number.isFinite(zodSchema.minLength)
       ? zodSchema.minLength ?? undefined
@@ -22,7 +40,7 @@ export class StringTransformer {
       minLength: length ?? maxLength,
       maxLength: length ?? minLength,
       format: this.mapStringFormat(zodSchema),
-      // pattern: regexCheck?.regex.source,
+      pattern,
     };
   }
 
@@ -44,21 +62,4 @@ export class StringTransformer {
 
     return undefined;
   }
-
-  // private getZodStringCheck<T extends ZodString['_zod']['checks'][number]['kind']>(
-  //   zodString: ZodString,
-  //   kind: T
-  // ) {
-  //   return undefined;
-  //   // return zodString.def.checks.find(
-  //   //   (
-  //   //     check
-  //   //   ): check is Extract<
-  //   //     ZodStringDef['checks'][number],
-  //   //     { kind: typeof kind }
-  //   //   > => {
-  //   //     return check.kind === kind;
-  //   //   }
-  //   // );
-  // }
 }

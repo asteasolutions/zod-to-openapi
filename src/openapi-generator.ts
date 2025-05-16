@@ -94,7 +94,6 @@ export class OpenAPIGenerator {
   }
 
   generateComponents(): Pick<OpenAPIObject, 'components'> {
-    console.log('generateComponents');
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
@@ -461,7 +460,6 @@ export class OpenAPIGenerator {
    * Should be used for nested objects, arrays, etc.
    */
   private generateSchemaWithRef(zodSchema: ZodTypeAny) {
-    console.log('generateSchemaWithRef', zodSchema);
     const refId = Metadata.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
