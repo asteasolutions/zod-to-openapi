@@ -10,13 +10,13 @@ export class TupleTransformer {
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
-    const { items } = zodSchema._def;
+    const { items } = zodSchema.def;
 
-    const schemas = items.map(mapItem);
+    // const schemas = items.map(mapItem);
 
     return {
       ...mapNullableType('array'),
-      ...this.versionSpecifics.mapTupleItems(schemas),
+      // ...this.versionSpecifics.mapTupleItems(schemas),
     };
   }
 }

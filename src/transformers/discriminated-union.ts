@@ -69,7 +69,7 @@ export class DiscriminatedUnionTransformer {
         return;
       }
 
-      const literalValue = value?._def.value;
+      const literalValue = value?.def.value;
 
       // This should never happen because Zod checks the disciminator type but to keep the types happy
       if (typeof literalValue !== 'string') {

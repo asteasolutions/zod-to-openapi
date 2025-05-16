@@ -4,7 +4,7 @@ import { ZodOpenApiFullMetadata } from '../src/zod-extensions';
 
 function expectToHaveMetadata(expectedMetadata: ZodOpenApiFullMetadata) {
   return expect.objectContaining({
-    _def: expect.objectContaining({
+    def: expect.objectContaining({
       openapi: expectedMetadata,
     }),
   });

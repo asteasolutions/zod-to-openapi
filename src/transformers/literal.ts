@@ -2,12 +2,13 @@ import { ZodLiteral } from 'zod';
 import { MapNullableType, SchemaObject } from '../types';
 
 export class LiteralTransformer {
-  transform<T>(zodSchema: ZodLiteral<T>, mapNullableType: MapNullableType) {
+  transform(zodSchema: ZodLiteral, mapNullableType: MapNullableType) {
     return {
       ...mapNullableType(
-        typeof zodSchema._def.value as NonNullable<SchemaObject['type']>
+        // TODO: Fix this
+        typeof zodSchema.def.values[0] as NonNullable<SchemaObject['type']>
       ),
-      enum: [zodSchema._def.value],
+      enum: [zodSchema.def.values[0]],
     };
   }
 }

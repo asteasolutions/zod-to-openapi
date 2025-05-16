@@ -1,4 +1,4 @@
-import { ZodBigIntCheck, ZodNumberCheck, ZodTypeAny } from 'zod';
+import { ZodType, ZodTypeAny } from 'zod';
 import type {
   ReferenceObject as ReferenceObject30,
   ParameterObject as ParameterObject30,
@@ -30,7 +30,8 @@ import type {
   HeadersObject as HeadersObject31,
 } from 'openapi3-ts/oas31';
 
-export type ZodNumericCheck = ZodNumberCheck | ZodBigIntCheck;
+// export type ZodNumericCheck = ZodNumberCheck | ZodBigIntCheck;
+export type ZodNumericCheck = any;
 
 export type ReferenceObject = ReferenceObject30 & ReferenceObject31;
 export type ParameterObject = ParameterObject30 & ParameterObject31;
@@ -72,5 +73,5 @@ export type GetNumberChecks = (
 >;
 
 export type MapSubSchema = (
-  zodSchema: ZodTypeAny
+  zodSchema: ZodType
 ) => SchemaObject | ReferenceObject;

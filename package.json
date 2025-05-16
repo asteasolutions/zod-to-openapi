@@ -48,7 +48,7 @@
     "ts-jest": "^29.0.3",
     "typescript": "^5.2.2",
     "yaml": "^2.2.2",
-    "zod": "^3.22.0"
+    "zod": "^4.0.0-beta.20250505T195954"
   },
   "author": "Astea Solutions <info@asteasolutions.com>",
   "license": "MIT"

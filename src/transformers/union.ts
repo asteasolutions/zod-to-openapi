@@ -30,7 +30,7 @@ export class UnionTransformer {
       return [schema];
     }
 
-    const options = schema._def.options as ZodTypeAny[];
+    const options = schema.def.options as ZodTypeAny[];
 
     return options.flatMap(option => this.flattenUnionTypes(option));
   }

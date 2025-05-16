@@ -26,7 +26,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
 
 export interface ZodOpenAPIInternalMetadata {
   refId?: string;
-  extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
+  extendedFrom?: { refId: string; schema: ZodObject };
 }
 
 export interface ZodOpenApiFullMetadata<T = any> {
@@ -34,16 +34,14 @@ export interface ZodOpenApiFullMetadata<T = any> {
   metadata?: ZodOpenAPIMetadata<T>;
 }
 
-declare module 'zod' {
-  interface ZodTypeDef {
+declare module '@zod/core' {
+  interface $ZodTypeDef {
     openapi?: ZodOpenApiFullMetadata;
   }
+}
 
-  interface ZodType<
-    Output = any,
-    Def extends ZodTypeDef = ZodTypeDef,
-    Input = Output
-  > {
+declare module 'zod' {
+  interface ZodType<Output = unknown, Input = unknown> {
     openapi<T extends ZodTypeAny>(
       this: T,
       metadata: Partial<ZodOpenAPIMetadata<z.input<T>>>
@@ -67,7 +65,7 @@ function preserveMetadataFromModifier(
     ...args: any[]
   ) {
     const result = zodModifier.apply(this, args);
-    result._def.openapi = this._def.openapi;
+    result.def.openapi = this.def.openapi;
 
     return result;
   };
@@ -90,19 +88,19 @@ export function extendZodWithOpenApi(zod: typeof z) {
     const { param, ...restOfOpenApi } = openapi ?? {};
 
     const _internal = {
-      ...this._def.openapi?._internal,
+      ...this.def.openapi?._internal,
       ...(typeof refOrOpenapi === 'string'
         ? { refId: refOrOpenapi }
         : undefined),
     };
 
     const resultMetadata = {
-      ...this._def.openapi?.metadata,
+      ...this.def.openapi?.metadata,
       ...restOfOpenApi,
-      ...(this._def.openapi?.metadata?.param || param
+      ...(this.def.openapi?.metadata?.param || param
         ? {
             param: {
-              ...this._def.openapi?.metadata?.param,
+              ...this.def.openapi?.metadata?.param,
               ...param,
             },
           }
@@ -110,7 +108,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
     };
 
     const result = new (this as any).constructor({
-      ...this._def,
+      ...this.def,
       openapi: {
         ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
         ...(Object.keys(resultMetadata).length > 0
@@ -125,14 +123,14 @@ export function extendZodWithOpenApi(zod: typeof z) {
       result.extend = function (...args: any) {
         const extendedResult = originalExtend.apply(this, args);
 
-        extendedResult._def.openapi = {
-          _internal: {
-            extendedFrom: this._def.openapi?._internal?.refId
-              ? { refId: this._def.openapi?._internal?.refId, schema: this }
-              : this._def.openapi?._internal.extendedFrom,
-          },
-          metadata: extendedResult._def.openapi?.metadata,
-        };
+        // extendedResult.def.openapi = {
+        //   _internal: {
+        //     extendedFrom: this.def.openapi?._internal?.refId
+        //       ? { refId: this.def.openapi?._internal?.refId, schema: this }
+        //       : this.def.openapi?._internal.extendedFrom,
+        //   },
+        //   metadata: extendedResult.def.openapi?.metadata,
+        // };
 
         return extendedResult;
       };
@@ -150,17 +148,17 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
   const zodDeepPartial = zod.ZodObject.prototype.deepPartial;
   zod.ZodObject.prototype.deepPartial = function (this: any) {
-    const initialShape = this._def.shape();
+    const initialShape = this.def.shape;
 
     const result = zodDeepPartial.apply(this);
 
-    const resultShape = result._def.shape();
+    const resultShape = result.def.shape;
 
     Object.entries(resultShape).forEach(([key, value]) => {
-      value._def.openapi = initialShape[key]?._def?.openapi;
+      (value as any).def.openapi = initialShape[key]?.def?.openapi;
     });
 
-    result._def.openapi = undefined;
+    result.def.openapi = undefined;
 
     return result;
   };
@@ -168,7 +166,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
   const zodPick = zod.ZodObject.prototype.pick as any;
   zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
     const result = zodPick.apply(this, args);
-    result._def.openapi = undefined;
+    result.def.openapi = undefined;
 
     return result;
   };
@@ -176,7 +174,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
   const zodOmit = zod.ZodObject.prototype.omit as any;
   zod.ZodObject.prototype.omit = function (this: any, ...args: any[]) {
     const result = zodOmit.apply(this, args);
-    result._def.openapi = undefined;
+    result.def.openapi = undefined;
 
     return result;
   };

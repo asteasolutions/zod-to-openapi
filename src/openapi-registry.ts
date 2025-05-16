@@ -58,7 +58,7 @@ type ResponseObject = ResponseObject30 | ResponseObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
 
-import type { AnyZodObject, ZodEffects, ZodType, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodType, ZodTypeAny } from 'zod';
 
 type Method =
   | 'get'
@@ -97,14 +97,13 @@ export interface ZodRequestBody {
 
 export interface ResponseConfig {
   description: string;
-  headers?: AnyZodObject | HeadersObject;
+  headers?: ZodObject | HeadersObject;
   links?: LinksObject;
   content?: ZodContentObject;
 }
 
-type ZodObjectWithEffect =
-  | AnyZodObject
-  | ZodEffects<ZodObjectWithEffect, unknown, unknown>;
+type ZodObjectWithEffect = ZodObject;
+// | ZodEffects<ZodObjectWithEffect, unknown, unknown>;
 
 export type RouteParameter = ZodObjectWithEffect | undefined;
 
@@ -161,7 +160,7 @@ export class OpenAPIRegistry {
 
   get definitions(): OpenAPIDefinitions[] {
     const parentDefinitions =
-      this.parents?.flatMap(par => par.definitions) ?? [];
+      this.parents?.flatMap(par => par._definitions) ?? [];
 
     return [...parentDefinitions, ...this._definitions];
   }
@@ -183,7 +182,7 @@ export class OpenAPIRegistry {
   registerParameter<T extends ZodTypeAny>(refId: string, zodSchema: T) {
     const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
-    const currentMetadata = schemaWithRefId._def.openapi?.metadata;
+    const currentMetadata = schemaWithRefId.def.openapi?.metadata;
 
     const schemaWithMetadata = schemaWithRefId.openapi({
       ...currentMetadata,

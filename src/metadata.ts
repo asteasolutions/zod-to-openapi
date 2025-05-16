@@ -10,9 +10,9 @@ export class Metadata {
   ): ZodOpenApiFullMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
 
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
+    const metadata = zodSchema.def.openapi
+      ? zodSchema.def.openapi
+      : innerSchema.def.openapi;
 
     /**
      * Every zod schema can receive a `description` by using the .describe method.
@@ -35,9 +35,9 @@ export class Metadata {
 
   static getInternalMetadata<T extends any>(zodSchema: ZodType<T>) {
     const innerSchema = this.unwrapChained(zodSchema);
-    const openapi = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
+    const openapi = zodSchema.def.openapi
+      ? zodSchema.def.openapi
+      : innerSchema.def.openapi;
 
     return openapi?._internal;
   }
@@ -47,9 +47,9 @@ export class Metadata {
   ): ZodOpenApiFullMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
 
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
+    const metadata = zodSchema.def.openapi
+      ? zodSchema.def.openapi
+      : innerSchema.def.openapi;
 
     /**
      * Every zod schema can receive a `description` by using the .describe method.
@@ -111,7 +111,7 @@ export class Metadata {
   static getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
     const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
 
-    return unwrapped?._def.defaultValue();
+    return unwrapped?.def.defaultValue();
   }
 
   private static unwrapUntil(schema: ZodType): ZodType;
@@ -129,23 +129,23 @@ export class Metadata {
 
     if (
       isZodType(schema, 'ZodOptional') ||
-      isZodType(schema, 'ZodNullable') ||
-      isZodType(schema, 'ZodBranded')
+      isZodType(schema, 'ZodNullable')
+      // || isZodType(schema, 'ZodBranded')
     ) {
-      return this.unwrapUntil(schema.unwrap(), typeName);
+      return this.unwrapUntil(schema.def.innerType, typeName);
     }
 
     if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.unwrapUntil(schema._def.innerType, typeName);
+      return this.unwrapUntil(schema.def.innerType, typeName);
     }
 
-    if (isZodType(schema, 'ZodEffects')) {
-      return this.unwrapUntil(schema._def.schema, typeName);
-    }
+    // if (isZodType(schema, 'ZodEffects')) {
+    //   return this.unwrapUntil(schema.def.schema, typeName);
+    // }
 
-    if (isZodType(schema, 'ZodPipeline')) {
-      return this.unwrapUntil(schema._def.in, typeName);
-    }
+    // if (isZodType(schema, 'ZodPipeline')) {
+    //   return this.unwrapUntil(schema.def.in, typeName);
+    // }
 
     return typeName ? undefined : schema;
   }

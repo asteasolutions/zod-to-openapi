@@ -8,7 +8,7 @@ export class NativeEnumTransformer {
     zodSchema: ZodNativeEnum<T>,
     mapNullableType: MapNullableType
   ) {
-    const { type, values } = enumInfo(zodSchema._def.values);
+    const { type, values } = enumInfo(zodSchema.def.values);
 
     if (type === 'mixed') {
       // enum Test {

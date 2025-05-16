@@ -1,4 +1,4 @@
-import type { AnyZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
@@ -94,6 +94,7 @@ export class OpenAPIGenerator {
   }
 
   generateComponents(): Pick<OpenAPIObject, 'components'> {
+    console.log('generateComponents');
     this.definitions.forEach(definition => this.generateSingle(definition));
 
     return {
@@ -254,7 +255,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
-      const propTypes = zodSchema._def.shape() as ZodRawShape;
+      const propTypes = zodSchema.def.shape;
 
       const parameters = Object.entries(propTypes).map(([key, schema]) => {
         const innerMetadata = Metadata.getMetadata(schema);
@@ -460,6 +461,7 @@ export class OpenAPIGenerator {
    * Should be used for nested objects, arrays, etc.
    */
   private generateSchemaWithRef(zodSchema: ZodTypeAny) {
+    console.log('generateSchemaWithRef', zodSchema);
     const refId = Metadata.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
@@ -545,14 +547,15 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private cleanParameter(schema: RouteParameter): AnyZodObject | undefined {
+  private cleanParameter(schema: RouteParameter): ZodObject | undefined {
     if (!schema) {
       return undefined;
     }
 
-    return isZodType(schema, 'ZodEffects')
-      ? this.cleanParameter(schema._def.schema)
-      : schema;
+    return schema;
+    // return isZodType(schema, 'ZodEffects')
+    //   ? this.cleanParameter(schema._def.schema)
+    //   : schema;
   }
 
   generatePath(route: RouteConfig): PathItemObject {
@@ -636,8 +639,8 @@ export class OpenAPIGenerator {
     return '$ref' in schema;
   }
 
-  private getResponseHeaders(headers: AnyZodObject): HeadersObject {
-    const schemaShape = headers._def.shape();
+  private getResponseHeaders(headers: ZodObject): HeadersObject {
+    const schemaShape = headers.def.shape;
 
     const responseHeaders = mapValues(schemaShape, _ =>
       this.generateSimpleParameter(_)
