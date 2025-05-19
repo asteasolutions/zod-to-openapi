@@ -4,13 +4,13 @@ import { MapNullableType, GetNumberChecks } from '../types';
 export class NumberTransformer {
   transform(
     zodSchema: ZodNumber,
-    mapNullableType: MapNullableType
-    // getNumberChecks: GetNumberChecks
+    mapNullableType: MapNullableType,
+    getNumberChecks: GetNumberChecks
   ) {
     return {
       ...mapNullableType('number'),
-      // ...mapNullableType(zodSchema.isInt ? 'integer' : 'number'),
-      // ...getNumberChecks(zodSchema.def.checks),
+      ...mapNullableType(zodSchema.format === 'safeint' ? 'integer' : 'number'),
+      ...getNumberChecks(zodSchema.def.checks ?? []),
     };
   }
 }

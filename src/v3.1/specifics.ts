@@ -1,5 +1,5 @@
 import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
-
+import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from '@zod/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
 
@@ -54,17 +54,19 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
     return Object.assign(
       {},
       ...checks.map<SchemaObject>(check => {
-        switch (check.kind) {
-          case 'min':
-            return check.inclusive
-              ? { minimum: Number(check.value) }
-              : { exclusiveMinimum: Number(check.value) };
-
-          case 'max':
-            return check.inclusive
-              ? { maximum: Number(check.value) }
-              : { exclusiveMaximum: Number(check.value) };
-
+        switch (check._zod.def.check) {
+          case 'greater_than': {
+            const greaterThanCheck = check as $ZodCheckGreaterThan;
+            return greaterThanCheck._zod.def.inclusive
+              ? { minimum: Number(greaterThanCheck._zod.def.value) }
+              : { exclusiveMinimum: Number(greaterThanCheck._zod.def.value) };
+          }
+          case 'less_than': {
+            const lessThanCheck = check as $ZodCheckLessThan;
+            return lessThanCheck._zod.def.inclusive
+              ? { maximum: Number(lessThanCheck._zod.def.value) }
+              : { exclusiveMaximum: Number(lessThanCheck._zod.def.value) };
+          }
           default:
             return {};
         }

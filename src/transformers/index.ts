@@ -71,8 +71,8 @@ export class OpenApiTransformer {
     return { ...schema, default: defaultValue };
   }
 
-  private transformSchemaWithoutDefault<T>(
-    zodSchema: ZodType<T>,
+  private transformSchemaWithoutDefault(
+    zodSchema: ZodType,
     isNullable: boolean,
     mapItem: MapSubSchema,
     generateSchemaRef: (ref: string) => string
@@ -88,12 +88,11 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodNumber')) {
-      return this.versionSpecifics.mapNullableType('number', isNullable);
-      // return this.numberTransformer.transform(
-      //   zodSchema,
-      //   schema => this.versionSpecifics.mapNullableType(schema, isNullable)
-      //   // _ => this.versionSpecifics.getNumberChecks(_)
-      // );
+      return this.numberTransformer.transform(
+        zodSchema,
+        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+        _ => this.versionSpecifics.getNumberChecks(_)
+      );
     }
 
     if (isZodType(zodSchema, 'ZodBigInt')) {

@@ -1,5 +1,4 @@
 import type { z } from 'zod';
-import type { $ZodType } from '@zod/core';
 
 export type ZodTypes = {
   ZodAny: z.ZodAny;
