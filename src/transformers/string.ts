@@ -1,15 +1,23 @@
 import { ZodString } from 'zod';
 import { MapNullableType } from '../types';
-import { $ZodCheck, $ZodCheckLengthEquals, $ZodCheckRegex } from '@zod/core';
+import {
+  $ZodCheck,
+  $ZodCheckLengthEquals,
+  $ZodCheckRegex,
+  $ZodCheckStringFormat,
+} from '@zod/core';
 
 function isZodCheckLengthEquals(
   check: $ZodCheck<string>
 ): check is $ZodCheckLengthEquals {
-  return check instanceof $ZodCheckLengthEquals;
+  return check._zod.def.check === 'length_equals';
 }
 
 function isZodCheckRegex(check: $ZodCheck<string>): check is $ZodCheckRegex {
-  return check instanceof $ZodCheckRegex;
+  return (
+    check._zod.def.check === 'string_format' &&
+    (check as $ZodCheckStringFormat)._zod.def.format === 'regex'
+  );
 }
 
 export class StringTransformer {
