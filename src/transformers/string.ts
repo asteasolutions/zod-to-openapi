@@ -57,16 +57,17 @@ export class StringTransformer {
    * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
    */
   private mapStringFormat(zodString: ZodString): string | undefined {
-    // if (zodString._inputisUUID) return 'uuid';
-    // if (zodString.isEmail) return 'email';
-    // if (zodString.isURL) return 'uri';
-    // if (zodString.isDate) return 'date';
-    // if (zodString.isDatetime) return 'date-time';
-    // if (zodString.isCUID) return 'cuid';
-    // if (zodString.isCUID2) return 'cuid2';
-    // if (zodString.isULID) return 'ulid';
-    // if (zodString.isIP) return 'ip';
-    // if (zodString.isEmoji) return 'emoji';
+    if (zodString.format === 'uuid') return 'uuid';
+    if (zodString.format === 'email') return 'email';
+    if (zodString.format === 'url') return 'uri';
+    if (zodString.format === 'date') return 'date';
+    if (zodString.format === 'datetime') return 'date-time';
+    if (zodString.format === 'cuid') return 'cuid';
+    if (zodString.format === 'cuid2') return 'cuid2';
+    if (zodString.format === 'ulid') return 'ulid';
+    if (zodString.format === 'ipv4') return 'ip';
+    if (zodString.format === 'ipv6') return 'ip';
+    if (zodString.format === 'emoji') return 'emoji';
 
     return undefined;
   }
