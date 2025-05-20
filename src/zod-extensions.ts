@@ -6,7 +6,7 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
+import type { ZodObject, ZodRawShape, ZodType, ZodTypeAny, z } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
 type ExampleValue<T> = T extends Date ? string : T;
@@ -55,26 +55,21 @@ declare module 'zod' {
   }
 }
 
-// function preserveMetadataFromModifier(
-//   zod: typeof z,
-//   modifier: keyof typeof z.ZodType.prototype
-// ) {
-//   const zodModifier = zod.ZodType.prototype[modifier];
-//   (zod.ZodType.prototype[modifier] as any) = function (
-//     this: any,
-//     ...args: any[]
-//   ) {
-//     console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>modifier', modifier);
-//     console.log(
-//       '>>>>>>>>>>>>>>>>>>>>>>>>>>preserveMetadataFromModifier',
-//       zodModifier
-//     );
-//     const result = zodModifier.apply(this, args);
-//     result.def.openapi = this.def.openapi;
+function preserveMetadataFromModifier<T extends ZodType>(
+  zodSchema: T,
+  modifier: keyof T
+) {
+  const zodModifier = zodSchema[modifier];
+  (zodSchema[modifier] as any) = function (this: any, ...args: any[]) {
+    const result = (zodModifier as any).apply(this, args);
 
-//     return result;
-//   };
-// }
+    const meta = this.meta();
+
+    // Check other comments in extend
+    // TODO: Extract in function
+    return result.meta(meta).openapi(meta?.['__zod_openapi']?.metadata ?? {});
+  };
+}
 
 export function extendZodWithOpenApi(zod: typeof z) {
   if (typeof zod.ZodType.prototype.openapi !== 'undefined') {
@@ -172,32 +167,15 @@ export function extendZodWithOpenApi(zod: typeof z) {
       };
     }
 
+    preserveMetadataFromModifier(result, 'optional');
+    preserveMetadataFromModifier(result, 'nullable');
+    preserveMetadataFromModifier(result, 'default');
+
+    preserveMetadataFromModifier(result, 'transform');
+    preserveMetadataFromModifier(result, 'refine');
+
     return result;
   };
-
-  // preserveMetadataFromModifier(zod, 'optional');
-  // preserveMetadataFromModifier(zod, 'nullable');
-  // preserveMetadataFromModifier(zod, 'default');
-
-  // preserveMetadataFromModifier(zod, 'transform');
-  // preserveMetadataFromModifier(zod, 'refine');
-
-  // const zodDeepPartial = zod.ZodObject.prototype.deepPartial;
-  // zod.ZodObject.prototype.deepPartial = function (this: any) {
-  //   const initialShape = this.def.shape;
-
-  //   const result = zodDeepPartial.apply(this);
-
-  //   const resultShape = result.def.shape;
-
-  //   Object.entries(resultShape).forEach(([key, value]) => {
-  //     (value as any).def.openapi = initialShape[key]?.def?.openapi;
-  //   });
-
-  //   result.def.openapi = undefined;
-
-  //   return result;
-  // };
 
   // const zodPick = zod.ZodObject.prototype.pick as any;
   // zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
