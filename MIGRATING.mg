@@ -30,9 +30,9 @@
 * optional.spec.ts DONE
 * readonly.spec.ts DONE
 * preprocess.spec.ts DONE
-* pipe.spec.ts
 * refine.spec.ts DONE
-* transform.spec.ts
+* transform.spec.ts DONE
+* pipe.spec.ts
 
 
 TODO:

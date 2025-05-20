@@ -42,10 +42,16 @@ export class Metadata {
     }
 
     if (isZodType(schema, 'ZodPipe')) {
-      return this.collectMetadata(
-        schema._zod.def.out as ZodType,
-        totalMetadata
-      );
+      const inSchema = schema._zod.def.in as ZodType;
+      const outSchema = schema._zod.def.out as ZodType;
+
+      // meaning preprocess
+      if (isZodType(inSchema, 'ZodTransform')) {
+        return this.collectMetadata(outSchema, totalMetadata);
+      }
+
+      // meaning transform
+      return this.collectMetadata(inSchema, totalMetadata);
     }
 
     // if (isZodType(schema, 'ZodEffects')) {
@@ -175,8 +181,18 @@ export class Metadata {
     // if (isZodType(schema, 'ZodPipeline')) {
     //   return this.unwrapUntil(schema.def.in, typeName);
     // }
+
     if (isZodType(schema, 'ZodPipe')) {
-      return this.unwrapUntil(schema._zod.def.out as ZodType, typeName);
+      const inSchema = schema._zod.def.in as ZodType;
+      const outSchema = schema._zod.def.out as ZodType;
+
+      // meaning preprocess
+      if (isZodType(inSchema, 'ZodTransform')) {
+        return this.unwrapUntil(outSchema, typeName);
+      }
+
+      // meaning transform
+      return this.unwrapUntil(inSchema, typeName);
     }
 
     return typeName ? undefined : schema;

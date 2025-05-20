@@ -9,6 +9,7 @@ export type ZodTypes = {
   // ZodBranded: z.ZodBranded;
   ZodDefault: z.ZodDefault;
   // ZodEffects: z.ZodEffects;
+  ZodTransform: z.ZodTransform;
   ZodEnum: z.ZodEnum;
   ZodIntersection: z.ZodIntersection;
   ZodLiteral: z.ZodLiteral;
@@ -44,6 +45,7 @@ const ZodTypeKeys = {
   // ZodBranded: z.ZodBranded;
   ZodDefault: 'default',
   // ZodEffects: z.ZodEffects;
+  ZodTransform: 'transform',
   ZodEnum: 'enum',
   ZodIntersection: 'intersection',
   ZodLiteral: 'literal',
