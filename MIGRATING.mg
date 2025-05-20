@@ -18,3 +18,18 @@
 * tuple.spec.ts DONE
 * object.spec.ts DONE
 * object-polymorphism.spec.ts DONE
+
+# Modifiers
+* branded.spec.ts DONE
+* catchall.spec.ts DONE
+* custom.spec.ts DONE
+* deepPartial.spec.ts
+* default.spec.ts DONE
+* instanceof.spec.ts DONE
+* nullable.spec.ts DONE
+* optional.spec.ts DONE
+* pipe.spec.ts
+* preprocess.spec.ts
+* readonly.spec.ts DONE
+* refine.spec.ts
+* transform.spec.ts

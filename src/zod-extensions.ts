@@ -153,6 +153,23 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
         return newResult;
       };
+
+      const originalCatchall = this.catchall;
+
+      result.catchall = function (...args: any) {
+        const result = originalCatchall.apply(this, args);
+
+        const newResult = result
+          .meta({
+            __zod_openapi: {
+              _internal: currentMetadata?._internal,
+            },
+          })
+          // See the comment in the extend case above
+          .openapi(currentMetadata?.metadata ?? {});
+
+        return newResult;
+      };
     }
 
     return result;
