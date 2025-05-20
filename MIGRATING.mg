@@ -28,8 +28,12 @@
 * instanceof.spec.ts DONE
 * nullable.spec.ts DONE
 * optional.spec.ts DONE
-* pipe.spec.ts
-* preprocess.spec.ts
 * readonly.spec.ts DONE
+* preprocess.spec.ts DONE
+* pipe.spec.ts
 * refine.spec.ts
 * transform.spec.ts
+
+
+TODO:
+* Make a helper for casting to ZodType

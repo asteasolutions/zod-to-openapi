@@ -8,7 +8,7 @@ import { isZodType } from '../lib/zod-is-type';
 
 export class IntersectionTransformer {
   transform(
-    zodSchema: ZodIntersection<ZodTypeAny, ZodTypeAny>,
+    zodSchema: ZodIntersection,
     isNullable: boolean,
     mapNullableOfArray: MapNullableOfArrayWithNullable,
     mapItem: MapSubSchema

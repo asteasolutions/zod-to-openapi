@@ -2,33 +2,34 @@ import type { z } from 'zod';
 
 export type ZodTypes = {
   ZodAny: z.ZodAny;
-  ZodArray: z.ZodArray<any>;
+  ZodArray: z.ZodArray;
   ZodBigInt: z.ZodBigInt;
   ZodBoolean: z.ZodBoolean;
   // TODO: Refactor
-  // ZodBranded: z.ZodBranded<any, any>;
-  ZodDefault: z.ZodDefault<any>;
-  // ZodEffects: z.ZodEffects<any>;
-  ZodEnum: z.ZodEnum<any>;
-  ZodIntersection: z.ZodIntersection<any, any>;
-  ZodLiteral: z.ZodLiteral<any>;
-  // ZodNativeEnum: z.ZodNativeEnum<any>;
+  // ZodBranded: z.ZodBranded;
+  ZodDefault: z.ZodDefault;
+  // ZodEffects: z.ZodEffects;
+  ZodEnum: z.ZodEnum;
+  ZodIntersection: z.ZodIntersection;
+  ZodLiteral: z.ZodLiteral;
+  // ZodNativeEnum: z.ZodNativeEnum;
   ZodNever: z.ZodNever;
   ZodNull: z.ZodNull;
-  ZodNullable: z.ZodNullable<any>;
+  ZodNullable: z.ZodNullable;
   ZodNumber: z.ZodNumber;
   ZodObject: z.ZodObject;
-  ZodOptional: z.ZodOptional<any>;
-  // ZodPipeline: z.ZodPipeline<any, any>;
-  ZodReadonly: z.ZodReadonly<any>;
+  ZodOptional: z.ZodOptional;
+  // ZodPipeline: z.ZodPipeline;
+  ZodPipe: z.ZodPipe;
+  ZodReadonly: z.ZodReadonly;
   ZodRecord: z.ZodRecord;
   ZodSchema: z.ZodSchema;
   ZodString: z.ZodString;
   ZodTuple: z.ZodTuple;
   ZodType: z.ZodType;
   ZodTypeAny: z.ZodTypeAny;
-  ZodUnion: z.ZodUnion<any>;
-  // ZodDiscriminatedUnion: z.ZodDiscriminatedUnion<any, any>;
+  ZodUnion: z.ZodUnion;
+  // ZodDiscriminatedUnion: z.ZodDiscriminatedUnion;
   ZodUnknown: z.ZodUnknown;
   ZodVoid: z.ZodVoid;
   ZodDate: z.ZodDate;
@@ -40,20 +41,21 @@ const ZodTypeKeys = {
   ZodBigInt: 'bigint',
   ZodBoolean: 'boolean',
   // TODO: Refactor
-  // ZodBranded: z.ZodBranded<any, any>;
+  // ZodBranded: z.ZodBranded;
   ZodDefault: 'default',
-  // ZodEffects: z.ZodEffects<any>;
+  // ZodEffects: z.ZodEffects;
   ZodEnum: 'enum',
   ZodIntersection: 'intersection',
   ZodLiteral: 'literal',
-  // ZodNativeEnum: z.ZodNativeEnum<any>;
+  // ZodNativeEnum: z.ZodNativeEnum;
   ZodNever: 'never',
   ZodNull: 'null',
   ZodNullable: 'nullable',
   ZodNumber: 'number',
   ZodObject: 'object',
   ZodOptional: 'optional',
-  // ZodPipeline: z.ZodPipeline<any, any>;
+  // ZodPipeline: z.ZodPipeline;
+  ZodPipe: 'pipe',
   ZodReadonly: 'readonly',
   ZodRecord: 'record',
   ZodSchema: 'schema',
@@ -62,7 +64,7 @@ const ZodTypeKeys = {
   ZodType: 'type',
   ZodTypeAny: 'typeAny',
   ZodUnion: 'union',
-  // ZodDiscriminatedUnion: z.ZodDiscriminatedUnion<any, any>;
+  // ZodDiscriminatedUnion: z.ZodDiscriminatedUnion;
   ZodUnknown: 'unknown',
   ZodVoid: 'void',
   ZodDate: 'date',

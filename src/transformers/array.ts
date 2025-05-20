@@ -2,12 +2,12 @@ import { ZodArray, ZodType } from 'zod';
 import { MapNullableType, MapSubSchema } from '../types';
 import { $ZodCheckMinLength, $ZodCheckMaxLength } from '@zod/core';
 export class ArrayTransformer {
-  transform<T extends ZodType>(
-    zodSchema: ZodArray<T>,
+  transform(
+    zodSchema: ZodArray,
     mapNullableType: MapNullableType,
     mapItems: MapSubSchema
   ) {
-    const itemType = zodSchema.def.element;
+    const itemType = zodSchema.def.element as ZodType;
 
     const minItems = zodSchema.def.checks?.find(
       (check): check is $ZodCheckMinLength =>

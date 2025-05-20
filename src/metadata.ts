@@ -28,11 +28,24 @@ export class Metadata {
     };
 
     if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
-      return this.collectMetadata(schema.def.innerType, totalMetadata);
+      return this.collectMetadata(
+        schema._zod.def.innerType as ZodType,
+        totalMetadata
+      );
     }
 
     if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.collectMetadata(schema.def.innerType, totalMetadata);
+      return this.collectMetadata(
+        schema._zod.def.innerType as ZodType,
+        totalMetadata
+      );
+    }
+
+    if (isZodType(schema, 'ZodPipe')) {
+      return this.collectMetadata(
+        schema._zod.def.out as ZodType,
+        totalMetadata
+      );
     }
 
     // if (isZodType(schema, 'ZodEffects')) {
@@ -127,7 +140,7 @@ export class Metadata {
   static getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
     const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
 
-    return unwrapped?.def.defaultValue();
+    return unwrapped?._zod.def.defaultValue() as T | undefined;
   }
 
   private static unwrapUntil(schema: ZodType): ZodType;
@@ -148,11 +161,11 @@ export class Metadata {
       isZodType(schema, 'ZodNullable')
       // || isZodType(schema, 'ZodBranded')
     ) {
-      return this.unwrapUntil(schema.def.innerType, typeName);
+      return this.unwrapUntil(schema._zod.def.innerType as ZodType, typeName);
     }
 
     if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.unwrapUntil(schema.def.innerType, typeName);
+      return this.unwrapUntil(schema._zod.def.innerType as ZodType, typeName);
     }
 
     // if (isZodType(schema, 'ZodEffects')) {
@@ -162,6 +175,9 @@ export class Metadata {
     // if (isZodType(schema, 'ZodPipeline')) {
     //   return this.unwrapUntil(schema.def.in, typeName);
     // }
+    if (isZodType(schema, 'ZodPipe')) {
+      return this.unwrapUntil(schema._zod.def.out as ZodType, typeName);
+    }
 
     return typeName ? undefined : schema;
   }
