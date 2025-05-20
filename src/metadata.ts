@@ -5,41 +5,52 @@ import { isNil, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
 
 export class Metadata {
-  static getMetadata<T extends any>(
-    zodSchema: ZodType<T>
-  ): ZodOpenApiFullMetadata<T> | undefined {
-    const innerSchema = this.unwrapChained(zodSchema);
+  static collectMetadata(
+    schema: ZodType,
+    metadata?: ZodOpenApiFullMetadata
+  ): ZodOpenApiFullMetadata | undefined {
+    const currentMetadata = schema.meta()?.['__zod_openapi'] as
+      | ZodOpenApiFullMetadata
+      | undefined;
 
-    const metadata = zodSchema.def.openapi
-      ? zodSchema.def.openapi
-      : innerSchema.def.openapi;
-
-    /**
-     * Every zod schema can receive a `description` by using the .describe method.
-     * That description should be used when generating an OpenApi schema.
-     * The `??` bellow makes sure we can handle both:
-     * - schema.describe('Test').optional()
-     * - schema.optional().describe('Test')
-     */
-    const zodDescription = zodSchema.description ?? innerSchema.description;
-
-    // A description provided from .openapi() should be taken with higher precedence
-    return {
-      _internal: metadata?._internal,
+    const totalMetadata = {
+      _internal: {
+        ...currentMetadata?._internal,
+        ...metadata?._internal,
+      },
       metadata: {
-        description: zodDescription,
+        ...currentMetadata?.metadata,
         ...metadata?.metadata,
       },
     };
+
+    if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
+      return this.collectMetadata(schema.def.innerType, totalMetadata);
+    }
+
+    if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
+      return this.collectMetadata(schema.def.innerType, totalMetadata);
+    }
+
+    // if (isZodType(schema, 'ZodEffects')) {
+    //   return this.collectMetadata(schema.def.schema, typeName);
+    // }
+
+    // if (isZodType(schema, 'ZodPipeline')) {
+    //   return this.collectMetadata(schema.def.in, typeName);
+    // }
+
+    return totalMetadata;
+  }
+
+  static getMetadata<T extends any>(
+    zodSchema: ZodType<T>
+  ): ZodOpenApiFullMetadata<T> | undefined {
+    return this.collectMetadata(zodSchema);
   }
 
   static getInternalMetadata<T extends any>(zodSchema: ZodType<T>) {
-    const innerSchema = this.unwrapChained(zodSchema);
-    const openapi = zodSchema.def.openapi
-      ? zodSchema.def.openapi
-      : innerSchema.def.openapi;
-
-    return openapi?._internal;
+    return this.collectMetadata(zodSchema)?._internal;
   }
 
   static getParamMetadata<T extends any>(
@@ -47,9 +58,11 @@ export class Metadata {
   ): ZodOpenApiFullMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
 
-    const metadata = zodSchema.def.openapi
-      ? zodSchema.def.openapi
-      : innerSchema.def.openapi;
+    const rawMetadata = zodSchema.meta() ?? innerSchema.meta();
+    const metadata = rawMetadata?.['__zod_openapi'] as ZodOpenApiFullMetadata;
+    // const metadata = zodSchema.def.openapi
+    //   ? zodSchema.def.openapi
+    //   : innerSchema.def.openapi;
 
     /**
      * Every zod schema can receive a `description` by using the .describe method.

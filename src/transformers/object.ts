@@ -1,5 +1,5 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodObject, ZodRawShape, z } from 'zod';
+import { ZodObject, ZodType, z } from 'zod';
 import { isZodType } from '../lib/zod-is-type';
 import { mapValues, objectEquals } from '../lib/lodash';
 import { Metadata } from '../metadata';
@@ -70,20 +70,17 @@ export class ObjectTransformer {
     zodSchema: ZodObject,
     mapItem: MapSubSchema
   ) {
-    // const unknownKeysOption = zodSchema.def.unknownKeys;
+    const catchallSchema = zodSchema.def.catchall;
 
-    // const catchallSchema = zodSchema.def.catchall;
+    if (!catchallSchema) {
+      return {};
+    }
 
-    // if (isZodType(catchallSchema, 'ZodNever')) {
-    //   if (unknownKeysOption === 'strict') {
-    //     return { additionalProperties: false };
-    //   }
+    if (isZodType(catchallSchema, 'ZodNever')) {
+      return { additionalProperties: false };
+    }
 
-    //   return {};
-    // }
-
-    // return { additionalProperties: mapItem(catchallSchema) };
-    return {};
+    return { additionalProperties: mapItem(catchallSchema as ZodType) };
   }
 
   private requiredKeysOf(objectSchema: ZodObject) {

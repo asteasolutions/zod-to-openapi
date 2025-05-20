@@ -1,9 +1,5 @@
-import { ZodType } from 'zod';
-import type {
-  $ZodCheck,
-  $ZodCheckGreaterThan,
-  $ZodCheckLessThan,
-} from '@zod/core';
+import type { ZodType } from 'zod';
+import type { $ZodCheck } from '@zod/core';
 import type {
   ReferenceObject as ReferenceObject30,
   ParameterObject as ParameterObject30,

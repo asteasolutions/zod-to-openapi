@@ -1,4 +1,4 @@
-import type { ZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodType, ZodTypeAny } from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
@@ -459,7 +459,7 @@ export class OpenAPIGenerator {
    *
    * Should be used for nested objects, arrays, etc.
    */
-  private generateSchemaWithRef(zodSchema: ZodTypeAny) {
+  private generateSchemaWithRef(zodSchema: ZodType) {
     const refId = Metadata.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
