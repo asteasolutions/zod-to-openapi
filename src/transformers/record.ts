@@ -1,5 +1,5 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodRecord } from 'zod';
+import { ZodRecord, ZodType } from 'zod';
 import { isZodType } from '../lib/zod-is-type';
 import { isString } from '../lib/lodash';
 
@@ -9,33 +9,33 @@ export class RecordTransformer {
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
-    const propertiesType = zodSchema.def.valueType;
-    const keyType = zodSchema.def.keyType;
+    const propertiesType = zodSchema.valueType as ZodType;
+    const keyType = zodSchema.keyType as ZodType;
 
-    // const propertiesSchema = mapItem(propertiesType);
+    const propertiesSchema = mapItem(propertiesType);
 
-    // if (isZodType(keyType, 'ZodEnum') || isZodType(keyType, 'ZodNativeEnum')) {
-    //   // Native enums have their keys as both number and strings however the number is an
-    //   // internal representation and the string is the access point for a documentation
-    //   const keys = Object.values(keyType.enum).filter(isString);
+    if (isZodType(keyType, 'ZodEnum')) {
+      // Native enums have their keys as both number and strings however the number is an
+      // internal representation and the string is the access point for a documentation
+      const keys = Object.values(keyType._zod.def.entries).filter(isString);
 
-    //   const properties = keys.reduce(
-    //     (acc, curr) => ({
-    //       ...acc,
-    //       [curr]: propertiesSchema,
-    //     }),
-    //     {} as SchemaObject['properties']
-    //   );
+      const properties = keys.reduce(
+        (acc, curr) => ({
+          ...acc,
+          [curr]: propertiesSchema,
+        }),
+        {} as SchemaObject['properties']
+      );
 
-    //   return {
-    //     ...mapNullableType('object'),
-    //     properties,
-    //   };
-    // }
+      return {
+        ...mapNullableType('object'),
+        properties,
+      };
+    }
 
     return {
       ...mapNullableType('object'),
-      // additionalProperties: propertiesSchema,
+      additionalProperties: propertiesSchema,
     };
   }
 }
