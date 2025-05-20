@@ -40,7 +40,7 @@ describe('default', () => {
 
   it('supports optional defaults', () => {
     const schema = z
-      .object({ test: z.ostring().default('test') })
+      .object({ test: z.string().optional().default('test') })
       .openapi('ObjectWithDefault');
 
     expectSchema([schema], {
@@ -82,7 +82,8 @@ describe('default', () => {
         z
           .object({
             test: z
-              .onumber()
+              .number()
+              .optional()
               .default(42)
               .refine(num => num && num % 2 === 0),
           })
