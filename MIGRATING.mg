@@ -15,6 +15,6 @@
 * native-enum.spec.ts DONE
 * record.spec.ts DONE
 * intersection.spec.ts DONE
+* tuple.spec.ts DONE
 * object-polymorphism.spec.ts
 * object.spec.ts
-* tuple.spec.ts
