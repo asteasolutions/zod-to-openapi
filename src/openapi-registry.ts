@@ -59,6 +59,7 @@ type SchemaObject = SchemaObject30 | SchemaObject31;
 type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
 
 import type { ZodObject, ZodType, ZodTypeAny } from 'zod';
+import { Metadata } from './metadata';
 
 type Method =
   | 'get'
@@ -182,10 +183,12 @@ export class OpenAPIRegistry {
   registerParameter<T extends ZodTypeAny>(refId: string, zodSchema: T) {
     const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
-    const currentMetadata = schemaWithRefId.def.openapi?.metadata;
+    const currentMetadata =
+      Metadata.getMetadata(schemaWithRefId)?.metadata ?? {};
 
     const schemaWithMetadata = schemaWithRefId.openapi({
-      ...currentMetadata,
+      // TODO: Fix this
+      ...(currentMetadata as any),
       param: {
         ...currentMetadata?.param,
         name: currentMetadata?.param?.name ?? refId,

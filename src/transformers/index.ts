@@ -124,20 +124,11 @@ export class OpenApiTransformer {
     // }
 
     if (isZodType(zodSchema, 'ZodArray')) {
-      const itemType = (zodSchema as any).def.element;
-
-      return {
-        ...this.versionSpecifics.mapNullableType('array', isNullable),
-        items: mapItem(itemType),
-
-        // minItems: zodSchema.def.minLength?.value,
-        // maxItems: zodSchema.def.maxLength?.value,
-      };
-      // return this.arrayTransformer.transform(
-      //   zodSchema,
-      //   _ => this.versionSpecifics.mapNullableType(_, isNullable),
-      //   mapItem
-      // );
+      return this.arrayTransformer.transform(
+        zodSchema,
+        _ => this.versionSpecifics.mapNullableType(_, isNullable),
+        mapItem
+      );
     }
 
     if (isZodType(zodSchema, 'ZodTuple')) {
