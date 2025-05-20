@@ -23,7 +23,7 @@
 * branded.spec.ts DONE
 * catchall.spec.ts DONE
 * custom.spec.ts DONE
-* deepPartial.spec.ts
+* deepPartial.spec.ts REMOVED
 * default.spec.ts DONE
 * instanceof.spec.ts DONE
 * nullable.spec.ts DONE
