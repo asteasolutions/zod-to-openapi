@@ -7,7 +7,12 @@ describe('pipe', () => {
       [
         z
           .date()
-          .or(z.string().min(1).pipe(z.coerce.date()))
+          .or(
+            z
+              .string()
+              .min(1)
+              .pipe(z.transform(val => z.coerce.date().parse(val)))
+          )
           .openapi('PipedDate'),
       ],
       {
@@ -25,7 +30,7 @@ describe('pipe', () => {
         z
           .number()
           .or(z.string())
-          .pipe(z.coerce.number())
+          .pipe(z.transform(val => z.coerce.number().parse(val)))
           .openapi('PipedNumber'),
       ],
       {

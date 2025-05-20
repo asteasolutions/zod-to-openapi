@@ -32,8 +32,7 @@
 * preprocess.spec.ts DONE
 * refine.spec.ts DONE
 * transform.spec.ts DONE
-* pipe.spec.ts
-
+* pipe.spec.ts DONE
 
 TODO:
 * Make a helper for casting to ZodType
