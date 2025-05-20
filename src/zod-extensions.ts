@@ -135,21 +135,21 @@ export function extendZodWithOpenApi(zod: typeof z) {
       result.extend = function (...args: any) {
         const extendedResult = originalExtend.apply(this, args);
 
-        const newResult = extendedResult.meta({
-          __zod_openapi: {
-            _internal: {
-              extendedFrom: currentMetadata?._internal?.refId
-                ? { refId: currentMetadata?._internal?.refId, schema: this }
-                : currentMetadata?._internal?.extendedFrom,
+        const newResult = extendedResult
+          .meta({
+            __zod_openapi: {
+              _internal: {
+                extendedFrom: currentMetadata?._internal?.refId
+                  ? { refId: currentMetadata?._internal?.refId, schema: this }
+                  : currentMetadata?._internal?.extendedFrom,
+              },
             },
-            metadata: currentMetadata?.metadata,
-          },
-        });
-
-        console.log(
-          '>>>>>>>>>>>>>>>>>>>>>>>>>>extendedResult',
-          newResult.meta()
-        );
+          })
+          // This is hacky. Yes we can do that directly in the meta call above,
+          // but that would not override future calls to .extend. That's why
+          // we call openapi explicitly here. And in that case might as well add the metadata
+          // here instead of through the meta call
+          .openapi(currentMetadata?.metadata ?? {});
 
         return newResult;
       };

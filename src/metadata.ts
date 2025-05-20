@@ -9,9 +9,12 @@ export class Metadata {
     schema: ZodType,
     metadata?: ZodOpenApiFullMetadata
   ): ZodOpenApiFullMetadata | undefined {
+    // console.log('collectMetadata', schema.def);
     const currentMetadata = schema.meta()?.['__zod_openapi'] as
       | ZodOpenApiFullMetadata
       | undefined;
+
+    // console.log('currentMetadata', currentMetadata);
 
     const totalMetadata = {
       _internal: {
