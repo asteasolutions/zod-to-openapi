@@ -9,10 +9,10 @@
 * date.spec.ts DONE
 * string-formats.spec.ts DONE
 * array.spec.ts DONE
-* discriminated-union.spec.ts
+* union.spec.ts DONE
+* discriminated-union.spec.ts DONE
+* enum.spec.ts DONE
 * record.spec.ts
-* union.spec.ts
-* enum.spec.ts
 * intersection.spec.ts
 * object-polymorphism.spec.ts
 * native-enum.spec.ts
