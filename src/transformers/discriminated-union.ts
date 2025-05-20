@@ -1,8 +1,4 @@
-import {
-  ZodDiscriminatedUnion,
-  ZodDiscriminatedUnionOption,
-  AnyZodObject,
-} from 'zod';
+import { ZodDiscriminatedUnion, ZodObject } from 'zod';
 import {
   DiscriminatorObject,
   MapNullableOfArrayWithNullable,
@@ -14,16 +10,13 @@ import { Metadata } from '../metadata';
 
 export class DiscriminatedUnionTransformer {
   transform(
-    zodSchema: ZodDiscriminatedUnion<
-      string,
-      ZodDiscriminatedUnionOption<string>[]
-    >,
+    zodSchema: ZodDiscriminatedUnion,
     isNullable: boolean,
     mapNullableOfArray: MapNullableOfArrayWithNullable,
     mapItem: MapSubSchema,
     generateSchemaRef: (schema: string) => string
   ) {
-    const options = [...zodSchema.options.values()];
+    const options = [...zodSchema._zod.def.options] as ZodObject[];
 
     const optionSchema = options.map(mapItem);
 
@@ -33,18 +26,32 @@ export class DiscriminatedUnionTransformer {
       };
     }
 
+    const discriminator = zodSchema._zod.disc.keys().next().value as
+      | string
+      | undefined;
+
+    if (!discriminator) {
+      console.error(
+        'No discriminator found for discriminated union',
+        zodSchema
+      );
+      return {
+        oneOf: optionSchema,
+      };
+    }
+
     return {
       oneOf: optionSchema,
       discriminator: this.mapDiscriminator(
         options,
-        zodSchema.discriminator,
+        discriminator,
         generateSchemaRef
       ),
     };
   }
 
   private mapDiscriminator(
-    zodObjects: AnyZodObject[],
+    zodObjects: ZodObject[],
     discriminator: string,
     generateSchemaRef: (schema: string) => string
   ): DiscriminatorObject | undefined {
@@ -56,20 +63,21 @@ export class DiscriminatedUnionTransformer {
     const mapping: Record<string, string> = {};
     zodObjects.forEach(obj => {
       const refId = Metadata.getRefId(obj) as string; // type-checked earlier
-      const value = obj.shape?.[discriminator];
+      const value = obj.def.shape?.[discriminator];
 
-      if (isZodType(value, 'ZodEnum') || isZodType(value, 'ZodNativeEnum')) {
+      if (isZodType(value, 'ZodEnum')) {
         // Native enums have their keys as both number and strings however the number is an
         // internal representation and the string is the access point for a documentation
-        const keys = Object.values(value.enum).filter(isString);
+        const keys = Object.values(value._zod.def.entries).filter(isString);
 
         keys.forEach((enumValue: string) => {
           mapping[enumValue] = generateSchemaRef(refId);
         });
+
         return;
       }
 
-      const literalValue = value?.def.value;
+      const literalValue = value?.def.values[0];
 
       // This should never happen because Zod checks the disciminator type but to keep the types happy
       if (typeof literalValue !== 'string') {

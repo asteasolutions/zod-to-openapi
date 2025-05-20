@@ -1,11 +1,11 @@
 import { SchemaObject, ReferenceObject, MapSubSchema } from '../types';
-import { ZodType } from 'zod';
+import { ZodDiscriminatedUnion, ZodType } from 'zod';
 import { UnknownZodTypeError } from '../errors';
 import { isZodType } from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
 import { ArrayTransformer } from './array';
 import { BigIntTransformer } from './big-int';
-// import { DiscriminatedUnionTransformer } from './discriminated-union';
+import { DiscriminatedUnionTransformer } from './discriminated-union';
 import { EnumTransformer } from './enum';
 import { IntersectionTransformer } from './intersection';
 import { LiteralTransformer } from './literal';
@@ -29,7 +29,7 @@ export class OpenApiTransformer {
   private arrayTransformer = new ArrayTransformer();
   private tupleTransformer: TupleTransformer;
   private unionTransformer = new UnionTransformer();
-  // private discriminatedUnionTransformer = new DiscriminatedUnionTransformer();
+  private discriminatedUnionTransformer = new DiscriminatedUnionTransformer();
   private intersectionTransformer = new IntersectionTransformer();
   private recordTransformer = new RecordTransformer();
 
@@ -140,22 +140,25 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodUnion')) {
+      // TODO: Should I start type checking based on the traits property
+      // instead of the def.type one. In that case I could remove the additional
+      // check + the cast
+      if (zodSchema._zod.disc) {
+        return this.discriminatedUnionTransformer.transform(
+          zodSchema as ZodDiscriminatedUnion,
+          isNullable,
+          _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
+          mapItem,
+          generateSchemaRef
+        );
+      }
+
       return this.unionTransformer.transform(
         zodSchema,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
         mapItem
       );
     }
-
-    // if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
-    //   return this.discriminatedUnionTransformer.transform(
-    //     zodSchema,
-    //     isNullable,
-    //     _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
-    //     mapItem,
-    //     generateSchemaRef
-    //   );
-    // }
 
     if (isZodType(zodSchema, 'ZodIntersection')) {
       return this.intersectionTransformer.transform(
