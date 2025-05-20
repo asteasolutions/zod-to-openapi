@@ -12,9 +12,9 @@
 * union.spec.ts DONE
 * discriminated-union.spec.ts DONE
 * enum.spec.ts DONE
+* native-enum.spec.ts DONE
 * record.spec.ts
 * intersection.spec.ts
 * object-polymorphism.spec.ts
-* native-enum.spec.ts
 * object.spec.ts
 * tuple.spec.ts

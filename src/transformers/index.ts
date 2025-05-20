@@ -9,7 +9,6 @@ import { DiscriminatedUnionTransformer } from './discriminated-union';
 import { EnumTransformer } from './enum';
 import { IntersectionTransformer } from './intersection';
 import { LiteralTransformer } from './literal';
-// import { NativeEnumTransformer } from './native-enum';
 import { NumberTransformer } from './number';
 import { ObjectTransformer } from './object';
 import { RecordTransformer } from './record';
@@ -25,7 +24,6 @@ export class OpenApiTransformer {
   private bigIntTransformer = new BigIntTransformer();
   private literalTransformer = new LiteralTransformer();
   private enumTransformer = new EnumTransformer();
-  // private nativeEnumTransformer = new NativeEnumTransformer();
   private arrayTransformer = new ArrayTransformer();
   private tupleTransformer: TupleTransformer;
   private unionTransformer = new UnionTransformer();
@@ -116,12 +114,6 @@ export class OpenApiTransformer {
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
-
-    // if (isZodType(zodSchema, 'ZodNativeEnum')) {
-    //   return this.nativeEnumTransformer.transform(zodSchema, schema =>
-    //     this.versionSpecifics.mapNullableType(schema, isNullable)
-    //   );
-    // }
 
     if (isZodType(zodSchema, 'ZodArray')) {
       return this.arrayTransformer.transform(
