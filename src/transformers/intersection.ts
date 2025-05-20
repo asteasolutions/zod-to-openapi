@@ -33,10 +33,13 @@ export class IntersectionTransformer {
       return [schema];
     }
 
-    // const leftSubTypes = this.flattenIntersectionTypes(schema.def.left);
-    // const rightSubTypes = this.flattenIntersectionTypes(schema.def.right);
+    const leftSubTypes = this.flattenIntersectionTypes(
+      schema._zod.def.left as ZodType
+    );
+    const rightSubTypes = this.flattenIntersectionTypes(
+      schema._zod.def.right as ZodType
+    );
 
-    // return [...leftSubTypes, ...rightSubTypes];
-    return [];
+    return [...leftSubTypes, ...rightSubTypes];
   }
 }
