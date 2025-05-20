@@ -136,12 +136,14 @@ export function extendZodWithOpenApi(zod: typeof z) {
         const extendedResult = originalExtend.apply(this, args);
 
         const newResult = extendedResult.meta({
-          _internal: {
-            extendedFrom: currentMetadata?._internal?.refId
-              ? { refId: currentMetadata?._internal?.refId, schema: this }
-              : currentMetadata?._internal?.extendedFrom,
+          __zod_openapi: {
+            _internal: {
+              extendedFrom: currentMetadata?._internal?.refId
+                ? { refId: currentMetadata?._internal?.refId, schema: this }
+                : currentMetadata?._internal?.extendedFrom,
+            },
+            metadata: currentMetadata?.metadata,
           },
-          metadata: currentMetadata?.metadata,
         });
 
         console.log(

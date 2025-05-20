@@ -16,5 +16,5 @@
 * record.spec.ts DONE
 * intersection.spec.ts DONE
 * tuple.spec.ts DONE
+* object.spec.ts DONE
 * object-polymorphism.spec.ts
-* object.spec.ts
