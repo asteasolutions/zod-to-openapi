@@ -173,6 +173,9 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     preserveMetadataFromModifier(result, 'transform');
     preserveMetadataFromModifier(result, 'refine');
+    preserveMetadataFromModifier(result, 'length');
+    preserveMetadataFromModifier(result, 'min');
+    preserveMetadataFromModifier(result, 'max');
 
     return result;
   };

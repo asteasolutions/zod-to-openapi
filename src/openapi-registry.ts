@@ -58,7 +58,7 @@ type ResponseObject = ResponseObject30 | ResponseObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
 
-import type { ZodObject, ZodType, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodPipe, ZodType, ZodTypeAny } from 'zod';
 import { Metadata } from './metadata';
 
 type Method =
@@ -103,8 +103,7 @@ export interface ResponseConfig {
   content?: ZodContentObject;
 }
 
-type ZodObjectWithEffect = ZodObject;
-// | ZodEffects<ZodObjectWithEffect, unknown, unknown>;
+type ZodObjectWithEffect = ZodObject | ZodPipe;
 
 export type RouteParameter = ZodObjectWithEffect | undefined;
 

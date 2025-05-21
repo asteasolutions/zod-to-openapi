@@ -550,10 +550,21 @@ export class OpenAPIGenerator {
       return undefined;
     }
 
+    if (isZodType(schema, 'ZodPipe')) {
+      // TODO: Better type inference
+      const inSchema = schema._zod.def.in as ZodObject;
+      const outSchema = schema._zod.def.out as ZodObject;
+
+      // meaning preprocess
+      if (isZodType(inSchema, 'ZodTransform')) {
+        return this.cleanParameter(outSchema);
+      }
+
+      // meaning transform
+      return this.cleanParameter(inSchema);
+    }
+
     return schema;
-    // return isZodType(schema, 'ZodEffects')
-    //   ? this.cleanParameter(schema._def.schema)
-    //   : schema;
   }
 
   generatePath(route: RouteConfig): PathItemObject {
