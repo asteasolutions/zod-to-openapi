@@ -194,7 +194,7 @@ There are two generators that can be used - `OpenApiGeneratorV3` and `OpenApiGen
 For example: changing the generator from `OpenApiGeneratorV3` to `OpenApiGeneratorV31` would result in following differences:
 
 ```ts
-z.string().nullable().openapi(refId: 'name');
+z.string().nullable().openapi({refId: 'name'});
 ```
 
 ```yml
