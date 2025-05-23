@@ -1,5 +1,5 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodRecord, ZodType } from 'zod';
+import { ZodRecord, ZodType } from 'zod/v4';
 import { isZodType } from '../lib/zod-is-type';
 import { isString } from '../lib/lodash';
 

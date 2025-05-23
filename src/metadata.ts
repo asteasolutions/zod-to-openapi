@@ -1,4 +1,4 @@
-import { ZodType, ZodTypeAny } from 'zod';
+import { ZodType, ZodTypeAny } from 'zod/v4';
 import { ZodTypes, isZodType } from './lib/zod-is-type';
 import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
 import { isNil, omit, omitBy } from './lib/lodash';
@@ -153,7 +153,7 @@ export class Metadata {
   static getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
     const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
 
-    return unwrapped?._zod.def.defaultValue() as T | undefined;
+    return unwrapped?._zod.def.defaultValue as T | undefined;
   }
 
   private static unwrapUntil(schema: ZodType): ZodType;

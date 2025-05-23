@@ -1,6 +1,6 @@
-import { ZodArray, ZodType } from 'zod';
+import { ZodArray, ZodType } from 'zod/v4';
 import { MapNullableType, MapSubSchema } from '../types';
-import { $ZodCheckMinLength, $ZodCheckMaxLength } from '@zod/core';
+import { $ZodCheckMinLength, $ZodCheckMaxLength } from 'zod/v4/core';
 export class ArrayTransformer {
   transform(
     zodSchema: ZodArray,

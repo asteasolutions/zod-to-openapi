@@ -6,7 +6,7 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodRawShape, ZodType, ZodTypeAny, z } from 'zod';
+import type { ZodObject, ZodRawShape, ZodType, ZodTypeAny, z } from 'zod/v4';
 import { isZodType } from './lib/zod-is-type';
 
 type ExampleValue<T> = T extends Date ? string : T;
@@ -34,13 +34,13 @@ export interface ZodOpenApiFullMetadata<T = any> {
   metadata?: ZodOpenAPIMetadata<T>;
 }
 
-declare module '@zod/core' {
+declare module 'zod/v4/core' {
   // interface $ZodTypeDef {
   //   openapi?: ZodOpenApiFullMetadata;
   // }
 }
 
-declare module 'zod' {
+declare module 'zod/v4' {
   interface ZodType<Output = unknown, Input = unknown> {
     openapi<T extends ZodTypeAny>(
       this: T,

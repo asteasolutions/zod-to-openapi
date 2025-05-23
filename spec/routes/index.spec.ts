@@ -1,4 +1,4 @@
-import { ZodSchema, z } from 'zod';
+import { ZodSchema, z } from 'zod/v4';
 import {
   OpenAPIDefinitions,
   OpenAPIRegistry,

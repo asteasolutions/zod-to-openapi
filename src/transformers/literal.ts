@@ -1,4 +1,4 @@
-import { ZodLiteral } from 'zod';
+import { ZodLiteral } from 'zod/v4';
 import { MapNullableType, SchemaObject } from '../types';
 
 export class LiteralTransformer {

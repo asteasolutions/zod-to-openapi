@@ -1,4 +1,4 @@
-import { ZodNumber } from 'zod';
+import { ZodNumber } from 'zod/v4';
 import { MapNullableType, GetNumberChecks } from '../types';
 
 export class NumberTransformer {

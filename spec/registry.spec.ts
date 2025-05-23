@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { OpenAPIRegistry } from '../src';
 import { ZodOpenApiFullMetadata } from '../src/zod-extensions';
 import { Metadata } from '../src/metadata';

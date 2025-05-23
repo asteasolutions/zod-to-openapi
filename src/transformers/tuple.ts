@@ -1,5 +1,5 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodTuple, ZodType } from 'zod';
+import { ZodTuple, ZodType } from 'zod/v4';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 
 export class TupleTransformer {

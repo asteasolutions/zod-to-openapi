@@ -1,4 +1,4 @@
-import { z, ZodString } from 'zod';
+import { z, ZodString } from 'zod/v4';
 import { expectSchema } from '../lib/helpers';
 
 describe('string formats', () => {

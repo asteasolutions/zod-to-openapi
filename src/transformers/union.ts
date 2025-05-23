@@ -1,4 +1,4 @@
-import { ZodType, ZodUnion } from 'zod';
+import { ZodType, ZodUnion } from 'zod/v4';
 import { MapNullableOfArray, MapSubSchema } from '../types';
 import { isZodType } from '../lib/zod-is-type';
 

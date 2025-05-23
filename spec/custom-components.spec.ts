@@ -1,5 +1,5 @@
 import { OpenAPIRegistry } from '../src/openapi-registry';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
 import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator';
 import { testDocConfig } from './lib/helpers';

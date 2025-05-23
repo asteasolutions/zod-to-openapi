@@ -5,7 +5,7 @@ import {
   OpenAPIRegistry,
   extendZodWithOpenApi,
 } from '../src';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import * as yaml from 'yaml';
 import * as fs from 'fs';
 

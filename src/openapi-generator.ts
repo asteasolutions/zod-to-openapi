@@ -1,4 +1,4 @@
-import type { ZodObject, ZodType, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodType, ZodTypeAny } from 'zod/v4';
 import {
   ConflictError,
   MissingParameterDataError,

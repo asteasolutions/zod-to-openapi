@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { extendZodWithOpenApi } from './zod-extensions';
 import { OpenApiGeneratorV3 } from './v3.0/openapi-generator';
 import { OpenAPIRegistry } from './openapi-registry';

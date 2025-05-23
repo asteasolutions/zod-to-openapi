@@ -1,5 +1,5 @@
 import { getOpenApiMetadata } from '../src/openapi-metadata';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 describe('OpenAPI metadata', () => {
   it('can obtain nested metadata', () => {
