@@ -139,8 +139,6 @@ extendZodWithOpenApi(z);
 z.string().openapi({ description: 'Some string' });
 ```
 
-# Test change
-
 ### Example 1: Calling the openapi-extension using tsx
 
 ```
