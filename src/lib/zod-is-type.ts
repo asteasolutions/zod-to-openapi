@@ -36,7 +36,7 @@ export type ZodTypes = {
   ZodDate: z.ZodDate;
 };
 
-const ZodTypeKeys = {
+const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodAny: 'any',
   ZodArray: 'array',
   ZodBigInt: 'bigint',
@@ -70,7 +70,7 @@ const ZodTypeKeys = {
   ZodUnknown: 'unknown',
   ZodVoid: 'void',
   ZodDate: 'date',
-} satisfies Record<keyof ZodTypes, string>;
+};
 
 export function isZodType<TypeName extends keyof ZodTypes>(
   schema: object,
