@@ -11,9 +11,7 @@ export class ObjectTransformer {
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
-    // console.log('Inside object transformer');
     const extendedFrom = Metadata.getInternalMetadata(zodSchema)?.extendedFrom;
-    // console.log('extendedFrom', extendedFrom);
 
     const required = this.requiredKeysOf(zodSchema);
     const properties = mapValues(zodSchema.def.shape, mapItem);
@@ -33,7 +31,6 @@ export class ObjectTransformer {
 
     const parent = extendedFrom.schema;
 
-    console.log('parent', parent);
     // We want to generate the parent schema so that it can be referenced down the line
     mapItem(parent);
 
