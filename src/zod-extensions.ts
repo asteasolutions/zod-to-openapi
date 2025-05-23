@@ -6,7 +6,7 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
+import type { ZodObject, ZodRawShape, ZodType, ZodTypeAny, z } from 'zod/v4';
 import { isZodType } from './lib/zod-is-type';
 
 type ExampleValue<T> = T extends Date ? string : T;
@@ -26,7 +26,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
 
 export interface ZodOpenAPIInternalMetadata {
   refId?: string;
-  extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
+  extendedFrom?: { refId: string; schema: ZodObject };
 }
 
 export interface ZodOpenApiFullMetadata<T = any> {
@@ -34,16 +34,14 @@ export interface ZodOpenApiFullMetadata<T = any> {
   metadata?: ZodOpenAPIMetadata<T>;
 }
 
-declare module 'zod' {
-  interface ZodTypeDef {
-    openapi?: ZodOpenApiFullMetadata;
-  }
+declare module 'zod/v4/core' {
+  // interface $ZodTypeDef {
+  //   openapi?: ZodOpenApiFullMetadata;
+  // }
+}
 
-  interface ZodType<
-    Output = any,
-    Def extends ZodTypeDef = ZodTypeDef,
-    Input = Output
-  > {
+declare module 'zod/v4' {
+  interface ZodType<Output = unknown, Input = unknown> {
     openapi<T extends ZodTypeAny>(
       this: T,
       metadata: Partial<ZodOpenAPIMetadata<z.input<T>>>
@@ -57,19 +55,26 @@ declare module 'zod' {
   }
 }
 
-function preserveMetadataFromModifier(
-  zod: typeof z,
-  modifier: keyof typeof z.ZodType.prototype
+function preserveMetadataFromModifier<T extends ZodType>(
+  zodSchema: T,
+  modifier: keyof T
 ) {
-  const zodModifier = zod.ZodType.prototype[modifier];
-  (zod.ZodType.prototype[modifier] as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
-    const result = zodModifier.apply(this, args);
-    result._def.openapi = this._def.openapi;
+  const zodModifier = zodSchema[modifier];
+  (zodSchema[modifier] as any) = function (this: any, ...args: any[]) {
+    const result = (zodModifier as any).apply(this, args);
 
-    return result;
+    const meta = this.meta();
+
+    // Check other comments in extend
+    // TODO: Extract in function
+    if (zodSchema.description) {
+      return result
+        .meta(meta)
+        .describe(zodSchema.description)
+        .openapi(meta?.['__zod_openapi']?.metadata ?? {});
+    } else {
+      return result.meta(meta).openapi(meta?.['__zod_openapi']?.metadata ?? {});
+    }
   };
 }
 
@@ -89,29 +94,32 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     const { param, ...restOfOpenApi } = openapi ?? {};
 
+    const currentMetadata = this.meta()?.['__zod_openapi'] as
+      | ZodOpenApiFullMetadata
+      | undefined;
+
     const _internal = {
-      ...this._def.openapi?._internal,
+      ...currentMetadata?._internal,
       ...(typeof refOrOpenapi === 'string'
         ? { refId: refOrOpenapi }
         : undefined),
     };
 
     const resultMetadata = {
-      ...this._def.openapi?.metadata,
+      ...currentMetadata?.metadata,
       ...restOfOpenApi,
-      ...(this._def.openapi?.metadata?.param || param
+      ...(currentMetadata?.metadata?.param || param
         ? {
             param: {
-              ...this._def.openapi?.metadata?.param,
+              ...currentMetadata?.metadata?.param,
               ...param,
             },
           }
         : undefined),
     };
 
-    const result = new (this as any).constructor({
-      ...this._def,
-      openapi: {
+    const result = this.meta({
+      __zod_openapi: {
         ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
         ...(Object.keys(resultMetadata).length > 0
           ? { metadata: resultMetadata }
@@ -122,62 +130,81 @@ export function extendZodWithOpenApi(zod: typeof z) {
     if (isZodType(this, 'ZodObject')) {
       const originalExtend = this.extend;
 
+      const currentMetadata = result.meta()?.['__zod_openapi'] as
+        | ZodOpenApiFullMetadata
+        | undefined;
+
       result.extend = function (...args: any) {
         const extendedResult = originalExtend.apply(this, args);
 
-        extendedResult._def.openapi = {
-          _internal: {
-            extendedFrom: this._def.openapi?._internal?.refId
-              ? { refId: this._def.openapi?._internal?.refId, schema: this }
-              : this._def.openapi?._internal.extendedFrom,
-          },
-          metadata: extendedResult._def.openapi?.metadata,
-        };
+        const newResult = extendedResult
+          .meta({
+            __zod_openapi: {
+              _internal: {
+                extendedFrom: currentMetadata?._internal?.refId
+                  ? { refId: currentMetadata?._internal?.refId, schema: this }
+                  : currentMetadata?._internal?.extendedFrom,
+              },
+            },
+          })
+          // This is hacky. Yes we can do that directly in the meta call above,
+          // but that would not override future calls to .extend. That's why
+          // we call openapi explicitly here. And in that case might as well add the metadata
+          // here instead of through the meta call
+          .openapi(currentMetadata?.metadata ?? {});
 
-        return extendedResult;
+        return newResult;
+      };
+
+      const originalCatchall = this.catchall;
+
+      result.catchall = function (...args: any) {
+        const result = originalCatchall.apply(this, args);
+
+        const newResult = result
+          .meta({
+            __zod_openapi: {
+              _internal: currentMetadata?._internal,
+            },
+          })
+          // See the comment in the extend case above
+          .openapi(currentMetadata?.metadata ?? {});
+
+        return newResult;
       };
     }
 
+    preserveMetadataFromModifier(result, 'optional');
+    preserveMetadataFromModifier(result, 'nullable');
+    preserveMetadataFromModifier(result, 'default');
+
+    preserveMetadataFromModifier(result, 'transform');
+    preserveMetadataFromModifier(result, 'refine');
+    preserveMetadataFromModifier(result, 'length');
+    preserveMetadataFromModifier(result, 'min');
+    preserveMetadataFromModifier(result, 'max');
+
+    if (this.description) {
+      // Description is not preserved through the meta call.
+      // See: https://github.com/colinhacks/zod/issues/4453
+      return result.describe(this.description);
+    }
     return result;
   };
 
-  preserveMetadataFromModifier(zod, 'optional');
-  preserveMetadataFromModifier(zod, 'nullable');
-  preserveMetadataFromModifier(zod, 'default');
+  // const zodPick = zod.ZodObject.prototype.pick as any;
+  // zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
+  //   const result = zodPick.apply(this, args);
+  //   result.def.openapi = undefined;
 
-  preserveMetadataFromModifier(zod, 'transform');
-  preserveMetadataFromModifier(zod, 'refine');
+  //   return result;
+  // };
 
-  const zodDeepPartial = zod.ZodObject.prototype.deepPartial;
-  zod.ZodObject.prototype.deepPartial = function (this: any) {
-    const initialShape = this._def.shape();
+  // const zodOmit = zod.ZodObject.prototype.omit as any;
+  // zod.ZodObject.prototype.omit = function (this: any, ...args: any[]) {
+  //   const result = zodOmit.apply(this, args);
+  //   result.def.openapi = undefined;
 
-    const result = zodDeepPartial.apply(this);
-
-    const resultShape = result._def.shape();
-
-    Object.entries(resultShape).forEach(([key, value]) => {
-      value._def.openapi = initialShape[key]?._def?.openapi;
-    });
-
-    result._def.openapi = undefined;
-
-    return result;
-  };
-
-  const zodPick = zod.ZodObject.prototype.pick as any;
-  zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
-    const result = zodPick.apply(this, args);
-    result._def.openapi = undefined;
-
-    return result;
-  };
-
-  const zodOmit = zod.ZodObject.prototype.omit as any;
-  zod.ZodObject.prototype.omit = function (this: any, ...args: any[]) {
-    const result = zodOmit.apply(this, args);
-    result._def.openapi = undefined;
-
-    return result;
-  };
+  //   return result;
+  // };
 }

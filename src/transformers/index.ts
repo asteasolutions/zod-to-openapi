@@ -1,5 +1,5 @@
 import { SchemaObject, ReferenceObject, MapSubSchema } from '../types';
-import { ZodType } from 'zod';
+import { ZodDiscriminatedUnion, ZodType } from 'zod/v4';
 import { UnknownZodTypeError } from '../errors';
 import { isZodType } from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
@@ -9,7 +9,6 @@ import { DiscriminatedUnionTransformer } from './discriminated-union';
 import { EnumTransformer } from './enum';
 import { IntersectionTransformer } from './intersection';
 import { LiteralTransformer } from './literal';
-import { NativeEnumTransformer } from './native-enum';
 import { NumberTransformer } from './number';
 import { ObjectTransformer } from './object';
 import { RecordTransformer } from './record';
@@ -25,7 +24,6 @@ export class OpenApiTransformer {
   private bigIntTransformer = new BigIntTransformer();
   private literalTransformer = new LiteralTransformer();
   private enumTransformer = new EnumTransformer();
-  private nativeEnumTransformer = new NativeEnumTransformer();
   private arrayTransformer = new ArrayTransformer();
   private tupleTransformer: TupleTransformer;
   private unionTransformer = new UnionTransformer();
@@ -71,8 +69,8 @@ export class OpenApiTransformer {
     return { ...schema, default: defaultValue };
   }
 
-  private transformSchemaWithoutDefault<T>(
-    zodSchema: ZodType<T>,
+  private transformSchemaWithoutDefault(
+    zodSchema: ZodType,
     isNullable: boolean,
     mapItem: MapSubSchema,
     generateSchemaRef: (ref: string) => string
@@ -117,12 +115,6 @@ export class OpenApiTransformer {
       );
     }
 
-    if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      return this.nativeEnumTransformer.transform(zodSchema, schema =>
-        this.versionSpecifics.mapNullableType(schema, isNullable)
-      );
-    }
-
     if (isZodType(zodSchema, 'ZodArray')) {
       return this.arrayTransformer.transform(
         zodSchema,
@@ -140,20 +132,23 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodUnion')) {
+      // TODO: Should I start type checking based on the traits property
+      // instead of the def.type one. In that case I could remove the additional
+      // check + the cast
+      if (zodSchema._zod.disc) {
+        return this.discriminatedUnionTransformer.transform(
+          zodSchema as ZodDiscriminatedUnion,
+          isNullable,
+          _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
+          mapItem,
+          generateSchemaRef
+        );
+      }
+
       return this.unionTransformer.transform(
         zodSchema,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
         mapItem
-      );
-    }
-
-    if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
-      return this.discriminatedUnionTransformer.transform(
-        zodSchema,
-        isNullable,
-        _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
-        mapItem,
-        generateSchemaRef
       );
     }
 
@@ -181,7 +176,7 @@ export class OpenApiTransformer {
     const refId = Metadata.getRefId(zodSchema);
 
     throw new UnknownZodTypeError({
-      currentSchema: zodSchema._def,
+      currentSchema: zodSchema.def,
       schemaName: refId,
     });
   }

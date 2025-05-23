@@ -4,7 +4,7 @@ import type {
   SchemasObject as SchemasObjectV30,
 } from 'openapi3-ts/oas30';
 import type { SchemasObject as SchemasObjectV31 } from 'openapi3-ts/oas31';
-import type { ZodTypeAny } from 'zod';
+import type { ZodTypeAny } from 'zod/v4';
 import {
   OpenAPIDefinitions,
   OpenAPIRegistry,

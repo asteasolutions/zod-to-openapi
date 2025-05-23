@@ -131,7 +131,7 @@ It can be bit tricky to achieve this in your codebase, because *require* is sync
 
 ```ts
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 extendZodWithOpenApi(z);
 
@@ -145,7 +145,7 @@ z.string().openapi({ description: 'Some string' });
 //zod-extend.ts
 
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 extendZodWithOpenApi(z);
 
@@ -159,7 +159,7 @@ extendZodWithOpenApi(z);
 
 ```
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 extendZodWithOpenApi(z);
 

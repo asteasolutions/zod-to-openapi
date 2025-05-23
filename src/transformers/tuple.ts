@@ -1,5 +1,5 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodTuple } from 'zod';
+import { ZodTuple, ZodType } from 'zod/v4';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 
 export class TupleTransformer {
@@ -10,7 +10,7 @@ export class TupleTransformer {
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
-    const { items } = zodSchema._def;
+    const items = zodSchema._zod.def.items as ZodType[];
 
     const schemas = items.map(mapItem);
 

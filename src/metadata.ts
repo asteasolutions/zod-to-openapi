@@ -1,45 +1,85 @@
-import { ZodType, ZodTypeAny } from 'zod';
+import { ZodType, ZodTypeAny } from 'zod/v4';
 import { ZodTypes, isZodType } from './lib/zod-is-type';
 import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
 import { isNil, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
 
 export class Metadata {
+  static collectMetadata(
+    schema: ZodType,
+    metadata?: ZodOpenApiFullMetadata
+  ): ZodOpenApiFullMetadata | undefined {
+    const currentMetadata = schema.meta()?.['__zod_openapi'] as
+      | ZodOpenApiFullMetadata
+      | undefined;
+
+    const _internal = {
+      ...currentMetadata?._internal,
+      ...metadata?._internal,
+    };
+
+    const description =
+      currentMetadata?.metadata?.description ?? schema.description;
+
+    const resultMetadata = {
+      ...currentMetadata?.metadata,
+      ...(description ? { description } : {}),
+      ...metadata?.metadata,
+    };
+
+    const totalMetadata = {
+      ...(Object.keys(_internal).length > 0 ? { _internal } : {}),
+      ...(Object.keys(resultMetadata).length > 0
+        ? { metadata: resultMetadata }
+        : {}),
+    };
+
+    if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
+      return this.collectMetadata(
+        schema._zod.def.innerType as ZodType,
+        totalMetadata
+      );
+    }
+
+    if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
+      return this.collectMetadata(
+        schema._zod.def.innerType as ZodType,
+        totalMetadata
+      );
+    }
+
+    if (isZodType(schema, 'ZodPipe')) {
+      const inSchema = schema._zod.def.in as ZodType;
+      const outSchema = schema._zod.def.out as ZodType;
+
+      // meaning preprocess
+      if (isZodType(inSchema, 'ZodTransform')) {
+        return this.collectMetadata(outSchema, totalMetadata);
+      }
+
+      // meaning transform
+      return this.collectMetadata(inSchema, totalMetadata);
+    }
+
+    // if (isZodType(schema, 'ZodEffects')) {
+    //   return this.collectMetadata(schema.def.schema, typeName);
+    // }
+
+    // if (isZodType(schema, 'ZodPipeline')) {
+    //   return this.collectMetadata(schema.def.in, typeName);
+    // }
+
+    return totalMetadata;
+  }
+
   static getMetadata<T extends any>(
     zodSchema: ZodType<T>
   ): ZodOpenApiFullMetadata<T> | undefined {
-    const innerSchema = this.unwrapChained(zodSchema);
-
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
-
-    /**
-     * Every zod schema can receive a `description` by using the .describe method.
-     * That description should be used when generating an OpenApi schema.
-     * The `??` bellow makes sure we can handle both:
-     * - schema.describe('Test').optional()
-     * - schema.optional().describe('Test')
-     */
-    const zodDescription = zodSchema.description ?? innerSchema.description;
-
-    // A description provided from .openapi() should be taken with higher precedence
-    return {
-      _internal: metadata?._internal,
-      metadata: {
-        description: zodDescription,
-        ...metadata?.metadata,
-      },
-    };
+    return this.collectMetadata(zodSchema);
   }
 
   static getInternalMetadata<T extends any>(zodSchema: ZodType<T>) {
-    const innerSchema = this.unwrapChained(zodSchema);
-    const openapi = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
-
-    return openapi?._internal;
+    return this.collectMetadata(zodSchema)?._internal;
   }
 
   static getParamMetadata<T extends any>(
@@ -47,9 +87,11 @@ export class Metadata {
   ): ZodOpenApiFullMetadata<T> | undefined {
     const innerSchema = this.unwrapChained(zodSchema);
 
-    const metadata = zodSchema._def.openapi
-      ? zodSchema._def.openapi
-      : innerSchema._def.openapi;
+    const rawMetadata = zodSchema.meta() ?? innerSchema.meta();
+    const metadata = rawMetadata?.['__zod_openapi'] as ZodOpenApiFullMetadata;
+    // const metadata = zodSchema.def.openapi
+    //   ? zodSchema.def.openapi
+    //   : innerSchema.def.openapi;
 
     /**
      * Every zod schema can receive a `description` by using the .describe method.
@@ -111,7 +153,7 @@ export class Metadata {
   static getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
     const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
 
-    return unwrapped?._def.defaultValue();
+    return unwrapped?._zod.def.defaultValue as T | undefined;
   }
 
   private static unwrapUntil(schema: ZodType): ZodType;
@@ -129,22 +171,35 @@ export class Metadata {
 
     if (
       isZodType(schema, 'ZodOptional') ||
-      isZodType(schema, 'ZodNullable') ||
-      isZodType(schema, 'ZodBranded')
+      isZodType(schema, 'ZodNullable')
+      // || isZodType(schema, 'ZodBranded')
     ) {
-      return this.unwrapUntil(schema.unwrap(), typeName);
+      return this.unwrapUntil(schema._zod.def.innerType as ZodType, typeName);
     }
 
     if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.unwrapUntil(schema._def.innerType, typeName);
+      return this.unwrapUntil(schema._zod.def.innerType as ZodType, typeName);
     }
 
-    if (isZodType(schema, 'ZodEffects')) {
-      return this.unwrapUntil(schema._def.schema, typeName);
-    }
+    // if (isZodType(schema, 'ZodEffects')) {
+    //   return this.unwrapUntil(schema.def.schema, typeName);
+    // }
 
-    if (isZodType(schema, 'ZodPipeline')) {
-      return this.unwrapUntil(schema._def.in, typeName);
+    // if (isZodType(schema, 'ZodPipeline')) {
+    //   return this.unwrapUntil(schema.def.in, typeName);
+    // }
+
+    if (isZodType(schema, 'ZodPipe')) {
+      const inSchema = schema._zod.def.in as ZodType;
+      const outSchema = schema._zod.def.out as ZodType;
+
+      // meaning preprocess
+      if (isZodType(inSchema, 'ZodTransform')) {
+        return this.unwrapUntil(outSchema, typeName);
+      }
+
+      // meaning transform
+      return this.unwrapUntil(inSchema, typeName);
     }
 
     return typeName ? undefined : schema;

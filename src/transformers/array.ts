@@ -1,20 +1,30 @@
-import { ZodTypeAny, ZodArray } from 'zod';
+import { ZodArray, ZodType } from 'zod/v4';
 import { MapNullableType, MapSubSchema } from '../types';
-
+import { $ZodCheckMinLength, $ZodCheckMaxLength } from 'zod/v4/core';
 export class ArrayTransformer {
-  transform<T extends ZodTypeAny>(
-    zodSchema: ZodArray<T>,
+  transform(
+    zodSchema: ZodArray,
     mapNullableType: MapNullableType,
     mapItems: MapSubSchema
   ) {
-    const itemType = zodSchema._def.type;
+    const itemType = zodSchema.def.element as ZodType;
+
+    const minItems = zodSchema.def.checks?.find(
+      (check): check is $ZodCheckMinLength =>
+        check._zod.def.check === 'min_length'
+    )?._zod.def.minimum;
+
+    const maxItems = zodSchema.def.checks?.find(
+      (check): check is $ZodCheckMaxLength =>
+        check._zod.def.check === 'max_length'
+    )?._zod.def.maximum;
 
     return {
       ...mapNullableType('array'),
       items: mapItems(itemType),
 
-      minItems: zodSchema._def.minLength?.value,
-      maxItems: zodSchema._def.maxLength?.value,
+      minItems,
+      maxItems,
     };
   }
 }
