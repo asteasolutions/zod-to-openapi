@@ -9,22 +9,29 @@ export class Metadata {
     schema: ZodType,
     metadata?: ZodOpenApiFullMetadata
   ): ZodOpenApiFullMetadata | undefined {
-    // console.log('collectMetadata', schema.def);
     const currentMetadata = schema.meta()?.['__zod_openapi'] as
       | ZodOpenApiFullMetadata
       | undefined;
 
-    // console.log('currentMetadata', currentMetadata);
+    const _internal = {
+      ...currentMetadata?._internal,
+      ...metadata?._internal,
+    };
+
+    const description =
+      currentMetadata?.metadata?.description ?? schema.description;
+
+    const resultMetadata = {
+      ...currentMetadata?.metadata,
+      ...(description ? { description } : {}),
+      ...metadata?.metadata,
+    };
 
     const totalMetadata = {
-      _internal: {
-        ...currentMetadata?._internal,
-        ...metadata?._internal,
-      },
-      metadata: {
-        ...currentMetadata?.metadata,
-        ...metadata?.metadata,
-      },
+      ...(Object.keys(_internal).length > 0 ? { _internal } : {}),
+      ...(Object.keys(resultMetadata).length > 0
+        ? { metadata: resultMetadata }
+        : {}),
     };
 
     if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {

@@ -67,7 +67,14 @@ function preserveMetadataFromModifier<T extends ZodType>(
 
     // Check other comments in extend
     // TODO: Extract in function
-    return result.meta(meta).openapi(meta?.['__zod_openapi']?.metadata ?? {});
+    if (zodSchema.description) {
+      return result
+        .meta(meta)
+        .describe(zodSchema.description)
+        .openapi(meta?.['__zod_openapi']?.metadata ?? {});
+    } else {
+      return result.meta(meta).openapi(meta?.['__zod_openapi']?.metadata ?? {});
+    }
   };
 }
 
@@ -177,6 +184,11 @@ export function extendZodWithOpenApi(zod: typeof z) {
     preserveMetadataFromModifier(result, 'min');
     preserveMetadataFromModifier(result, 'max');
 
+    if (this.description) {
+      // Description is not preserved through the meta call.
+      // See: https://github.com/colinhacks/zod/issues/4453
+      return result.describe(this.description);
+    }
     return result;
   };
 

@@ -1,27 +1,35 @@
 import { z } from 'zod';
 import { OpenAPIRegistry } from '../src';
 import { ZodOpenApiFullMetadata } from '../src/zod-extensions';
+import { Metadata } from '../src/metadata';
+import { OpenAPIDefinitions } from '../src/openapi-registry';
 
-function expectToHaveMetadata(expectedMetadata: ZodOpenApiFullMetadata) {
-  return expect.objectContaining({
-    def: expect.objectContaining({
-      openapi: expectedMetadata,
-    }),
-  });
+function expectToHaveDefinitionMetadata(
+  definition: OpenAPIDefinitions | undefined,
+  type: 'schema' | 'parameter',
+  expectedMetadata: ZodOpenApiFullMetadata
+) {
+  expect(definition?.type).toEqual(type);
+
+  if (definition?.type !== type) {
+    throw new Error(); // checked above. this is for type safety only
+  }
+
+  return expect(Metadata.getMetadata(definition?.schema)).toEqual(
+    expectedMetadata
+  );
 }
 
 describe('OpenAPIRegistry', () => {
   it('can create schema definition', () => {
     const registry = new OpenAPIRegistry();
 
-    registry.register('Test', z.string());
+    const schema = registry.register('Test', z.string());
 
-    expect(registry.definitions).toEqual([
-      {
-        type: 'schema',
-        schema: expectToHaveMetadata({ _internal: { refId: 'Test' } }),
-      },
-    ]);
+    expect(registry.definitions.length).toEqual(1);
+    expectToHaveDefinitionMetadata(registry.definitions?.[0], 'schema', {
+      _internal: { refId: 'Test' },
+    });
   });
 
   it('can create schema definition with additional metadata', () => {
@@ -32,15 +40,11 @@ describe('OpenAPIRegistry', () => {
       z.string().openapi({ description: 'Some string', deprecated: true })
     );
 
-    expect(registry.definitions).toEqual([
-      {
-        type: 'schema',
-        schema: expectToHaveMetadata({
-          _internal: { refId: 'Test' },
-          metadata: { description: 'Some string', deprecated: true },
-        }),
-      },
-    ]);
+    expect(registry.definitions.length).toEqual(1);
+    expectToHaveDefinitionMetadata(registry.definitions?.[0], 'schema', {
+      _internal: { refId: 'Test' },
+      metadata: { description: 'Some string', deprecated: true },
+    });
   });
 
   it('can create parameter definition', () => {
@@ -48,15 +52,11 @@ describe('OpenAPIRegistry', () => {
 
     registry.registerParameter('Test', z.string());
 
-    expect(registry.definitions).toEqual([
-      {
-        type: 'parameter',
-        schema: expectToHaveMetadata({
-          _internal: { refId: 'Test' },
-          metadata: { param: { name: 'Test' } },
-        }),
-      },
-    ]);
+    expect(registry.definitions.length).toEqual(1);
+    expectToHaveDefinitionMetadata(registry.definitions?.[0], 'parameter', {
+      _internal: { refId: 'Test' },
+      metadata: { param: { name: 'Test' } },
+    });
   });
 
   it('can create parameter definition with additional metadata', () => {
@@ -67,18 +67,14 @@ describe('OpenAPIRegistry', () => {
       z.string().openapi({ description: 'Some string', param: { in: 'query' } })
     );
 
-    expect(registry.definitions).toEqual([
-      {
-        type: 'parameter',
-        schema: expectToHaveMetadata({
-          _internal: { refId: 'Test' },
-          metadata: {
-            description: 'Some string',
-            param: { name: 'Test', in: 'query' },
-          },
-        }),
+    expect(registry.definitions.length).toEqual(1);
+    expectToHaveDefinitionMetadata(registry.definitions?.[0], 'parameter', {
+      _internal: { refId: 'Test' },
+      metadata: {
+        description: 'Some string',
+        param: { name: 'Test', in: 'query' },
       },
-    ]);
+    });
   });
 
   it('preserves name given with .openapi over the reference name', () => {
@@ -89,16 +85,10 @@ describe('OpenAPIRegistry', () => {
       z.string().openapi({ param: { name: 'actualName' } })
     );
 
-    expect(registry.definitions).toEqual([
-      {
-        type: 'parameter',
-        schema: expectToHaveMetadata({
-          _internal: { refId: 'referenceName' },
-          metadata: {
-            param: { name: 'actualName' },
-          },
-        }),
-      },
-    ]);
+    expect(registry.definitions.length).toEqual(1);
+    expectToHaveDefinitionMetadata(registry.definitions?.[0], 'parameter', {
+      _internal: { refId: 'referenceName' },
+      metadata: { param: { name: 'actualName' } },
+    });
   });
 });
