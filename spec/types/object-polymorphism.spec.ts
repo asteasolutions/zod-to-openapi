@@ -8,7 +8,7 @@ describe('object polymorphism', () => {
       'Extended'
     );
 
-    expectSchema([BaseSchema, ExtendedSchema], {
+    expectSchema([ExtendedSchema], {
       Base: {
         type: 'object',
         required: ['id'],

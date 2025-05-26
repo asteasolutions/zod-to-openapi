@@ -9,29 +9,24 @@ export class Metadata {
     schema: ZodType,
     metadata?: ZodOpenApiFullMetadata
   ): ZodOpenApiFullMetadata | undefined {
-    const currentMetadata = schema.meta()?.['__zod_openapi'] as
-      | ZodOpenApiFullMetadata
-      | undefined;
+    const currentMetadata = schema.meta() as ZodOpenApiFullMetadata | undefined;
 
     const _internal = {
       ...currentMetadata?._internal,
       ...metadata?._internal,
     };
 
-    const description =
-      currentMetadata?.metadata?.description ?? schema.description;
+    const description = currentMetadata?.description ?? schema.description;
 
     const resultMetadata = {
-      ...currentMetadata?.metadata,
+      ...currentMetadata,
       ...(description ? { description } : {}),
-      ...metadata?.metadata,
+      ...metadata,
     };
 
     const totalMetadata = {
       ...(Object.keys(_internal).length > 0 ? { _internal } : {}),
-      ...(Object.keys(resultMetadata).length > 0
-        ? { metadata: resultMetadata }
-        : {}),
+      ...(Object.keys(resultMetadata).length > 0 ? resultMetadata : {}),
     };
 
     if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
@@ -72,10 +67,23 @@ export class Metadata {
     return totalMetadata;
   }
 
+  /**
+   * @deprecated Use one of `getOpenApiMetadata` or `getInternalMetadata` instead
+   */
   static getMetadata<T extends any>(
     zodSchema: ZodType<T>
   ): ZodOpenApiFullMetadata<T> | undefined {
     return this.collectMetadata(zodSchema);
+  }
+
+  static getOpenApiMetadata<T extends any>(
+    zodSchema: ZodType<T>
+  ): ZodOpenAPIMetadata<T> | undefined {
+    const metadata = this.collectMetadata(zodSchema);
+
+    const { _internal, ...rest } = metadata ?? {};
+
+    return rest;
   }
 
   static getInternalMetadata<T extends any>(zodSchema: ZodType<T>) {
@@ -88,10 +96,7 @@ export class Metadata {
     const innerSchema = this.unwrapChained(zodSchema);
 
     const rawMetadata = zodSchema.meta() ?? innerSchema.meta();
-    const metadata = rawMetadata?.['__zod_openapi'] as ZodOpenApiFullMetadata;
-    // const metadata = zodSchema.def.openapi
-    //   ? zodSchema.def.openapi
-    //   : innerSchema.def.openapi;
+    const metadata = rawMetadata as ZodOpenApiFullMetadata;
 
     /**
      * Every zod schema can receive a `description` by using the .describe method.
@@ -103,14 +108,11 @@ export class Metadata {
     const zodDescription = zodSchema.description ?? innerSchema.description;
 
     return {
-      _internal: metadata?._internal,
-      metadata: {
-        ...metadata?.metadata,
-        // A description provided from .openapi() should be taken with higher precedence
-        param: {
-          description: zodDescription,
-          ...metadata?.metadata?.param,
-        },
+      ...metadata,
+      // A description provided from .openapi() should be taken with higher precedence
+      param: {
+        description: zodDescription,
+        ...metadata?.param,
       },
     };
   }
@@ -119,8 +121,8 @@ export class Metadata {
    * A method that omits all custom keys added to the regular OpenAPI
    * metadata properties
    */
-  static buildSchemaMetadata(metadata: ZodOpenAPIMetadata) {
-    return omitBy(omit(metadata, ['param']), isNil);
+  static buildSchemaMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
+    return omitBy(omit(metadata, ['param', '_internal']), isNil);
   }
 
   static buildParameterMetadata(

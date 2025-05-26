@@ -182,12 +182,10 @@ export class OpenAPIRegistry {
   registerParameter<T extends ZodType>(refId: string, zodSchema: T) {
     const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
-    const currentMetadata =
-      Metadata.getMetadata(schemaWithRefId)?.metadata ?? {};
+    const currentMetadata = Metadata.getOpenApiMetadata(schemaWithRefId) ?? {};
 
     const schemaWithMetadata = schemaWithRefId.openapi({
-      // TODO: Fix this
-      ...(currentMetadata as any),
+      ...currentMetadata,
       param: {
         ...currentMetadata?.param,
         name: currentMetadata?.param?.name ?? refId,

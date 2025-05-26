@@ -43,7 +43,8 @@ describe('OpenAPIRegistry', () => {
     expect(registry.definitions.length).toEqual(1);
     expectToHaveDefinitionMetadata(registry.definitions?.[0], 'schema', {
       _internal: { refId: 'Test' },
-      metadata: { description: 'Some string', deprecated: true },
+      description: 'Some string',
+      deprecated: true,
     });
   });
 
@@ -55,7 +56,7 @@ describe('OpenAPIRegistry', () => {
     expect(registry.definitions.length).toEqual(1);
     expectToHaveDefinitionMetadata(registry.definitions?.[0], 'parameter', {
       _internal: { refId: 'Test' },
-      metadata: { param: { name: 'Test' } },
+      param: { name: 'Test' },
     });
   });
 
@@ -70,10 +71,8 @@ describe('OpenAPIRegistry', () => {
     expect(registry.definitions.length).toEqual(1);
     expectToHaveDefinitionMetadata(registry.definitions?.[0], 'parameter', {
       _internal: { refId: 'Test' },
-      metadata: {
-        description: 'Some string',
-        param: { name: 'Test', in: 'query' },
-      },
+      description: 'Some string',
+      param: { name: 'Test', in: 'query' },
     });
   });
 
@@ -88,7 +87,7 @@ describe('OpenAPIRegistry', () => {
     expect(registry.definitions.length).toEqual(1);
     expectToHaveDefinitionMetadata(registry.definitions?.[0], 'parameter', {
       _internal: { refId: 'referenceName' },
-      metadata: { param: { name: 'actualName' } },
+      param: { name: 'actualName' },
     });
   });
 });

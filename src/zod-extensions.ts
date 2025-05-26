@@ -22,6 +22,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   example?: E;
   examples?: E[];
   default?: T;
+  _internal?: never;
 };
 
 export interface ZodOpenAPIInternalMetadata {
@@ -29,9 +30,9 @@ export interface ZodOpenAPIInternalMetadata {
   extendedFrom?: { refId: string; schema: ZodObject };
 }
 
-export interface ZodOpenApiFullMetadata<T = any> {
+export interface ZodOpenApiFullMetadata<T = any>
+  extends Omit<ZodOpenAPIMetadata<T>, '_internal'> {
   _internal?: ZodOpenAPIInternalMetadata;
-  metadata?: ZodOpenAPIMetadata<T>;
 }
 
 declare module 'zod/v4/core' {
@@ -44,13 +45,13 @@ declare module 'zod/v4' {
   interface ZodType<Output = unknown, Input = unknown> {
     openapi<T extends ZodTypeAny>(
       this: T,
-      metadata: Partial<ZodOpenAPIMetadata<z.input<T>>>
+      metadata: Partial<ZodOpenAPIMetadata<Input>>
     ): T;
 
     openapi<T extends ZodTypeAny>(
       this: T,
       refId: string,
-      metadata?: Partial<ZodOpenAPIMetadata<z.input<T>>>
+      metadata?: Partial<ZodOpenAPIMetadata<Input>>
     ): T;
   }
 }
@@ -65,7 +66,7 @@ function preserveMetadataFromModifier<T extends ZodType>(
 
     const meta = this.meta();
 
-    return result.meta(meta).openapi(meta?.['__zod_openapi']?.metadata ?? {});
+    return result.meta(meta).openapi(meta?.metadata ?? {});
   };
 }
 
@@ -85,24 +86,24 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     const { param, ...restOfOpenApi } = openapi ?? {};
 
-    const currentMetadata = this.meta()?.['__zod_openapi'] as
-      | ZodOpenApiFullMetadata
-      | undefined;
+    const allMetadata = this.meta() as ZodOpenApiFullMetadata | undefined;
+    const { _internal: internalMetadata, ...currentMetadata } =
+      allMetadata ?? {};
 
     const _internal = {
-      ...currentMetadata?._internal,
+      ...internalMetadata,
       ...(typeof refOrOpenapi === 'string'
         ? { refId: refOrOpenapi }
         : undefined),
     };
 
     const resultMetadata = {
-      ...currentMetadata?.metadata,
+      ...currentMetadata,
       ...restOfOpenApi,
-      ...(currentMetadata?.metadata?.param || param
+      ...(currentMetadata?.param || param
         ? {
             param: {
-              ...currentMetadata?.metadata?.param,
+              ...currentMetadata?.param,
               ...param,
             },
           }
@@ -110,39 +111,35 @@ export function extendZodWithOpenApi(zod: typeof z) {
     };
 
     const result = this.meta({
-      __zod_openapi: {
-        ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
-        ...(Object.keys(resultMetadata).length > 0
-          ? { metadata: resultMetadata }
-          : undefined),
-      },
+      ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
+      ...(Object.keys(resultMetadata).length > 0 ? resultMetadata : undefined),
     });
 
     if (isZodType(this, 'ZodObject')) {
       const originalExtend = this.extend;
 
-      const currentMetadata = result.meta()?.['__zod_openapi'] as
+      const currentMetadata = result.meta() as
         | ZodOpenApiFullMetadata
         | undefined;
 
       result.extend = function (...args: any) {
         const extendedResult = originalExtend.apply(this, args);
 
+        const { _internal, ...rest } = currentMetadata ?? {};
+
         const newResult = extendedResult
           .meta({
-            __zod_openapi: {
-              _internal: {
-                extendedFrom: currentMetadata?._internal?.refId
-                  ? { refId: currentMetadata?._internal?.refId, schema: this }
-                  : currentMetadata?._internal?.extendedFrom,
-              },
+            _internal: {
+              extendedFrom: _internal?.refId
+                ? { refId: _internal.refId, schema: this }
+                : _internal?.extendedFrom,
             },
           })
           // This is hacky. Yes we can do that directly in the meta call above,
           // but that would not override future calls to .extend. That's why
           // we call openapi explicitly here. And in that case might as well add the metadata
           // here instead of through the meta call
-          .openapi(currentMetadata?.metadata ?? {});
+          .openapi(rest);
 
         return newResult;
       };
