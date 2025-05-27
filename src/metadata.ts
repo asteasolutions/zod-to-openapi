@@ -191,8 +191,4 @@ export class Metadata {
 
     return typeName ? undefined : schema;
   }
-
-  static isOptionalSchema(zodSchema: ZodType): boolean {
-    return zodSchema.isOptional();
-  }
 }

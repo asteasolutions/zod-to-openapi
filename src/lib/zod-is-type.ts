@@ -80,3 +80,19 @@ export function isZodType<TypeName extends keyof ZodTypes>(
 export function isAnyZodType(schema: object): schema is z.ZodType {
   return 'def' in schema;
 }
+
+/**
+ * The schema.isNullable() is deprecated. This is the suggested replacement
+ * as this was how isNullable operated beforehand.
+ */
+export function isNullableSchema(schema: z.ZodType) {
+  return schema.safeParse(null).success;
+}
+
+/**
+ * The schema.isOptional() is deprecated. This is the suggested replacement
+ * as this was how isOptional operated beforehand.
+ */
+export function isOptionalSchema(schema: z.ZodType) {
+  return schema.safeParse(undefined).success;
+}

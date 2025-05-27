@@ -5,7 +5,12 @@ import {
   enhanceMissingParametersError,
 } from './errors';
 import { compact, isNil, mapValues, objectEquals, omitBy } from './lib/lodash';
-import { isAnyZodType, isZodType } from './lib/zod-is-type';
+import {
+  isAnyZodType,
+  isNullableSchema,
+  isOptionalSchema,
+  isZodType,
+} from './lib/zod-is-type';
 import {
   OpenAPIComponentObject,
   OpenAPIDefinitions,
@@ -15,7 +20,6 @@ import {
   ZodContentObject,
   ZodRequestBody,
 } from './openapi-registry';
-import { ZodOpenApiFullMetadata } from './zod-extensions';
 import {
   BaseParameterObject,
   ComponentsObject,
@@ -327,7 +331,7 @@ export class OpenAPIGenerator {
 
     // TODO: Why are we not unwrapping here for isNullable as well?
     const required =
-      !Metadata.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
+      !isOptionalSchema(zodSchema) && !isNullableSchema(zodSchema);
 
     const schema = this.generateSchemaWithRef(zodSchema);
 
@@ -373,7 +377,11 @@ export class OpenAPIGenerator {
 
     const result = metadata?.type
       ? { type: metadata.type }
-      : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
+      : this.toOpenAPISchema(
+          innerSchema,
+          isNullableSchema(zodSchema),
+          defaultValue
+        );
 
     return metadata
       ? Metadata.applySchemaMetadata(result, metadata)
@@ -390,16 +398,13 @@ export class OpenAPIGenerator {
     const innerSchema = Metadata.unwrapChained(zodSchema);
 
     const defaultValue = Metadata.getDefaultValue(zodSchema);
-    const isNullableSchema = zodSchema.isNullable();
+    const isNullable = isNullableSchema(zodSchema);
 
     if (metadata?.type) {
-      return this.versionSpecifics.mapNullableType(
-        metadata.type,
-        isNullableSchema
-      );
+      return this.versionSpecifics.mapNullableType(metadata.type, isNullable);
     }
 
-    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
+    return this.toOpenAPISchema(innerSchema, isNullable, defaultValue);
   }
 
   /**

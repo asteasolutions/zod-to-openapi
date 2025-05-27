@@ -1,6 +1,6 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
 import { ZodObject, ZodType, z } from 'zod/v4';
-import { isZodType } from '../lib/zod-is-type';
+import { isOptionalSchema, isZodType } from '../lib/zod-is-type';
 import { mapValues, objectEquals } from '../lib/lodash';
 import { Metadata } from '../metadata';
 
@@ -86,7 +86,7 @@ export class ObjectTransformer {
 
   private requiredKeysOf(objectSchema: ZodObject) {
     return Object.entries(objectSchema.def.shape)
-      .filter(([_key, type]) => !Metadata.isOptionalSchema(type))
+      .filter(([_key, type]) => !isOptionalSchema(type))
       .map(([key, _type]) => key);
   }
 }
