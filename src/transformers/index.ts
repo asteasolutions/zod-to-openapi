@@ -133,20 +133,19 @@ export class OpenApiTransformer {
       );
     }
 
-    if (isZodType(zodSchema, 'ZodUnion')) {
-      // TODO: Should I start type checking based on the traits property
-      // instead of the def.type one. In that case I could remove the additional
-      // check + the cast
-      if (zodSchema._zod.disc) {
-        return this.discriminatedUnionTransformer.transform(
-          zodSchema as ZodDiscriminatedUnion,
-          isNullable,
-          _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
-          mapItem,
-          generateSchemaRef
-        );
-      }
+    // Note: It is important that this goes above the union transformer
+    // because the discriminated union is still a union
+    if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
+      return this.discriminatedUnionTransformer.transform(
+        zodSchema,
+        isNullable,
+        _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
+        mapItem,
+        generateSchemaRef
+      );
+    }
 
+    if (isZodType(zodSchema, 'ZodUnion')) {
       return this.unionTransformer.transform(
         zodSchema,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),

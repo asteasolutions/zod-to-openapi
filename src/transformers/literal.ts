@@ -1,14 +1,30 @@
 import { ZodLiteral } from 'zod/v4';
-import { MapNullableType, SchemaObject } from '../types';
+import { MapNullableType } from '../types';
+import { BigIntTransformer } from './big-int';
 
 export class LiteralTransformer {
+  private bigIntTransformer = new BigIntTransformer();
+
   transform(zodSchema: ZodLiteral, mapNullableType: MapNullableType) {
-    return {
-      ...mapNullableType(
-        // TODO: Fix this
-        typeof zodSchema.def.values[0] as NonNullable<SchemaObject['type']>
-      ),
-      enum: [zodSchema.def.values[0]],
-    };
+    const type = typeof zodSchema.def.values[0];
+
+    if (
+      type === 'boolean' ||
+      type === 'number' ||
+      type === 'string' ||
+      type === 'object'
+    ) {
+      return {
+        ...mapNullableType(type),
+        enum: [zodSchema.def.values[0]],
+      };
+    }
+
+    if (type === 'bigint') {
+      return this.bigIntTransformer.transform(mapNullableType);
+    }
+
+    // Zod doesn't really support anything else anyways
+    return mapNullableType('null');
   }
 }
