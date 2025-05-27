@@ -1,4 +1,4 @@
-import { ZodType, ZodTypeAny } from 'zod/v4';
+import { ZodType } from 'zod/v4';
 import { ZodTypes, isZodType } from './lib/zod-is-type';
 import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
 import { isNil, omit, omitBy } from './lib/lodash';
@@ -44,6 +44,7 @@ export class Metadata {
     }
 
     if (isZodType(schema, 'ZodPipe')) {
+      // TODO: Fix casts as ZodType from $ZodType
       const inSchema = schema._zod.def.in as ZodType;
       const outSchema = schema._zod.def.out as ZodType;
 
@@ -55,14 +56,6 @@ export class Metadata {
       // meaning transform
       return this.collectMetadata(inSchema, totalMetadata);
     }
-
-    // if (isZodType(schema, 'ZodEffects')) {
-    //   return this.collectMetadata(schema.def.schema, typeName);
-    // }
-
-    // if (isZodType(schema, 'ZodPipeline')) {
-    //   return this.collectMetadata(schema.def.in, typeName);
-    // }
 
     return totalMetadata;
   }
@@ -152,7 +145,7 @@ export class Metadata {
     return this.unwrapUntil(schema);
   }
 
-  static getDefaultValue<T>(zodSchema: ZodTypeAny): T | undefined {
+  static getDefaultValue<T>(zodSchema: ZodType): T | undefined {
     const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
 
     return unwrapped?._zod.def.defaultValue as T | undefined;
@@ -183,14 +176,6 @@ export class Metadata {
       return this.unwrapUntil(schema._zod.def.innerType as ZodType, typeName);
     }
 
-    // if (isZodType(schema, 'ZodEffects')) {
-    //   return this.unwrapUntil(schema.def.schema, typeName);
-    // }
-
-    // if (isZodType(schema, 'ZodPipeline')) {
-    //   return this.unwrapUntil(schema.def.in, typeName);
-    // }
-
     if (isZodType(schema, 'ZodPipe')) {
       const inSchema = schema._zod.def.in as ZodType;
       const outSchema = schema._zod.def.out as ZodType;
@@ -207,7 +192,7 @@ export class Metadata {
     return typeName ? undefined : schema;
   }
 
-  static isOptionalSchema(zodSchema: ZodTypeAny): boolean {
+  static isOptionalSchema(zodSchema: ZodType): boolean {
     return zodSchema.isOptional();
   }
 }

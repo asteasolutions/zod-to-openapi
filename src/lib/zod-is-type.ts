@@ -23,7 +23,6 @@ export type ZodTypes = {
   ZodString: z.ZodString;
   ZodTuple: z.ZodTuple;
   ZodType: z.ZodType;
-  ZodTypeAny: z.ZodTypeAny;
   ZodUnion: z.ZodUnion;
   ZodDiscriminatedUnion: z.ZodDiscriminatedUnion;
   ZodUnknown: z.ZodUnknown;
@@ -54,7 +53,6 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodString: 'string',
   ZodTuple: 'tuple',
   ZodType: 'type',
-  ZodTypeAny: 'typeAny',
   ZodUnion: 'union',
   ZodDiscriminatedUnion: 'union',
   ZodUnknown: 'unknown',

@@ -1,4 +1,4 @@
-import type { ZodObject, ZodType, ZodTypeAny } from 'zod/v4';
+import type { ZodObject, ZodType } from 'zod/v4';
 import {
   ConflictError,
   MissingParameterDataError,
@@ -77,7 +77,7 @@ export class OpenAPIGenerator {
   private openApiTransformer: OpenApiTransformer;
 
   constructor(
-    private definitions: (OpenAPIDefinitions | ZodTypeAny)[],
+    private definitions: (OpenAPIDefinitions | ZodType)[],
     private versionSpecifics: OpenApiVersionSpecifics
   ) {
     this.openApiTransformer = new OpenApiTransformer(versionSpecifics);
@@ -151,7 +151,7 @@ export class OpenAPIGenerator {
     });
   }
 
-  private generateSingle(definition: OpenAPIDefinitions | ZodTypeAny): void {
+  private generateSingle(definition: OpenAPIDefinitions | ZodType): void {
     if (!('type' in definition)) {
       this.generateSchemaWithRef(definition);
       return;
@@ -177,7 +177,7 @@ export class OpenAPIGenerator {
   }
 
   private generateParameterDefinition(
-    zodSchema: ZodTypeAny
+    zodSchema: ZodType
   ): ParameterObject | ReferenceObject {
     const refId = Metadata.getRefId(zodSchema);
 
@@ -244,7 +244,7 @@ export class OpenAPIGenerator {
   }
 
   private generateInlineParameters(
-    zodSchema: ZodTypeAny,
+    zodSchema: ZodType,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
@@ -321,7 +321,7 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private generateSimpleParameter(zodSchema: ZodTypeAny): BaseParameterObject {
+  private generateSimpleParameter(zodSchema: ZodType): BaseParameterObject {
     const metadata = Metadata.getParamMetadata(zodSchema);
     const paramMetadata = metadata?.param;
 
@@ -338,7 +338,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private generateParameter(zodSchema: ZodTypeAny): ParameterObject {
+  private generateParameter(zodSchema: ZodType): ParameterObject {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
 
     const paramMetadata = metadata?.param;
