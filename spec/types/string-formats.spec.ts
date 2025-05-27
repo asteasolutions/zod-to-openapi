@@ -3,18 +3,19 @@ import { expectSchema } from '../lib/helpers';
 
 describe('string formats', () => {
   fit.each`
-    format        | zodString                | expected
-    ${'emoji'}    | ${z.string().emoji()}    | ${'emoji'}
-    ${'cuid'}     | ${z.string().cuid()}     | ${'cuid'}
-    ${'cuid2'}    | ${z.string().cuid2()}    | ${'cuid2'}
-    ${'ulid'}     | ${z.string().ulid()}     | ${'ulid'}
-    ${'uuid'}     | ${z.string().uuid()}     | ${'uuid'}
-    ${'email'}    | ${z.string().email()}    | ${'email'}
-    ${'url'}      | ${z.string().url()}      | ${'uri'}
-    ${'date'}     | ${z.string().date()}     | ${'date'}
-    ${'datetime'} | ${z.string().datetime()} | ${'date-time'}
+    format        | zodString           | expected
+    ${'emoji'}    | ${z.emoji()}        | ${'emoji'}
+    ${'cuid'}     | ${z.cuid()}         | ${'cuid'}
+    ${'cuid2'}    | ${z.cuid2()}        | ${'cuid2'}
+    ${'ulid'}     | ${z.ulid()}         | ${'ulid'}
+    ${'uuid'}     | ${z.uuid()}         | ${'uuid'}
+    ${'email'}    | ${z.email()}        | ${'email'}
+    ${'url'}      | ${z.url()}          | ${'uri'}
+    ${'date'}     | ${z.date()}         | ${'date'}
+    ${'ipv4'}     | ${z.ipv4()}         | ${'ip'}
+    ${'ipv6'}     | ${z.ipv6()}         | ${'ip'}
+    ${'datetime'} | ${z.iso.datetime()} | ${'date-time'}
   `(
-    // ${'ip'}       | ${z.string().ip()}       | ${'ip'}
     'maps a ZodString $format to $expected format',
     ({ zodString, expected }: { zodString: ZodString; expected: string }) => {
       expectSchema([zodString.openapi('ZodString')], {

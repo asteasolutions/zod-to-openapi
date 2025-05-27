@@ -16,12 +16,14 @@ import { StringTransformer } from './string';
 import { TupleTransformer } from './tuple';
 import { UnionTransformer } from './union';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
+import { DateTransformer } from './date';
 
 export class OpenApiTransformer {
   private objectTransformer = new ObjectTransformer();
   private stringTransformer = new StringTransformer();
   private numberTransformer = new NumberTransformer();
   private bigIntTransformer = new BigIntTransformer();
+  private dateTransformer = new DateTransformer();
   private literalTransformer = new LiteralTransformer();
   private enumTransformer = new EnumTransformer();
   private arrayTransformer = new ArrayTransformer();
@@ -170,7 +172,9 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
-      return this.versionSpecifics.mapNullableType('string', isNullable);
+      return this.dateTransformer.transform(_ =>
+        this.versionSpecifics.mapNullableType(_, isNullable)
+      );
     }
 
     const refId = Metadata.getRefId(zodSchema);

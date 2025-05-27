@@ -17,7 +17,10 @@ describe('pipe', () => {
       ],
       {
         PipedDate: {
-          anyOf: [{ type: 'string' }, { type: 'string', minLength: 1 }],
+          anyOf: [
+            { type: 'string', format: 'date' },
+            { type: 'string', minLength: 1 },
+          ],
         },
       },
       '3.1.0'
