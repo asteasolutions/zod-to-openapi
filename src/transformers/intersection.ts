@@ -4,7 +4,7 @@ import {
   SchemaObject,
 } from '../types';
 import { ZodIntersection, ZodType } from 'zod/v4';
-import { isZodType } from '../lib/zod-is-type';
+import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 
 export class IntersectionTransformer {
   transform(
@@ -33,12 +33,12 @@ export class IntersectionTransformer {
       return [schema];
     }
 
-    const leftSubTypes = this.flattenIntersectionTypes(
-      schema._zod.def.left as ZodType
-    );
-    const rightSubTypes = this.flattenIntersectionTypes(
-      schema._zod.def.right as ZodType
-    );
+    const leftSubTypes = isAnyZodType(schema._zod.def.left)
+      ? this.flattenIntersectionTypes(schema._zod.def.left)
+      : [];
+    const rightSubTypes = isAnyZodType(schema._zod.def.right)
+      ? this.flattenIntersectionTypes(schema._zod.def.right)
+      : [];
 
     return [...leftSubTypes, ...rightSubTypes];
   }

@@ -35,12 +35,6 @@ export interface ZodOpenApiFullMetadata<T = any>
   _internal?: ZodOpenAPIInternalMetadata;
 }
 
-declare module 'zod/v4/core' {
-  // interface $ZodTypeDef {
-  //   openapi?: ZodOpenApiFullMetadata;
-  // }
-}
-
 declare module 'zod/v4' {
   interface ZodType<Output = unknown, Input = unknown> {
     openapi<T extends ZodType>(

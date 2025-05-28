@@ -62,19 +62,31 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
 
 export function isZodType<TypeName extends keyof ZodTypes>(
   schema: object,
+  typeNames: TypeName[]
+): schema is ZodTypes[TypeName];
+export function isZodType<TypeName extends keyof ZodTypes>(
+  schema: object,
   typeName: TypeName
+): schema is ZodTypes[TypeName];
+export function isZodType<TypeName extends keyof ZodTypes>(
+  schema: object,
+  typeNames: TypeName | TypeName[]
 ): schema is ZodTypes[TypeName] {
-  const typeNameMatch =
-    (schema as z.ZodType)?.def?.type === ZodTypeKeys[typeName];
+  const typeNamesArray = Array.isArray(typeNames) ? typeNames : [typeNames];
 
-  if (typeName === 'ZodDiscriminatedUnion') {
-    return (
-      typeNameMatch &&
-      'discriminator' in (schema as z.ZodDiscriminatedUnion).def
-    );
-  }
+  return typeNamesArray.some(typeName => {
+    const typeNameMatch =
+      (schema as z.ZodType)?.def?.type === ZodTypeKeys[typeName];
 
-  return typeNameMatch;
+    if (typeName === 'ZodDiscriminatedUnion') {
+      return (
+        typeNameMatch &&
+        'discriminator' in (schema as z.ZodDiscriminatedUnion).def
+      );
+    }
+
+    return typeNameMatch;
+  });
 }
 
 export function isAnyZodType(schema: object): schema is z.ZodType {

@@ -1,5 +1,5 @@
 import { ZodType } from 'zod/v4';
-import { ZodTypes, isZodType } from './lib/zod-is-type';
+import { ZodTypes, isAnyZodType, isZodType } from './lib/zod-is-type';
 import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
 import { isNil, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
@@ -29,32 +29,31 @@ export class Metadata {
       ...(Object.keys(resultMetadata).length > 0 ? resultMetadata : {}),
     };
 
-    if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
-      return this.collectMetadata(
-        schema._zod.def.innerType as ZodType,
-        totalMetadata
-      );
-    }
-
-    if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.collectMetadata(
-        schema._zod.def.innerType as ZodType,
-        totalMetadata
-      );
+    if (
+      isZodType(schema, [
+        'ZodOptional',
+        'ZodNullable',
+        'ZodDefault',
+        'ZodReadonly',
+      ]) &&
+      isAnyZodType(schema._zod.def.innerType)
+    ) {
+      return this.collectMetadata(schema._zod.def.innerType, totalMetadata);
     }
 
     if (isZodType(schema, 'ZodPipe')) {
-      // TODO: Fix casts as ZodType from $ZodType
-      const inSchema = schema._zod.def.in as ZodType;
-      const outSchema = schema._zod.def.out as ZodType;
+      const inSchema = schema._zod.def.in;
+      const outSchema = schema._zod.def.out;
 
       // meaning preprocess
-      if (isZodType(inSchema, 'ZodTransform')) {
+      if (isZodType(inSchema, 'ZodTransform') && isAnyZodType(outSchema)) {
         return this.collectMetadata(outSchema, totalMetadata);
       }
 
-      // meaning transform
-      return this.collectMetadata(inSchema, totalMetadata);
+      if (isAnyZodType(inSchema)) {
+        // meaning transform
+        return this.collectMetadata(inSchema, totalMetadata);
+      }
     }
 
     return totalMetadata;
@@ -165,28 +164,30 @@ export class Metadata {
     }
 
     if (
-      isZodType(schema, 'ZodOptional') ||
-      isZodType(schema, 'ZodNullable')
-      // || isZodType(schema, 'ZodBranded')
+      isZodType(schema, [
+        'ZodOptional',
+        'ZodNullable',
+        'ZodDefault',
+        'ZodReadonly',
+      ]) &&
+      isAnyZodType(schema._zod.def.innerType)
     ) {
-      return this.unwrapUntil(schema._zod.def.innerType as ZodType, typeName);
-    }
-
-    if (isZodType(schema, 'ZodDefault') || isZodType(schema, 'ZodReadonly')) {
-      return this.unwrapUntil(schema._zod.def.innerType as ZodType, typeName);
+      return this.unwrapUntil(schema._zod.def.innerType, typeName);
     }
 
     if (isZodType(schema, 'ZodPipe')) {
-      const inSchema = schema._zod.def.in as ZodType;
-      const outSchema = schema._zod.def.out as ZodType;
+      const inSchema = schema._zod.def.in;
+      const outSchema = schema._zod.def.out;
 
       // meaning preprocess
-      if (isZodType(inSchema, 'ZodTransform')) {
+      if (isZodType(inSchema, 'ZodTransform') && isAnyZodType(outSchema)) {
         return this.unwrapUntil(outSchema, typeName);
       }
 
       // meaning transform
-      return this.unwrapUntil(inSchema, typeName);
+      if (isAnyZodType(inSchema)) {
+        return this.unwrapUntil(inSchema, typeName);
+      }
     }
 
     return typeName ? undefined : schema;
