@@ -16,17 +16,10 @@ export class Metadata {
       ...metadata?._internal,
     };
 
-    const description = currentMetadata?.description ?? schema.description;
-
-    const resultMetadata = {
-      ...currentMetadata,
-      ...(description ? { description } : {}),
-      ...metadata,
-    };
-
     const totalMetadata = {
       ...(Object.keys(_internal).length > 0 ? { _internal } : {}),
-      ...resultMetadata,
+      ...currentMetadata,
+      ...metadata,
     };
 
     if (
