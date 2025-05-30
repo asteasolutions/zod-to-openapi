@@ -22,8 +22,6 @@ function isZodCheckRegex(check: $ZodCheck<string>): check is $ZodCheckRegex {
 
 export class StringTransformer {
   transform(zodSchema: ZodString, mapNullableType: MapNullableType) {
-    // const regexCheck = this.getZodStringCheck(zodSchema, 'regex');
-
     const regexCheck = zodSchema.def.checks?.find(isZodCheckRegex);
     // toString generates an additional / at the beginning and end of the pattern
     const pattern = regexCheck?._zod.def.pattern
@@ -32,7 +30,6 @@ export class StringTransformer {
 
     const check = zodSchema.def.checks?.find(isZodCheckLengthEquals);
     const length = check?._zod.def.length;
-    // const length = this.getZodStringCheck(zodSchema, 'length')?.value;`
 
     const maxLength = Number.isFinite(zodSchema.minLength)
       ? zodSchema.minLength ?? undefined

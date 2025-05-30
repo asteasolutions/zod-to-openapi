@@ -153,20 +153,4 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     return result;
   };
-
-  // const zodPick = zod.ZodObject.prototype.pick as any;
-  // zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
-  //   const result = zodPick.apply(this, args);
-  //   result.def.openapi = undefined;
-
-  //   return result;
-  // };
-
-  // const zodOmit = zod.ZodObject.prototype.omit as any;
-  // zod.ZodObject.prototype.omit = function (this: any, ...args: any[]) {
-  //   const result = zodOmit.apply(this, args);
-  //   result.def.openapi = undefined;
-
-  //   return result;
-  // };
 }

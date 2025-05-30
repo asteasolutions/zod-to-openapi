@@ -26,7 +26,7 @@ export class Metadata {
 
     const totalMetadata = {
       ...(Object.keys(_internal).length > 0 ? { _internal } : {}),
-      ...(Object.keys(resultMetadata).length > 0 ? resultMetadata : {}),
+      ...resultMetadata,
     };
 
     if (
