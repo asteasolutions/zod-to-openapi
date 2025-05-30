@@ -26,9 +26,7 @@ export class DiscriminatedUnionTransformer {
       };
     }
 
-    const discriminator = zodSchema._zod.disc.keys().next().value as
-      | string
-      | undefined;
+    const discriminator = zodSchema.def.discriminator;
 
     if (!discriminator) {
       console.error(
