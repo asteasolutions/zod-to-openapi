@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { expectSchema } from '../lib/helpers';
 
 describe('date', () => {
@@ -8,6 +8,7 @@ describe('date', () => {
     expectSchema([schema], {
       Date: {
         type: 'string',
+        format: 'date',
       },
     });
   });
@@ -19,6 +20,7 @@ describe('date', () => {
     expectSchema([schema], {
       Date: {
         type: 'string',
+        format: 'date',
         example,
       },
     });

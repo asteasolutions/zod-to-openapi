@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { createSchemas, expectSchema } from '../lib/helpers';
 
 describe('native enum', () => {
