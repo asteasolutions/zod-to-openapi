@@ -4,7 +4,8 @@ import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
 import { isNil, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
 
-const zodToOpenAPIRegistry = z.registry<ZodOpenApiFullMetadata<any>>();
+const zodToOpenAPIRegistry = z.registry<ZodOpenApiFullMetadata>();
+
 export class Metadata {
   static collectMetadata(
     schema: ZodType,
@@ -22,7 +23,7 @@ export class Metadata {
       ...metadata?.param,
     };
 
-    const totalMetadata = {
+    const totalMetadata: ZodOpenApiFullMetadata = {
       ...(Object.keys(_internal).length > 0 ? { _internal } : {}),
       ...currentMetadata,
       ...metadata,
@@ -38,10 +39,7 @@ export class Metadata {
       ]) &&
       isAnyZodType(schema._zod.def.innerType)
     ) {
-      return this.collectMetadata(
-        schema._zod.def.innerType,
-        totalMetadata as any
-      );
+      return this.collectMetadata(schema._zod.def.innerType, totalMetadata);
     }
 
     if (isZodType(schema, 'ZodPipe')) {
@@ -50,24 +48,22 @@ export class Metadata {
 
       // meaning preprocess
       if (isZodType(inSchema, 'ZodTransform') && isAnyZodType(outSchema)) {
-        return this.collectMetadata(outSchema, totalMetadata as any);
+        return this.collectMetadata(outSchema, totalMetadata);
       }
 
       if (isAnyZodType(inSchema)) {
         // meaning transform
-        return this.collectMetadata(inSchema, totalMetadata as any);
+        return this.collectMetadata(inSchema, totalMetadata);
       }
     }
 
-    return totalMetadata as any;
+    return totalMetadata;
   }
 
   /**
    * @deprecated Use one of `getOpenApiMetadata` or `getInternalMetadata` instead
    */
-  static getMetadata<T extends any>(
-    zodSchema: ZodType<T>
-  ): ZodOpenApiFullMetadata<T> | undefined {
+  static getMetadata<T extends any>(zodSchema: ZodType<T>) {
     return this.collectMetadata(zodSchema);
   }
 
@@ -85,9 +81,7 @@ export class Metadata {
     return this.collectMetadata(zodSchema)?._internal;
   }
 
-  static getParamMetadata<T extends any>(
-    zodSchema: ZodType<T>
-  ): ZodOpenApiFullMetadata<T> | undefined {
+  static getParamMetadata<T extends any>(zodSchema: ZodType<T>) {
     const metadata = this.collectMetadata(zodSchema);
 
     return {
@@ -187,7 +181,9 @@ export class Metadata {
   static getMetadataFromInternalRegistry(
     zodSchema: ZodType
   ): ZodOpenApiFullMetadata | undefined {
-    return zodToOpenAPIRegistry.get(zodSchema) as any;
+    return zodToOpenAPIRegistry.get(zodSchema) as
+      | ZodOpenApiFullMetadata
+      | undefined;
   }
 
   static getMetadataFromRegistry(
@@ -200,7 +196,7 @@ export class Metadata {
       ? ({
           ...internal,
           ...general,
-        } as any)
+        } as ZodOpenApiFullMetadata)
       : undefined;
   }
 

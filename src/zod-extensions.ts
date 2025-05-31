@@ -53,13 +53,18 @@ declare module 'zod/v4' {
   }
 }
 
-function preserveMetadataFromModifier<T extends ZodType>(
+function preserveMetadataFromModifier<T extends ZodType, K extends keyof T>(
   zodSchema: T,
-  modifier: keyof T
+  modifier: K
 ) {
   const zodModifier = zodSchema[modifier];
-  (zodSchema[modifier] as any) = function (this: any, ...args: any[]) {
-    const result = (zodModifier as any).apply(this, args);
+
+  if (typeof zodModifier !== 'function') {
+    return;
+  }
+
+  zodSchema[modifier] = function (this: T, ...args: any[]) {
+    const result = zodModifier.apply(this, args);
 
     const meta = Metadata.getMetadataFromRegistry(this);
 
@@ -68,7 +73,7 @@ function preserveMetadataFromModifier<T extends ZodType>(
     }
 
     return result;
-  };
+  } as T[K];
 }
 
 export function extendZodWithOpenApi(zod: typeof z) {
@@ -114,18 +119,18 @@ export function extendZodWithOpenApi(zod: typeof z) {
     // We need to create a new instance of the schema so that sequential
     // calls to .openapi from keys do not override each other
     // See the test in metadata-overrides.spec.ts (only adds overrides for new metadata properties)
-    const result = new (this as any).constructor(this._def);
+    const result = new this.constructor(this._def);
 
     Metadata.setMetadataInRegistry(result, {
       ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
       ...resultMetadata,
-    } as any);
+    } as ZodOpenApiFullMetadata);
 
     if (isZodType(result, 'ZodObject')) {
       const currentMetadata = Metadata.getMetadataFromRegistry(result);
 
       const originalExtend = result.extend;
-      result.extend = function (...args: any) {
+      result.extend = function (...args: Parameters<typeof originalExtend>) {
         const extendedResult = originalExtend.apply(result, args);
 
         const { _internal, ...rest } = currentMetadata ?? {};
@@ -142,8 +147,8 @@ export function extendZodWithOpenApi(zod: typeof z) {
         // but that would not override future calls to .extend. That's why
         // we call openapi explicitly here. And in that case might as well add the metadata
         // here instead of through the meta call
-        return extendedResult.openapi(rest) as any;
-      };
+        return extendedResult.openapi(rest);
+      } as typeof originalExtend;
 
       preserveMetadataFromModifier(result, 'catchall');
     }
