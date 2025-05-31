@@ -6,8 +6,10 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodType, z } from 'zod/v4';
+import type { ZodObject, ZodType } from 'zod/v4';
+import { z } from 'zod/v4';
 import { isZodType } from './lib/zod-is-type';
+import { Metadata } from './metadata';
 
 type ExampleValue<T> = T extends Date ? string : T;
 
@@ -33,6 +35,7 @@ export interface ZodOpenAPIInternalMetadata {
 export interface ZodOpenApiFullMetadata<T = any>
   extends Omit<ZodOpenAPIMetadata<T>, '_internal'> {
   _internal?: ZodOpenAPIInternalMetadata;
+  [k: string]: unknown;
 }
 
 declare module 'zod/v4' {
@@ -58,9 +61,13 @@ function preserveMetadataFromModifier<T extends ZodType>(
   (zodSchema[modifier] as any) = function (this: any, ...args: any[]) {
     const result = (zodModifier as any).apply(this, args);
 
-    const meta = this.meta();
+    const meta = Metadata.getMetadataFromRegistry(this);
 
-    return result.meta(meta).openapi(meta?.metadata ?? {});
+    if (meta) {
+      Metadata.setMetadataInRegistry(result, meta);
+    }
+
+    return result;
   };
 }
 
@@ -80,7 +87,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     const { param, ...restOfOpenApi } = openapi ?? {};
 
-    const allMetadata = this.meta() as ZodOpenApiFullMetadata | undefined;
+    const allMetadata = Metadata.getMetadataFromRegistry(this);
     const { _internal: internalMetadata, ...currentMetadata } =
       allMetadata ?? {};
 
@@ -104,38 +111,38 @@ export function extendZodWithOpenApi(zod: typeof z) {
         : undefined),
     };
 
-    const result = this.meta({
+    // We need to create a new instance of the schema so that sequential
+    // calls to .openapi from keys do not override each other
+    // See the test in metadata-overrides.spec.ts (only adds overrides for new metadata properties)
+    const result = new (this as any).constructor(this._def);
+
+    Metadata.setMetadataInRegistry(result, {
       ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
-      ...(Object.keys(resultMetadata).length > 0 ? resultMetadata : undefined),
-    });
+      ...resultMetadata,
+    } as any);
 
-    if (isZodType(this, 'ZodObject')) {
-      const originalExtend = this.extend;
+    if (isZodType(result, 'ZodObject')) {
+      const currentMetadata = Metadata.getMetadataFromRegistry(result);
 
-      const currentMetadata = result.meta() as
-        | ZodOpenApiFullMetadata
-        | undefined;
-
+      const originalExtend = result.extend;
       result.extend = function (...args: any) {
-        const extendedResult = originalExtend.apply(this, args);
+        const extendedResult = originalExtend.apply(result, args);
 
         const { _internal, ...rest } = currentMetadata ?? {};
 
-        const newResult = extendedResult
-          .meta({
-            _internal: {
-              extendedFrom: _internal?.refId
-                ? { refId: _internal.refId, schema: this }
-                : _internal?.extendedFrom,
-            },
-          })
-          // This is hacky. Yes we can do that directly in the meta call above,
-          // but that would not override future calls to .extend. That's why
-          // we call openapi explicitly here. And in that case might as well add the metadata
-          // here instead of through the meta call
-          .openapi(rest);
+        Metadata.setMetadataInRegistry(extendedResult, {
+          _internal: {
+            extendedFrom: _internal?.refId
+              ? { refId: _internal.refId, schema: result }
+              : _internal?.extendedFrom,
+          },
+        });
 
-        return newResult;
+        // This is hacky. Yes we can do that directly in the meta call above,
+        // but that would not override future calls to .extend. That's why
+        // we call openapi explicitly here. And in that case might as well add the metadata
+        // here instead of through the meta call
+        return extendedResult.openapi(rest) as any;
       };
 
       preserveMetadataFromModifier(result, 'catchall');
@@ -150,6 +157,22 @@ export function extendZodWithOpenApi(zod: typeof z) {
     preserveMetadataFromModifier(result, 'length');
     preserveMetadataFromModifier(result, 'min');
     preserveMetadataFromModifier(result, 'max');
+
+    const originalMeta = result.meta;
+    result.meta = function (this, ...args: Parameters<typeof originalMeta>) {
+      const result = originalMeta.apply(this, args);
+      if (args[0]) {
+        const meta = Metadata.getMetadataFromInternalRegistry(this);
+        if (meta) {
+          Metadata.setMetadataInRegistry(result, {
+            ...meta,
+            ...args[0],
+          });
+        }
+      }
+
+      return result;
+    };
 
     return result;
   };
