@@ -4,7 +4,11 @@ import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
 import { isNil, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
 
-const zodToOpenAPIRegistry = z.registry<ZodOpenApiFullMetadata>();
+/**
+ * @deprecated This is not really deprecated but this should always be used with
+ * caution. Using it may alter the behavior of the library and the generated schemas.
+ */
+export const zodToOpenAPIRegistry = z.registry<ZodOpenApiFullMetadata>();
 
 export class Metadata {
   static collectMetadata(
@@ -192,12 +196,23 @@ export class Metadata {
     const internal = this.getMetadataFromInternalRegistry(zodSchema);
     const general = zodSchema.meta();
 
-    return internal || general
-      ? ({
-          ...internal,
-          ...general,
-        } as ZodOpenApiFullMetadata)
-      : undefined;
+    if (!internal) {
+      return general;
+    }
+
+    const { _internal, ...rest } = internal;
+
+    const { id, title, ...restGeneral } = general ?? {};
+
+    return {
+      _internal: {
+        ...(id ? { refId: id } : {}),
+        ..._internal,
+      },
+      ...rest,
+      ...(title ? { description: title } : {}),
+      ...restGeneral,
+    };
   }
 
   static setMetadataInRegistry(

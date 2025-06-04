@@ -67,4 +67,22 @@ describe('meta', () => {
       },
     });
   });
+  it('should register schema when given an id in .meta', () => {
+    const schema = z.string().meta({ id: 'SomeString' });
+
+    expectSchema([schema], {
+      SomeString: { type: 'string' },
+    });
+  });
+
+  it('should use the refId from .openapi as priority over the one in .meta', () => {
+    const schema = z
+      .string()
+      .meta({ id: 'MetaString' })
+      .openapi('SomeOpenApiString');
+
+    expectSchema([schema], {
+      SomeOpenApiString: { type: 'string' },
+    });
+  });
 });
