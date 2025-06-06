@@ -3,6 +3,9 @@
 [![npm version](https://img.shields.io/npm/v/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
 [![npm downloads](https://img.shields.io/npm/dm/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
 
+> [!IMPORTANT]
+> **For Zod v4 support, please use version 8.0.0-beta!** Install with: `npm install @asteasolutions/zod-to-openapi@8.0.0-beta`
+
 A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate an Open API Swagger documentation.
 
 1. [Purpose and quick example](#purpose-and-quick-example)
