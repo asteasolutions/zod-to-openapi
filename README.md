@@ -3,6 +3,9 @@
 [![npm version](https://img.shields.io/npm/v/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
 [![npm downloads](https://img.shields.io/npm/dm/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
 
+> [!IMPORTANT]
+> **For Zod v4 support, please use version 8.0.0-beta!** Install with: `npm install @asteasolutions/zod-to-openapi@beta`
+
 A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate an Open API Swagger documentation.
 
 1. [Purpose and quick example](#purpose-and-quick-example)
@@ -131,7 +134,7 @@ It can be bit tricky to achieve this in your codebase, because *require* is sync
 
 ```ts
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 extendZodWithOpenApi(z);
 
@@ -145,7 +148,7 @@ z.string().openapi({ description: 'Some string' });
 //zod-extend.ts
 
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 extendZodWithOpenApi(z);
 
@@ -159,7 +162,7 @@ extendZodWithOpenApi(z);
 
 ```
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 extendZodWithOpenApi(z);
 
