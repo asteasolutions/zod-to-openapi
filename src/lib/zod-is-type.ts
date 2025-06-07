@@ -14,6 +14,7 @@ export type ZodTypes = {
   ZodNull: z.ZodNull;
   ZodNullable: z.ZodNullable;
   ZodNumber: z.ZodNumber;
+  ZodNonOptional: z.ZodNonOptional;
   ZodObject: z.ZodObject;
   ZodOptional: z.ZodOptional;
   ZodPipe: z.ZodPipe;
@@ -44,6 +45,7 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodNull: 'null',
   ZodNullable: 'nullable',
   ZodNumber: 'number',
+  ZodNonOptional: 'nonoptional',
   ZodObject: 'object',
   ZodOptional: 'optional',
   ZodPipe: 'pipe',
