@@ -7,9 +7,9 @@ import { expectSchema } from './lib/helpers';
 describe('Separate Zod instance', () => {
   function requireSeparateZodInstance() {
     jest.resetModules();
-    delete require.cache[require.resolve('zod')];
+    delete require.cache[require.resolve('zod/v4')];
 
-    return require('zod');
+    return require('zod/v4');
   }
 
   const zod1 = requireSeparateZodInstance();
