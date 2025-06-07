@@ -40,6 +40,7 @@ export class Metadata {
         'ZodNullable',
         'ZodDefault',
         'ZodReadonly',
+        'ZodNonOptional',
       ]) &&
       isAnyZodType(schema._zod.def.innerType)
     ) {
@@ -158,6 +159,7 @@ export class Metadata {
         'ZodNullable',
         'ZodDefault',
         'ZodReadonly',
+        'ZodNonOptional',
       ]) &&
       isAnyZodType(schema._zod.def.innerType)
     ) {
