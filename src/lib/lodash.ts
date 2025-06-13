@@ -4,10 +4,6 @@ export function isUndefined<T>(value: any): value is undefined {
   return value === undefined;
 }
 
-export function isNil<T>(value: any): value is null | undefined {
-  return value === null || value === undefined;
-}
-
 export function mapValues<
   T extends object,
   MapperResult,
@@ -54,7 +50,7 @@ export function omitBy<
 }
 
 export function compact<T extends any>(arr: (T | null | undefined)[]) {
-  return arr.filter((elem): elem is T => !isNil(elem));
+  return arr.filter((elem): elem is T => !isUndefined(elem));
 }
 
 export const objectEquals = isEqual;
