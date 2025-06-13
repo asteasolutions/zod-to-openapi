@@ -4,7 +4,13 @@ import {
   MissingParameterDataError,
   enhanceMissingParametersError,
 } from './errors';
-import { compact, isNil, mapValues, objectEquals, omitBy } from './lib/lodash';
+import {
+  compact,
+  isUndefined,
+  mapValues,
+  objectEquals,
+  omitBy,
+} from './lib/lodash';
 import { isAnyZodType, isZodType } from './lib/zod-is-type';
 import {
   OpenAPIComponentObject,
@@ -374,7 +380,7 @@ export class OpenAPIGenerator {
 
     return metadata?.metadata
       ? Metadata.applySchemaMetadata(result, metadata.metadata)
-      : omitBy(result, isNil);
+      : omitBy(result, isUndefined);
   }
 
   /**
