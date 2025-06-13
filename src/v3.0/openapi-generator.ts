@@ -1,6 +1,9 @@
 import type { OpenAPIObject } from 'openapi3-ts/oas30';
 
-import { OpenAPIGenerator, OpenApiVersion } from '../openapi-generator';
+import {
+  OpenAPIGenerator,
+  OpenApiGeneratorOptions,
+} from '../openapi-generator';
 import { ZodSchema } from 'zod/v4';
 import { OpenApiGeneratorV30Specifics } from './specifics';
 import { OpenAPIDefinitions } from '../openapi-registry';
@@ -13,9 +16,12 @@ export type OpenAPIObjectConfig = Omit<
 export class OpenApiGeneratorV3 {
   private generator;
 
-  constructor(definitions: (OpenAPIDefinitions | ZodSchema)[]) {
+  constructor(
+    definitions: (OpenAPIDefinitions | ZodSchema)[],
+    options?: OpenApiGeneratorOptions
+  ) {
     const specifics = new OpenApiGeneratorV30Specifics();
-    this.generator = new OpenAPIGenerator(definitions, specifics);
+    this.generator = new OpenAPIGenerator(definitions, specifics, options);
   }
 
   generateDocument(config: OpenAPIObjectConfig): OpenAPIObject {

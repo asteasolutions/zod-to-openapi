@@ -15,7 +15,10 @@ import { RecordTransformer } from './record';
 import { StringTransformer } from './string';
 import { TupleTransformer } from './tuple';
 import { UnionTransformer } from './union';
-import { OpenApiVersionSpecifics } from '../openapi-generator';
+import {
+  OpenApiGeneratorOptions,
+  OpenApiVersionSpecifics,
+} from '../openapi-generator';
 import { DateTransformer } from './date';
 
 export class OpenApiTransformer {
@@ -28,13 +31,17 @@ export class OpenApiTransformer {
   private enumTransformer = new EnumTransformer();
   private arrayTransformer = new ArrayTransformer();
   private tupleTransformer: TupleTransformer;
-  private unionTransformer = new UnionTransformer();
+  private unionTransformer: UnionTransformer;
   private discriminatedUnionTransformer = new DiscriminatedUnionTransformer();
   private intersectionTransformer = new IntersectionTransformer();
   private recordTransformer = new RecordTransformer();
 
-  constructor(private versionSpecifics: OpenApiVersionSpecifics) {
+  constructor(
+    private versionSpecifics: OpenApiVersionSpecifics,
+    options?: OpenApiGeneratorOptions
+  ) {
     this.tupleTransformer = new TupleTransformer(versionSpecifics);
+    this.unionTransformer = new UnionTransformer(options);
   }
 
   transform<T>(
