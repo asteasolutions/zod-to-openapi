@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { expectSchema } from '../lib/helpers';
 
 describe('refine', () => {
@@ -64,7 +64,10 @@ describe('refine', () => {
       [
         z
           .object({
-            test: z.onumber().refine(num => !num || num % 2 === 0),
+            test: z
+              .number()
+              .optional()
+              .refine(num => !num || num % 2 === 0),
           })
           .openapi('ObjectWithRefinedString'),
       ],
@@ -87,7 +90,8 @@ describe('refine', () => {
         z
           .object({
             test: z
-              .onumber()
+              .number()
+              .optional()
               .refine(num => num && num % 2 === 0)
               .default(42),
           })
