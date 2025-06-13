@@ -1,7 +1,7 @@
 import { ZodType, z } from 'zod/v4';
 import { ZodTypes, isAnyZodType, isZodType } from './lib/zod-is-type';
 import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
-import { isNil, omit, omitBy } from './lib/lodash';
+import { isUndefined, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
 
 /**
@@ -104,13 +104,13 @@ export class Metadata {
    * metadata properties
    */
   static buildSchemaMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
-    return omitBy(omit(metadata, ['param', '_internal']), isNil);
+    return omitBy(omit(metadata, ['param', '_internal']), isUndefined);
   }
 
   static buildParameterMetadata(
     metadata: Required<ZodOpenAPIMetadata>['param']
   ) {
-    return omitBy(metadata, isNil);
+    return omitBy(metadata, isUndefined);
   }
 
   static applySchemaMetadata(
@@ -122,7 +122,7 @@ export class Metadata {
         ...initialData,
         ...this.buildSchemaMetadata(metadata),
       },
-      isNil
+      isUndefined
     );
   }
 

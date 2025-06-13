@@ -216,4 +216,35 @@ describe('nullable', () => {
       },
     });
   });
+
+  it('supports null example in openapi 3.0.0', () => {
+    const TestSchema = z
+      .nullable(z.string())
+      .openapi('Test', { example: null });
+
+    expectSchema([TestSchema], {
+      Test: {
+        type: 'string',
+        nullable: true,
+        example: null,
+      },
+    });
+  });
+
+  it('supports null example', () => {
+    const TestSchema = z
+      .nullable(z.string())
+      .openapi('Test', { example: null });
+
+    expectSchema(
+      [TestSchema],
+      {
+        Test: {
+          type: ['string', 'null'],
+          example: null,
+        },
+      },
+      '3.1.0'
+    );
+  });
 });
