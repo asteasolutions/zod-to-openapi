@@ -129,7 +129,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
           _internal: {
             extendedFrom: this._def.openapi?._internal?.refId
               ? { refId: this._def.openapi?._internal?.refId, schema: this }
-              : this._def.openapi?._internal.extendedFrom,
+              : this._def.openapi?._internal?.extendedFrom,
           },
           metadata: extendedResult._def.openapi?.metadata,
         };
