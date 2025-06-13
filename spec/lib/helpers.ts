@@ -15,21 +15,31 @@ import {
   OpenAPIObjectConfig,
 } from '../../src/v3.0/openapi-generator';
 import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
-import { OpenApiVersion } from '../../src/openapi-generator';
+import {
+  OpenApiGeneratorOptions,
+  OpenApiVersion,
+} from '../../src/openapi-generator';
 
 export function createSchemas(
   zodSchemas: ZodType[],
-  openApiVersion: OpenApiVersion = '3.0.0'
+  options?: OpenApiGeneratorOptions & {
+    version?: OpenApiVersion;
+  }
 ) {
   const definitions = zodSchemas.map(schema => ({
     type: 'schema' as const,
     schema,
   }));
 
+  const openApiVersion = options?.version ?? '3.0.0';
+
   const OpenApiGenerator =
     openApiVersion === '3.1.0' ? OpenApiGeneratorV31 : OpenApiGeneratorV3;
 
-  const { components } = new OpenApiGenerator(definitions).generateComponents();
+  const { components } = new OpenApiGenerator(
+    definitions,
+    options
+  ).generateComponents();
 
   return components;
 }
@@ -37,9 +47,11 @@ export function createSchemas(
 export function expectSchema<T extends OpenApiVersion = '3.0.0'>(
   zodSchemas: ZodType[],
   openAPISchemas: T extends '3.1.0' ? SchemasObjectV31 : SchemasObjectV30,
-  openApiVersion?: T
+  options?: OpenApiGeneratorOptions & {
+    version?: T;
+  }
 ) {
-  const components = createSchemas(zodSchemas, openApiVersion);
+  const components = createSchemas(zodSchemas, options);
 
   expect(components?.['schemas']).toEqual(openAPISchemas);
 }

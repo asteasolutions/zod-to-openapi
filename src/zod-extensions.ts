@@ -16,6 +16,8 @@ type ExampleValue<T> = T extends Date ? string : T;
 type ParameterObject = ParameterObject30 | ParameterObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 
+export type UnionPreferredType = 'oneOf' | 'anyOf';
+
 export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   SchemaObject,
   'example' | 'examples' | 'default'
@@ -30,6 +32,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
 export interface ZodOpenAPIInternalMetadata {
   refId?: string;
   extendedFrom?: { refId: string; schema: ZodObject };
+  unionPreferredType?: UnionPreferredType;
 }
 
 export interface ZodOpenApiFullMetadata<T = any>
@@ -50,6 +53,10 @@ declare module 'zod/v4' {
       refId: string,
       metadata?: Partial<ZodOpenAPIMetadata<Input>>
     ): T;
+  }
+
+  interface ZodUnion {
+    openapiAs(this: ZodUnion, type: UnionPreferredType): this;
   }
 }
 
@@ -180,5 +187,18 @@ export function extendZodWithOpenApi(zod: typeof z) {
     };
 
     return result;
+  };
+
+  zod.ZodUnion.prototype.openapiAs = function (
+    this: z.ZodUnion,
+    type: UnionPreferredType
+  ) {
+    Metadata.setMetadataInRegistry(this, {
+      _internal: {
+        unionPreferredType: type,
+      },
+    });
+
+    return this;
   };
 }
