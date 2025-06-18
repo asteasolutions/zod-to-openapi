@@ -1,0 +1,595 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Recursive schemas can register and generate recursive schemas 1`] = `
+{
+  "components": {
+    "parameters": {},
+    "schemas": {
+      "Category": {
+        "description": "A product category that can contain subcategories",
+        "properties": {
+          "description": {
+            "example": "Electronic devices and accessories",
+            "type": "string",
+          },
+          "id": {
+            "example": "cat-123",
+            "type": "string",
+          },
+          "name": {
+            "example": "Electronics",
+            "type": "string",
+          },
+          "parent": {
+            "$ref": "#/components/schemas/Category",
+          },
+          "subcategories": {
+            "items": {
+              "$ref": "#/components/schemas/Category",
+            },
+            "type": "array",
+          },
+        },
+        "required": [
+          "id",
+          "name",
+        ],
+        "type": "object",
+      },
+      "Comment": {
+        "description": "A comment that can have nested replies",
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/User",
+          },
+          "content": {
+            "example": "Great post! Thanks for sharing.",
+            "type": "string",
+          },
+          "createdAt": {
+            "example": "2023-12-07T11:00:00Z",
+            "format": "date-time",
+            "type": "string",
+          },
+          "id": {
+            "example": "comment-101",
+            "type": "string",
+          },
+          "parent": {
+            "$ref": "#/components/schemas/Comment",
+          },
+          "replies": {
+            "items": {
+              "$ref": "#/components/schemas/Comment",
+            },
+            "type": "array",
+          },
+        },
+        "required": [
+          "id",
+          "content",
+          "createdAt",
+          "author",
+        ],
+        "type": "object",
+      },
+      "MenuItem": {
+        "description": "A menu item that can contain nested submenus",
+        "properties": {
+          "icon": {
+            "example": "home-icon",
+            "type": "string",
+          },
+          "id": {
+            "example": "menu-item-1",
+            "type": "string",
+          },
+          "label": {
+            "example": "Home",
+            "type": "string",
+          },
+          "order": {
+            "example": 1,
+            "type": "integer",
+          },
+          "submenu": {
+            "properties": {
+              "config": {
+                "properties": {
+                  "maxDepth": {
+                    "default": 3,
+                    "type": "integer",
+                  },
+                  "showIcons": {
+                    "default": true,
+                    "type": "boolean",
+                  },
+                },
+                "type": "object",
+              },
+              "featured": {
+                "$ref": "#/components/schemas/MenuItem",
+              },
+              "items": {
+                "items": {
+                  "$ref": "#/components/schemas/MenuItem",
+                },
+                "type": "array",
+              },
+            },
+            "required": [
+              "items",
+            ],
+            "type": "object",
+          },
+          "url": {
+            "example": "/home",
+            "format": "uri",
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "label",
+          "order",
+        ],
+        "type": "object",
+      },
+      "Organization": {
+        "description": "An organizational unit that can have parent and child units",
+        "properties": {
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/Organization",
+            },
+            "type": "array",
+          },
+          "employees": {
+            "items": {
+              "$ref": "#/components/schemas/User",
+            },
+            "type": "array",
+          },
+          "id": {
+            "example": "org-555",
+            "type": "string",
+          },
+          "manager": {
+            "$ref": "#/components/schemas/User",
+          },
+          "name": {
+            "example": "Engineering Department",
+            "type": "string",
+          },
+          "parent": {
+            "$ref": "#/components/schemas/Organization",
+          },
+          "type": {
+            "enum": [
+              "company",
+              "department",
+              "team",
+            ],
+            "example": "department",
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+        ],
+        "type": "object",
+      },
+      "Post": {
+        "description": "A blog post created by a user",
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/User",
+          },
+          "comments": {
+            "items": {
+              "$ref": "#/components/schemas/Comment",
+            },
+            "type": "array",
+          },
+          "content": {
+            "example": "This is the content of my post...",
+            "type": "string",
+          },
+          "createdAt": {
+            "example": "2023-12-07T10:30:00Z",
+            "format": "date-time",
+            "type": "string",
+          },
+          "id": {
+            "example": "post-789",
+            "type": "string",
+          },
+          "title": {
+            "example": "My First Post",
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "createdAt",
+          "author",
+        ],
+        "type": "object",
+      },
+      "User": {
+        "description": "A user who can create posts",
+        "properties": {
+          "email": {
+            "example": "john@example.com",
+            "format": "email",
+            "type": "string",
+          },
+          "id": {
+            "example": "user-456",
+            "type": "string",
+          },
+          "posts": {
+            "items": {
+              "$ref": "#/components/schemas/Post",
+            },
+            "type": "array",
+          },
+          "username": {
+            "example": "johndoe",
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "username",
+          "email",
+        ],
+        "type": "object",
+      },
+    },
+  },
+  "info": {
+    "contact": {
+      "email": "support@example.com",
+      "name": "API Support",
+    },
+    "description": "An API demonstrating various recursive data structures using Zod and OpenAPI",
+    "title": "Recursive Types API",
+    "version": "1.0.0",
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/categories": {
+      "get": {
+        "description": "Get all categories",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Category",
+                  },
+                  "type": "array",
+                },
+              },
+            },
+            "description": "List of categories",
+          },
+        },
+        "summary": "Retrieve a list of product categories with their subcategories",
+        "tags": [
+          "Categories",
+        ],
+      },
+      "post": {
+        "description": "Create a new category",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "description": {
+                    "example": "Electronic devices and accessories",
+                    "type": "string",
+                  },
+                  "name": {
+                    "example": "Electronics",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "name",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "description": "Category data",
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category",
+                },
+              },
+            },
+            "description": "Category created successfully",
+          },
+          "400": {
+            "description": "Invalid category data",
+          },
+        },
+        "summary": "Create a new product category",
+        "tags": [
+          "Categories",
+        ],
+      },
+    },
+    "/categories/{id}": {
+      "get": {
+        "description": "Get category by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "example": "cat-123",
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category",
+                },
+              },
+            },
+            "description": "Category details",
+          },
+          "404": {
+            "description": "Category not found",
+          },
+        },
+        "summary": "Retrieve a specific category with its subcategories and parent",
+        "tags": [
+          "Categories",
+        ],
+      },
+    },
+    "/menu": {
+      "get": {
+        "description": "Get navigation menu",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MenuItem",
+                  },
+                  "type": "array",
+                },
+              },
+            },
+            "description": "Navigation menu",
+          },
+        },
+        "summary": "Retrieve the complete navigation menu structure",
+        "tags": [
+          "Menu",
+        ],
+      },
+    },
+    "/organizations/{id}/hierarchy": {
+      "get": {
+        "description": "Get organization hierarchy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "example": "org-555",
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organization",
+                },
+              },
+            },
+            "description": "Organization hierarchy",
+          },
+          "404": {
+            "description": "Organization not found",
+          },
+        },
+        "summary": "Retrieve an organization with its parent and child organizations",
+        "tags": [
+          "Organizations",
+        ],
+      },
+    },
+    "/posts/{id}": {
+      "get": {
+        "description": "Get post by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "example": "post-789",
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post",
+                },
+              },
+            },
+            "description": "Post details",
+          },
+          "404": {
+            "description": "Post not found",
+          },
+        },
+        "summary": "Retrieve a post with author and comments",
+        "tags": [
+          "Posts",
+        ],
+      },
+    },
+    "/posts/{id}/comments": {
+      "post": {
+        "description": "Add comment to post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "example": "post-789",
+              "type": "string",
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "content": {
+                    "example": "Great post! Thanks for sharing.",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "content",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "description": "Comment data",
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment",
+                },
+              },
+            },
+            "description": "Comment added successfully",
+          },
+          "400": {
+            "description": "Invalid comment data",
+          },
+          "404": {
+            "description": "Post not found",
+          },
+        },
+        "summary": "Add a new comment to a post",
+        "tags": [
+          "Comments",
+        ],
+      },
+    },
+    "/users/{id}": {
+      "get": {
+        "description": "Get user by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "example": "user-456",
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User",
+                },
+              },
+            },
+            "description": "User details",
+          },
+          "404": {
+            "description": "User not found",
+          },
+        },
+        "summary": "Retrieve a user with their posts",
+        "tags": [
+          "Users",
+        ],
+      },
+    },
+  },
+  "servers": [
+    {
+      "description": "Production server",
+      "url": "https://api.example.com/v1",
+    },
+    {
+      "description": "Development server",
+      "url": "http://localhost:3000/v1",
+    },
+  ],
+  "tags": [
+    {
+      "description": "Product category management",
+      "name": "Categories",
+    },
+    {
+      "description": "User management",
+      "name": "Users",
+    },
+    {
+      "description": "Blog post management",
+      "name": "Posts",
+    },
+    {
+      "description": "Comment management",
+      "name": "Comments",
+    },
+    {
+      "description": "Navigation menu",
+      "name": "Menu",
+    },
+    {
+      "description": "Organization hierarchy",
+      "name": "Organizations",
+    },
+  ],
+  "webhooks": {},
+}
+`;
