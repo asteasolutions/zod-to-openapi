@@ -176,4 +176,156 @@ describe('object', () => {
       },
     });
   });
+  it('generates OpenAPI schema for recursive objects', () => {
+    const Category = z
+      .object({
+        name: z.string(),
+        get subcategories() {
+          return z.array(Category);
+        },
+      })
+      .openapi({
+        description: 'A category with subcategories',
+        ref: 'category',
+      });
+
+    expectSchema([Category], {
+      category: {
+        type: 'object',
+        description: 'A category with subcategories',
+        required: ['name', 'subcategories'],
+        properties: {
+          name: { type: 'string' },
+          subcategories: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/category' },
+          },
+        },
+      },
+    });
+  });
+
+  it('generates OpenAPI schema for mutually recursive objects', () => {
+    const User = z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        get posts() {
+          return z.array(Post);
+        },
+      })
+      .openapi({
+        ref: 'User',
+      });
+
+    const Post = z
+      .object({
+        id: z.string(),
+        title: z.string(),
+        get author() {
+          return User;
+        },
+      })
+      .openapi({
+        ref: 'Post',
+      });
+
+    expectSchema([User, Post], {
+      User: {
+        type: 'object',
+        required: ['id', 'name', 'posts'],
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          posts: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/Post' },
+          },
+        },
+      },
+      Post: {
+        type: 'object',
+        required: ['id', 'title', 'author'],
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          author: { $ref: '#/components/schemas/User' },
+        },
+      },
+    });
+  });
+
+  it('generates OpenAPI schema for recursive objects with optional properties', () => {
+    const Node = z
+      .object({
+        value: z.string(),
+        get children() {
+          return z.array(Node).optional();
+        },
+        get parent() {
+          return Node.optional();
+        },
+      })
+      .openapi({
+        ref: 'Node',
+        description: 'A tree node that can reference itself',
+      });
+
+    expectSchema([Node], {
+      Node: {
+        type: 'object',
+        description: 'A tree node that can reference itself',
+        required: ['value'],
+        properties: {
+          value: { type: 'string' },
+          children: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/Node' },
+          },
+          parent: { $ref: '#/components/schemas/Node' },
+        },
+      },
+    });
+  });
+
+  it('generates OpenAPI schema for deeply nested recursive objects', () => {
+    const Menu = z
+      .object({
+        id: z.string(),
+        title: z.string(),
+        get submenu() {
+          return z.object({
+            items: z.array(Menu),
+            get featured() {
+              return Menu.optional();
+            },
+          });
+        },
+      })
+      .openapi({
+        ref: 'Menu',
+      });
+
+    expectSchema([Menu], {
+      Menu: {
+        type: 'object',
+        required: ['id', 'title', 'submenu'],
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          submenu: {
+            type: 'object',
+            required: ['items'],
+            properties: {
+              items: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/Menu' },
+              },
+              featured: { $ref: '#/components/schemas/Menu' },
+            },
+          },
+        },
+      },
+    });
+  });
 });

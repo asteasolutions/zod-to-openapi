@@ -85,6 +85,7 @@ export class OpenAPIGenerator {
   }[] = [];
 
   private openApiTransformer: OpenApiTransformer;
+  private processingSchemas: Set<string> = new Set();
 
   constructor(
     private definitions: (OpenAPIDefinitions | ZodType)[],
@@ -476,15 +477,32 @@ export class OpenAPIGenerator {
   private generateSchemaWithRef(zodSchema: ZodType) {
     const refId = Metadata.getRefId(zodSchema);
 
-    const result = this.generateSimpleSchema(zodSchema);
-
-    if (refId && this.schemaRefs[refId] === undefined) {
-      this.schemaRefs[refId] = result;
-
+    // Handle recursive schemas by detecting if we're already processing this schema
+    if (refId && this.processingSchemas.has(refId)) {
+      // We're in a recursive situation - return a reference
       return { $ref: this.generateSchemaRef(refId) };
     }
 
-    return result;
+    // If we have a refId, mark it as being processed
+    if (refId) {
+      this.processingSchemas.add(refId);
+    }
+
+    try {
+      const result = this.generateSimpleSchema(zodSchema);
+
+      if (refId && this.schemaRefs[refId] === undefined) {
+        this.schemaRefs[refId] = result;
+        return { $ref: this.generateSchemaRef(refId) };
+      }
+
+      return result;
+    } finally {
+      // Clean up - remove from processing set
+      if (refId) {
+        this.processingSchemas.delete(refId);
+      }
+    }
   }
 
   private generateSchemaRef(refId: string) {

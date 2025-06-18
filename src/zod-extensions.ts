@@ -24,6 +24,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   example?: E;
   examples?: E[];
   default?: T;
+  ref?: string;
   _internal?: never;
 };
 
@@ -90,7 +91,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
   ) {
     const openapi = typeof refOrOpenapi === 'string' ? metadata : refOrOpenapi;
 
-    const { param, ...restOfOpenApi } = openapi ?? {};
+    const { param, ref, ...restOfOpenApi } = openapi ?? {};
 
     const allMetadata = Metadata.getMetadataFromRegistry(this);
     const { _internal: internalMetadata, ...currentMetadata } =
@@ -100,6 +101,8 @@ export function extendZodWithOpenApi(zod: typeof z) {
       ...internalMetadata,
       ...(typeof refOrOpenapi === 'string'
         ? { refId: refOrOpenapi }
+        : ref
+        ? { refId: ref }
         : undefined),
     };
 
