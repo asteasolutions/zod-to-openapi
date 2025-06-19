@@ -1,10 +1,10 @@
-import { ZodType, ZodUnion } from 'zod/v4';
+import { $ZodType, $ZodUnion } from 'zod/v4/core';
 import { MapNullableOfArray, MapSubSchema } from '../types';
-import { isAnyZodType, isZodType } from '../lib/zod-is-type';
+import { isAnyCoreZodType, isZodType } from '../lib/zod-is-type';
 
 export class UnionTransformer {
   transform(
-    zodSchema: ZodUnion,
+    zodSchema: $ZodUnion,
     mapNullableOfArray: MapNullableOfArray,
     mapItem: MapSubSchema
   ) {
@@ -25,22 +25,22 @@ export class UnionTransformer {
     };
   }
 
-  private flattenUnionTypes(schema: ZodType): ZodType[] {
+  private flattenUnionTypes(schema: $ZodType): $ZodType[] {
     if (!isZodType(schema, 'ZodUnion')) {
       return [schema];
     }
 
-    const options = schema.def.options;
+    const options = schema._zod.def.options;
 
     return options.flatMap(option =>
-      isAnyZodType(option) ? this.flattenUnionTypes(option) : []
+      isAnyCoreZodType(option) ? this.flattenUnionTypes(option) : []
     );
   }
 
-  private unwrapNullable(schema: ZodType): ZodType {
+  private unwrapNullable(schema: $ZodType): $ZodType {
     if (isZodType(schema, 'ZodNullable')) {
-      const unwrapped = schema.unwrap();
-      if (isAnyZodType(unwrapped)) {
+      const unwrapped = schema._zod.def.innerType;
+      if (isAnyCoreZodType(unwrapped)) {
         return this.unwrapNullable(unwrapped);
       }
     }

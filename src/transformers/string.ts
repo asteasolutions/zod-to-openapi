@@ -1,4 +1,4 @@
-import { ZodString } from 'zod/v4';
+import { $ZodString } from 'zod/v4/core';
 import { MapNullableType } from '../types';
 import {
   $ZodCheck,
@@ -21,22 +21,22 @@ function isZodCheckRegex(check: $ZodCheck<string>): check is $ZodCheckRegex {
 }
 
 export class StringTransformer {
-  transform(zodSchema: ZodString, mapNullableType: MapNullableType) {
-    const regexCheck = zodSchema.def.checks?.find(isZodCheckRegex);
+  transform(zodSchema: $ZodString, mapNullableType: MapNullableType) {
+    const regexCheck = zodSchema._zod.def.checks?.find(isZodCheckRegex);
     // toString generates an additional / at the beginning and end of the pattern
     const pattern = regexCheck?._zod.def.pattern
       .toString()
       .replace(/^\/|\/$/g, '');
 
-    const check = zodSchema.def.checks?.find(isZodCheckLengthEquals);
+    const check = zodSchema._zod.def.checks?.find(isZodCheckLengthEquals);
     const length = check?._zod.def.length;
 
-    const maxLength = Number.isFinite(zodSchema.minLength)
-      ? zodSchema.minLength ?? undefined
+    const maxLength = Number.isFinite(zodSchema._zod.bag.minimum)
+      ? zodSchema._zod.bag.minimum ?? undefined
       : undefined;
 
-    const minLength = Number.isFinite(zodSchema.maxLength)
-      ? zodSchema.maxLength ?? undefined
+    const minLength = Number.isFinite(zodSchema._zod.bag.maximum)
+      ? zodSchema._zod.bag.maximum ?? undefined
       : undefined;
 
     return {
@@ -53,18 +53,18 @@ export class StringTransformer {
    * Attempts to map Zod strings to known formats
    * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
    */
-  private mapStringFormat(zodString: ZodString): string | undefined {
-    if (zodString.format === 'uuid') return 'uuid';
-    if (zodString.format === 'email') return 'email';
-    if (zodString.format === 'url') return 'uri';
-    if (zodString.format === 'date') return 'date';
-    if (zodString.format === 'datetime') return 'date-time';
-    if (zodString.format === 'cuid') return 'cuid';
-    if (zodString.format === 'cuid2') return 'cuid2';
-    if (zodString.format === 'ulid') return 'ulid';
-    if (zodString.format === 'ipv4') return 'ip';
-    if (zodString.format === 'ipv6') return 'ip';
-    if (zodString.format === 'emoji') return 'emoji';
+  private mapStringFormat(zodString: $ZodString): string | undefined {
+    if (zodString._zod.bag.format === 'uuid') return 'uuid';
+    if (zodString._zod.bag.format === 'email') return 'email';
+    if (zodString._zod.bag.format === 'url') return 'uri';
+    if (zodString._zod.bag.format === 'date') return 'date';
+    if (zodString._zod.bag.format === 'datetime') return 'date-time';
+    if (zodString._zod.bag.format === 'cuid') return 'cuid';
+    if (zodString._zod.bag.format === 'cuid2') return 'cuid2';
+    if (zodString._zod.bag.format === 'ulid') return 'ulid';
+    if (zodString._zod.bag.format === 'ipv4') return 'ip';
+    if (zodString._zod.bag.format === 'ipv6') return 'ip';
+    if (zodString._zod.bag.format === 'emoji') return 'emoji';
 
     return undefined;
   }

@@ -1,4 +1,4 @@
-import type { ZodType } from 'zod/v4';
+import type { $ZodType } from 'zod/v4/core';
 import type { $ZodCheck } from 'zod/v4/core';
 import type {
   ReferenceObject as ReferenceObject30,
@@ -73,5 +73,5 @@ export type GetNumberChecks = (
 >;
 
 export type MapSubSchema = (
-  zodSchema: ZodType
+  zodSchema: $ZodType
 ) => SchemaObject | ReferenceObject;

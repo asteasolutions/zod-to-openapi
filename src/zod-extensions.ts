@@ -6,10 +6,10 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodType } from 'zod/v4';
 import { z } from 'zod/v4';
 import { isZodType } from './lib/zod-is-type';
 import { Metadata } from './metadata';
+import type { $ZodObject, $ZodType } from 'zod/v4/core';
 
 type ExampleValue<T> = T extends Date ? string : T;
 
@@ -29,7 +29,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
 
 export interface ZodOpenAPIInternalMetadata {
   refId?: string;
-  extendedFrom?: { refId: string; schema: ZodObject };
+  extendedFrom?: { refId: string; schema: $ZodObject };
 }
 
 export interface ZodOpenApiFullMetadata<T = any>
@@ -53,7 +53,7 @@ declare module 'zod/v4' {
   }
 }
 
-function preserveMetadataFromModifier<T extends ZodType, K extends keyof T>(
+function preserveMetadataFromModifier<T extends $ZodType, K extends keyof T>(
   zodSchema: T,
   modifier: K
 ) {
@@ -85,46 +85,17 @@ export function extendZodWithOpenApi(zod: typeof z) {
   }
 
   zod.ZodType.prototype.openapi = function (
+    this: z.ZodType,
     refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
     metadata?: Partial<ZodOpenAPIMetadata<any>>
   ) {
-    const openapi = typeof refOrOpenapi === 'string' ? metadata : refOrOpenapi;
-
-    const { param, ...restOfOpenApi } = openapi ?? {};
-
-    const allMetadata = Metadata.getMetadataFromRegistry(this);
-    const { _internal: internalMetadata, ...currentMetadata } =
-      allMetadata ?? {};
-
-    const _internal = {
-      ...internalMetadata,
-      ...(typeof refOrOpenapi === 'string'
-        ? { refId: refOrOpenapi }
-        : undefined),
-    };
-
-    const resultMetadata = {
-      ...currentMetadata,
-      ...restOfOpenApi,
-      ...(currentMetadata?.param || param
-        ? {
-            param: {
-              ...currentMetadata?.param,
-              ...param,
-            },
-          }
-        : undefined),
-    };
-
     // We need to create a new instance of the schema so that sequential
     // calls to .openapi from keys do not override each other
     // See the test in metadata-overrides.spec.ts (only adds overrides for new metadata properties)
-    const result = new this.constructor(this._def);
+    const result = this.clone(this._zod.def);
 
-    Metadata.setMetadataInRegistry(result, {
-      ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
-      ...resultMetadata,
-    } as ZodOpenApiFullMetadata);
+    Metadata.cloneMetadataFromRegistry(this, result);
+    Metadata.registerMetadataInRegistry(result, refOrOpenapi, metadata);
 
     if (isZodType(result, 'ZodObject')) {
       const currentMetadata = Metadata.getMetadataFromRegistry(result);
@@ -159,24 +130,26 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     preserveMetadataFromModifier(result, 'transform');
     preserveMetadataFromModifier(result, 'refine');
-    preserveMetadataFromModifier(result, 'length');
-    preserveMetadataFromModifier(result, 'min');
-    preserveMetadataFromModifier(result, 'max');
+    if ('length' in result) preserveMetadataFromModifier(result, 'length');
+    if ('min' in result) preserveMetadataFromModifier(result, 'min');
+    if ('max' in result) preserveMetadataFromModifier(result, 'max');
 
     const originalMeta = result.meta;
-    result.meta = function (this, ...args: Parameters<typeof originalMeta>) {
-      const result = originalMeta.apply(this, args);
+    // @ts-ignore
+    result.meta = function (...args: Parameters<typeof originalMeta>) {
+      // @ts-ignore
+      const r = originalMeta.apply(result, args);
       if (args[0]) {
         const meta = Metadata.getMetadataFromInternalRegistry(this);
         if (meta) {
-          Metadata.setMetadataInRegistry(result, {
+          Metadata.setMetadataInRegistry(r, {
             ...meta,
             ...args[0],
           });
         }
       }
 
-      return result;
+      return r;
     };
 
     return result;

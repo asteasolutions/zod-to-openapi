@@ -1,12 +1,12 @@
-import { ZodLiteral } from 'zod/v4';
+import { $ZodLiteral } from 'zod/v4/core';
 import { MapNullableType } from '../types';
 import { BigIntTransformer } from './big-int';
 
 export class LiteralTransformer {
   private bigIntTransformer = new BigIntTransformer();
 
-  transform(zodSchema: ZodLiteral, mapNullableType: MapNullableType) {
-    const type = typeof zodSchema.def.values[0];
+  transform(zodSchema: $ZodLiteral, mapNullableType: MapNullableType) {
+    const type = typeof zodSchema._zod.def.values[0];
 
     if (
       type === 'boolean' ||
@@ -16,7 +16,7 @@ export class LiteralTransformer {
     ) {
       return {
         ...mapNullableType(type),
-        enum: [zodSchema.def.values[0]],
+        enum: [zodSchema._zod.def.values[0]],
       };
     }
 

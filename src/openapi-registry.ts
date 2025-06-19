@@ -58,8 +58,9 @@ type ResponseObject = ResponseObject30 | ResponseObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
 
-import type { ZodObject, ZodPipe, ZodType } from 'zod/v4';
+import type { $ZodObject, $ZodPipe, $ZodType } from 'zod/v4/core';
 import { Metadata } from './metadata';
+import { isAnyZodType } from './lib/zod-is-type';
 
 type Method =
   | 'get'
@@ -72,7 +73,7 @@ type Method =
   | 'trace';
 
 export interface ZodMediaTypeObject {
-  schema: ZodType<unknown> | SchemaObject | ReferenceObject;
+  schema: $ZodType<unknown> | SchemaObject | ReferenceObject;
   examples?: ExamplesObject;
   example?: any;
   encoding?: EncodingObject;
@@ -98,12 +99,12 @@ export interface ZodRequestBody {
 
 export interface ResponseConfig {
   description: string;
-  headers?: ZodObject | HeadersObject;
+  headers?: $ZodObject | HeadersObject;
   links?: LinksObject;
   content?: ZodContentObject;
 }
 
-type ZodObjectWithEffect = ZodObject | ZodPipe;
+type ZodObjectWithEffect = $ZodObject | $ZodPipe;
 
 export type RouteParameter = ZodObjectWithEffect | undefined;
 
@@ -115,7 +116,7 @@ export type RouteConfig = Omit<OperationObject, 'responses'> & {
     params?: RouteParameter;
     query?: RouteParameter;
     cookies?: RouteParameter;
-    headers?: RouteParameter | ZodType<unknown>[];
+    headers?: RouteParameter | $ZodType<unknown>[];
   };
   responses: {
     [statusCode: string]: ResponseConfig | ReferenceObject;
@@ -148,8 +149,8 @@ export type OpenAPIDefinitions =
       name: string;
       component: OpenAPIComponentObject;
     }
-  | { type: 'schema'; schema: ZodType }
-  | { type: 'parameter'; schema: ZodType }
+  | { type: 'schema'; schema: $ZodType }
+  | { type: 'parameter'; schema: $ZodType }
   | { type: 'route'; route: RouteConfig }
   | WebhookDefinition;
 
@@ -168,7 +169,7 @@ export class OpenAPIRegistry {
   /**
    * Registers a new component schema under /components/schemas/${name}
    */
-  register<T extends ZodType>(refId: string, zodSchema: T): T {
+  register<T extends $ZodType>(refId: string, zodSchema: T): T {
     const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
     this._definitions.push({ type: 'schema', schema: schemaWithRefId });
@@ -179,11 +180,12 @@ export class OpenAPIRegistry {
   /**
    * Registers a new parameter schema under /components/parameters/${name}
    */
-  registerParameter<T extends ZodType>(refId: string, zodSchema: T) {
+  registerParameter<T extends $ZodType>(refId: string, zodSchema: T) {
     const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
 
     const currentMetadata = Metadata.getOpenApiMetadata(schemaWithRefId) ?? {};
 
+    // @ts-ignore
     const schemaWithMetadata = schemaWithRefId.openapi({
       ...currentMetadata,
       param: {
@@ -246,7 +248,13 @@ export class OpenAPIRegistry {
     };
   }
 
-  private schemaWithRefId<T extends ZodType>(refId: string, zodSchema: T): T {
-    return zodSchema.openapi(refId);
+  private schemaWithRefId<T extends $ZodType>(refId: string, zodSchema: T): T {
+    if (isAnyZodType(zodSchema) && 'openapi' in zodSchema) {
+      return zodSchema.openapi(refId);
+    }
+
+    Metadata.registerMetadataInRegistry(zodSchema, refId);
+
+    return zodSchema;
   }
 }

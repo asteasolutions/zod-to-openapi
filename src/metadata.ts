@@ -1,5 +1,12 @@
-import { ZodType, z } from 'zod/v4';
-import { ZodTypes, isAnyZodType, isZodType } from './lib/zod-is-type';
+import * as z from 'zod/v4/core';
+import type { $ZodType } from 'zod/v4/core';
+import {
+  ZodTypes,
+  isAnyCoreZodType,
+  isAnyZodType,
+  isZodType,
+  type ZodTypeName,
+} from './lib/zod-is-type';
 import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
 import { isUndefined, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
@@ -12,7 +19,7 @@ export const zodToOpenAPIRegistry = z.registry<ZodOpenApiFullMetadata>();
 
 export class Metadata {
   static collectMetadata(
-    schema: ZodType,
+    schema: $ZodType,
     metadata?: ZodOpenApiFullMetadata
   ): ZodOpenApiFullMetadata | undefined {
     const currentMetadata = this.getMetadataFromRegistry(schema);
@@ -68,12 +75,12 @@ export class Metadata {
   /**
    * @deprecated Use one of `getOpenApiMetadata` or `getInternalMetadata` instead
    */
-  static getMetadata<T extends any>(zodSchema: ZodType<T>) {
+  static getMetadata<T extends any>(zodSchema: $ZodType<T>) {
     return this.collectMetadata(zodSchema);
   }
 
   static getOpenApiMetadata<T extends any>(
-    zodSchema: ZodType<T>
+    zodSchema: $ZodType<T>
   ): ZodOpenAPIMetadata<T> | undefined {
     const metadata = this.collectMetadata(zodSchema);
 
@@ -82,11 +89,11 @@ export class Metadata {
     return rest;
   }
 
-  static getInternalMetadata<T extends any>(zodSchema: ZodType<T>) {
+  static getInternalMetadata<T extends any>(zodSchema: $ZodType<T>) {
     return this.collectMetadata(zodSchema)?._internal;
   }
 
-  static getParamMetadata<T extends any>(zodSchema: ZodType<T>) {
+  static getParamMetadata<T extends any>(zodSchema: $ZodType<T>) {
     const metadata = this.collectMetadata(zodSchema);
 
     return {
@@ -126,29 +133,29 @@ export class Metadata {
     );
   }
 
-  static getRefId<T extends any>(zodSchema: ZodType<T>) {
+  static getRefId<T extends any>(zodSchema: $ZodType<T>) {
     return this.getInternalMetadata(zodSchema)?.refId;
   }
 
-  static unwrapChained(schema: ZodType): ZodType {
+  static unwrapChained(schema: $ZodType): $ZodType {
     return this.unwrapUntil(schema);
   }
 
-  static getDefaultValue<T>(zodSchema: ZodType): T | undefined {
+  static getDefaultValue<T>(zodSchema: $ZodType): T | undefined {
     const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
 
     return unwrapped?._zod.def.defaultValue as T | undefined;
   }
 
-  private static unwrapUntil(schema: ZodType): ZodType;
-  private static unwrapUntil<TypeName extends keyof ZodTypes>(
-    schema: ZodType,
+  private static unwrapUntil(schema: $ZodType): $ZodType;
+  private static unwrapUntil<TypeName extends ZodTypeName>(
+    schema: $ZodType,
     typeName: TypeName | undefined
   ): ZodTypes[TypeName] | undefined;
-  private static unwrapUntil<TypeName extends keyof ZodTypes>(
-    schema: ZodType,
+  private static unwrapUntil<TypeName extends ZodTypeName>(
+    schema: $ZodType,
     typeName?: TypeName
-  ): ZodType | undefined {
+  ): $ZodType | undefined {
     if (typeName && isZodType(schema, typeName)) {
       return schema;
     }
@@ -161,7 +168,7 @@ export class Metadata {
         'ZodReadonly',
         'ZodNonOptional',
       ]) &&
-      isAnyZodType(schema._zod.def.innerType)
+      isAnyCoreZodType(schema._zod.def.innerType)
     ) {
       return this.unwrapUntil(schema._zod.def.innerType, typeName);
     }
@@ -171,12 +178,12 @@ export class Metadata {
       const outSchema = schema._zod.def.out;
 
       // meaning preprocess
-      if (isZodType(inSchema, 'ZodTransform') && isAnyZodType(outSchema)) {
+      if (isZodType(inSchema, 'ZodTransform') && isAnyCoreZodType(outSchema)) {
         return this.unwrapUntil(outSchema, typeName);
       }
 
       // meaning transform
-      if (isAnyZodType(inSchema)) {
+      if (isAnyCoreZodType(inSchema)) {
         return this.unwrapUntil(inSchema, typeName);
       }
     }
@@ -185,7 +192,7 @@ export class Metadata {
   }
 
   static getMetadataFromInternalRegistry(
-    zodSchema: ZodType
+    zodSchema: $ZodType
   ): ZodOpenApiFullMetadata | undefined {
     return zodToOpenAPIRegistry.get(zodSchema) as
       | ZodOpenApiFullMetadata
@@ -193,10 +200,10 @@ export class Metadata {
   }
 
   static getMetadataFromRegistry(
-    zodSchema: ZodType
+    zodSchema: $ZodType
   ): ZodOpenApiFullMetadata | undefined {
     const internal = this.getMetadataFromInternalRegistry(zodSchema);
-    const general = zodSchema.meta();
+    const general = z.globalRegistry.get(zodSchema);
 
     if (!internal) {
       return general;
@@ -217,10 +224,59 @@ export class Metadata {
     };
   }
 
+  static cloneMetadataFromRegistry(
+    sourceZodSchema: $ZodType,
+    targetZodSchema: $ZodType
+  ) {
+    const metadata = this.getMetadataFromRegistry(sourceZodSchema);
+    if (metadata) {
+      this.setMetadataInRegistry(targetZodSchema, metadata);
+    }
+  }
+
   static setMetadataInRegistry(
-    zodSchema: ZodType,
+    zodSchema: $ZodType,
     metadata: ZodOpenApiFullMetadata
   ) {
     zodToOpenAPIRegistry.add(zodSchema, metadata);
+  }
+
+  static registerMetadataInRegistry(
+    zodSchema: $ZodType,
+    refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
+    metadata?: Partial<ZodOpenAPIMetadata<any>>
+  ) {
+    const openapi = typeof refOrOpenapi === 'string' ? metadata : refOrOpenapi;
+
+    const { param, ...restOfOpenApi } = openapi ?? {};
+
+    const allMetadata = Metadata.getMetadataFromRegistry(zodSchema);
+    const { _internal: internalMetadata, ...currentMetadata } =
+      allMetadata ?? {};
+
+    const _internal = {
+      ...internalMetadata,
+      ...(typeof refOrOpenapi === 'string'
+        ? { refId: refOrOpenapi }
+        : undefined),
+    };
+
+    const resultMetadata = {
+      ...currentMetadata,
+      ...restOfOpenApi,
+      ...(currentMetadata?.param || param
+        ? {
+            param: {
+              ...currentMetadata?.param,
+              ...param,
+            },
+          }
+        : undefined),
+    };
+
+    Metadata.setMetadataInRegistry(zodSchema, {
+      ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
+      ...resultMetadata,
+    } as ZodOpenApiFullMetadata);
   }
 }
