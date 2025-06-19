@@ -1,10 +1,10 @@
-import { ZodEnum } from 'zod/v4';
+import { $ZodEnum } from 'zod/v4/core';
 import { MapNullableType } from '../types';
 import { enumInfo } from '../lib/enum-info';
 import { ZodToOpenAPIError } from '../errors';
 
 export class EnumTransformer {
-  transform(zodSchema: ZodEnum, mapNullableType: MapNullableType) {
+  transform(zodSchema: $ZodEnum, mapNullableType: MapNullableType) {
     const { type, values } = enumInfo(zodSchema._zod.def.entries);
 
     if (type === 'mixed') {

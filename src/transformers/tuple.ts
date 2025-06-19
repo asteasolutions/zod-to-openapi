@@ -1,20 +1,20 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodTuple } from 'zod/v4';
+import { $ZodTuple } from 'zod/v4/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
-import { isAnyZodType } from '../lib/zod-is-type';
+import { isAnyCoreZodType } from '../lib/zod-is-type';
 
 export class TupleTransformer {
   constructor(private versionSpecifics: OpenApiVersionSpecifics) {}
 
   transform(
-    zodSchema: ZodTuple,
+    zodSchema: $ZodTuple,
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
     const items = zodSchema._zod.def.items;
 
     const schemas = items.map(item =>
-      isAnyZodType(item) ? mapItem(item) : {}
+      isAnyCoreZodType(item) ? mapItem(item) : {}
     );
 
     return {

@@ -1,5 +1,5 @@
 import { SchemaObject, ReferenceObject, MapSubSchema } from '../types';
-import { ZodType } from 'zod/v4';
+import { $ZodType } from 'zod/v4/core';
 import { UnknownZodTypeError } from '../errors';
 import { isZodType } from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
@@ -38,7 +38,7 @@ export class OpenApiTransformer {
   }
 
   transform<T>(
-    zodSchema: ZodType<T>,
+    zodSchema: $ZodType<T>,
     isNullable: boolean,
     mapItem: MapSubSchema,
     generateSchemaRef: (ref: string) => string,
@@ -72,7 +72,7 @@ export class OpenApiTransformer {
   }
 
   private transformSchemaWithoutDefault(
-    zodSchema: ZodType,
+    zodSchema: $ZodType,
     isNullable: boolean,
     mapItem: MapSubSchema,
     generateSchemaRef: (ref: string) => string
@@ -179,7 +179,7 @@ export class OpenApiTransformer {
     const refId = Metadata.getRefId(zodSchema);
 
     throw new UnknownZodTypeError({
-      currentSchema: zodSchema.def,
+      currentSchema: zodSchema._zod.def,
       schemaName: refId,
     });
   }

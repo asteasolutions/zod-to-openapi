@@ -1,4 +1,4 @@
-import type { ZodObject, ZodType } from 'zod/v4';
+import { util, type $ZodObject, type $ZodType } from 'zod/v4/core';
 import {
   ConflictError,
   MissingParameterDataError,
@@ -12,6 +12,7 @@ import {
   omitBy,
 } from './lib/lodash';
 import {
+  isAnyCoreZodType,
   isAnyZodType,
   isNullableSchema,
   isOptionalSchema,
@@ -87,7 +88,7 @@ export class OpenAPIGenerator {
   private openApiTransformer: OpenApiTransformer;
 
   constructor(
-    private definitions: (OpenAPIDefinitions | ZodType)[],
+    private definitions: (OpenAPIDefinitions | $ZodType)[],
     private versionSpecifics: OpenApiVersionSpecifics
   ) {
     this.openApiTransformer = new OpenApiTransformer(versionSpecifics);
@@ -161,7 +162,7 @@ export class OpenAPIGenerator {
     });
   }
 
-  private generateSingle(definition: OpenAPIDefinitions | ZodType): void {
+  private generateSingle(definition: OpenAPIDefinitions | $ZodType): void {
     if (!('type' in definition)) {
       this.generateSchemaWithRef(definition);
       return;
@@ -187,7 +188,7 @@ export class OpenAPIGenerator {
   }
 
   private generateParameterDefinition(
-    zodSchema: ZodType
+    zodSchema: $ZodType
   ): ParameterObject | ReferenceObject {
     const refId = Metadata.getRefId(zodSchema);
 
@@ -201,7 +202,7 @@ export class OpenAPIGenerator {
   }
 
   private getParameterRef(
-    schema: ZodType,
+    schema: $ZodType,
     external?: ParameterData
   ): ReferenceObject | undefined {
     const metadata = Metadata.getOpenApiMetadata(schema);
@@ -254,7 +255,7 @@ export class OpenAPIGenerator {
   }
 
   private generateInlineParameters(
-    zodSchema: ZodType,
+    zodSchema: $ZodType,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
@@ -267,7 +268,7 @@ export class OpenAPIGenerator {
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
-      const propTypes = zodSchema.def.shape;
+      const propTypes = zodSchema._zod.def.shape;
 
       const parameters = Object.entries(propTypes).map(([key, schema]) => {
         const innerMetadata = Metadata.getOpenApiMetadata(schema);
@@ -308,9 +309,12 @@ export class OpenAPIGenerator {
           );
         }
 
-        return this.generateParameter(
-          schema.openapi({ param: { name: key, in: location } })
-        );
+        const cloned = util.clone(schema);
+        Metadata.cloneMetadataFromRegistry(schema, cloned);
+        Metadata.registerMetadataInRegistry(cloned, {
+          param: { name: key, in: location },
+        });
+        return this.generateParameter(cloned);
       });
 
       return parameters;
@@ -326,12 +330,13 @@ export class OpenAPIGenerator {
       );
     }
 
-    return [
-      this.generateParameter(zodSchema.openapi({ param: { in: location } })),
-    ];
+    const cloned = util.clone(zodSchema);
+    Metadata.cloneMetadataFromRegistry(zodSchema, cloned);
+    Metadata.registerMetadataInRegistry(cloned, { param: { in: location } });
+    return [this.generateParameter(cloned)];
   }
 
-  private generateSimpleParameter(zodSchema: ZodType): BaseParameterObject {
+  private generateSimpleParameter(zodSchema: $ZodType): BaseParameterObject {
     const metadata = Metadata.getParamMetadata(zodSchema);
     const paramMetadata = metadata?.param;
 
@@ -348,7 +353,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private generateParameter(zodSchema: ZodType): ParameterObject {
+  private generateParameter(zodSchema: $ZodType): ParameterObject {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
 
     const paramMetadata = metadata?.param;
@@ -376,7 +381,7 @@ export class OpenAPIGenerator {
     };
   }
 
-  private generateSchemaWithMetadata<T>(zodSchema: ZodType<T>) {
+  private generateSchemaWithMetadata<T>(zodSchema: $ZodType<T>) {
     const innerSchema = Metadata.unwrapChained(zodSchema);
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const defaultValue = Metadata.getDefaultValue(zodSchema);
@@ -398,7 +403,7 @@ export class OpenAPIGenerator {
    * Same as above but applies nullable
    */
   private constructReferencedOpenAPISchema<T>(
-    zodSchema: ZodType<T>
+    zodSchema: $ZodType<T>
   ): SchemaObject | ReferenceObject {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const innerSchema = Metadata.unwrapChained(zodSchema);
@@ -417,7 +422,7 @@ export class OpenAPIGenerator {
    * Generates an OpenAPI SchemaObject or a ReferenceObject with all the provided metadata applied
    */
   private generateSimpleSchema<T>(
-    zodSchema: ZodType<T>
+    zodSchema: $ZodType<T>
   ): SchemaObject | ReferenceObject {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
 
@@ -473,7 +478,7 @@ export class OpenAPIGenerator {
    *
    * Should be used for nested objects, arrays, etc.
    */
-  private generateSchemaWithRef(zodSchema: ZodType) {
+  private generateSchemaWithRef(zodSchema: $ZodType) {
     const refId = Metadata.getRefId(zodSchema);
 
     const result = this.generateSimpleSchema(zodSchema);
@@ -559,7 +564,7 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private cleanParameter(schema: RouteParameter): ZodObject | undefined {
+  private cleanParameter(schema: RouteParameter): $ZodObject | undefined {
     if (!schema) {
       return undefined;
     }
@@ -646,11 +651,12 @@ export class OpenAPIGenerator {
       };
     }
 
-    const responseHeaders = isZodType(headers, 'ZodObject')
-      ? this.getResponseHeaders(headers)
-      : // This is input data so it is okay to cast in the common generator
-        // since this is the user's responsibility to keep it correct
-        (headers as ResponseObject['headers']);
+    const responseHeaders =
+      isAnyZodType(headers) && isZodType(headers, 'ZodObject')
+        ? this.getResponseHeaders(headers)
+        : // This is input data so it is okay to cast in the common generator
+          // since this is the user's responsibility to keep it correct
+          (headers as ResponseObject['headers']);
 
     return {
       ...rest,
@@ -665,8 +671,8 @@ export class OpenAPIGenerator {
     return '$ref' in schema;
   }
 
-  private getResponseHeaders(headers: ZodObject): HeadersObject {
-    const schemaShape = headers.def.shape;
+  private getResponseHeaders(headers: $ZodObject): HeadersObject {
+    const schemaShape = headers._zod.def.shape;
 
     const responseHeaders = mapValues(schemaShape, _ =>
       this.generateSimpleParameter(_)
@@ -677,7 +683,7 @@ export class OpenAPIGenerator {
 
   private getBodyContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
-      if (!config || !isAnyZodType(config.schema)) {
+      if (!config || !isAnyCoreZodType(config.schema)) {
         return config;
       }
 
@@ -690,7 +696,7 @@ export class OpenAPIGenerator {
   }
 
   private toOpenAPISchema<T>(
-    zodSchema: ZodType<T>,
+    zodSchema: $ZodType<T>,
     isNullable: boolean,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {

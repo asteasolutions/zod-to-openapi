@@ -1,12 +1,16 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodObject } from 'zod/v4';
-import { isAnyZodType, isOptionalSchema, isZodType } from '../lib/zod-is-type';
+import { $ZodObject } from 'zod/v4/core';
+import {
+  isAnyCoreZodType,
+  isOptionalSchema,
+  isZodType,
+} from '../lib/zod-is-type';
 import { mapValues, objectEquals } from '../lib/lodash';
 import { Metadata } from '../metadata';
 
 export class ObjectTransformer {
   transform(
-    zodSchema: ZodObject,
+    zodSchema: $ZodObject,
     defaultValue: object,
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
@@ -14,7 +18,7 @@ export class ObjectTransformer {
     const extendedFrom = Metadata.getInternalMetadata(zodSchema)?.extendedFrom;
 
     const required = this.requiredKeysOf(zodSchema);
-    const properties = mapValues(zodSchema.def.shape, mapItem);
+    const properties = mapValues(zodSchema._zod.def.shape, mapItem);
 
     if (!extendedFrom) {
       return {
@@ -35,7 +39,7 @@ export class ObjectTransformer {
     mapItem(parent);
 
     const keysRequiredByParent = this.requiredKeysOf(parent);
-    const propsOfParent = mapValues(parent?.def.shape, mapItem);
+    const propsOfParent = mapValues(parent?._zod.def.shape, mapItem);
 
     const propertiesToAdd = Object.fromEntries(
       Object.entries(properties).filter(([key, type]) => {
@@ -68,10 +72,10 @@ export class ObjectTransformer {
   }
 
   private generateAdditionalProperties(
-    zodSchema: ZodObject,
+    zodSchema: $ZodObject,
     mapItem: MapSubSchema
   ) {
-    const catchallSchema = zodSchema.def.catchall;
+    const catchallSchema = zodSchema._zod.def.catchall;
 
     if (!catchallSchema) {
       return {};
@@ -81,15 +85,15 @@ export class ObjectTransformer {
       return { additionalProperties: false };
     }
 
-    if (isAnyZodType(catchallSchema)) {
+    if (isAnyCoreZodType(catchallSchema)) {
       return { additionalProperties: mapItem(catchallSchema) };
     }
 
     return {};
   }
 
-  private requiredKeysOf(objectSchema: ZodObject) {
-    return Object.entries(objectSchema.def.shape)
+  private requiredKeysOf(objectSchema: $ZodObject) {
+    return Object.entries(objectSchema._zod.def.shape)
       .filter(([_key, type]) => !isOptionalSchema(type))
       .map(([key, _type]) => key);
   }

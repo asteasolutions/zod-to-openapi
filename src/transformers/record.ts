@@ -1,18 +1,18 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodRecord } from 'zod/v4';
-import { isAnyZodType, isZodType } from '../lib/zod-is-type';
+import { $ZodRecord } from 'zod/v4/core';
+import { isAnyCoreZodType, isZodType } from '../lib/zod-is-type';
 import { isString } from '../lib/lodash';
 
 export class RecordTransformer {
   transform(
-    zodSchema: ZodRecord,
+    zodSchema: $ZodRecord,
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
-    const propertiesType = zodSchema.valueType;
-    const keyType = zodSchema.keyType;
+    const propertiesType = zodSchema._zod.def.valueType;
+    const keyType = zodSchema._zod.def.keyType;
 
-    const propertiesSchema = isAnyZodType(propertiesType)
+    const propertiesSchema = isAnyCoreZodType(propertiesType)
       ? mapItem(propertiesType)
       : {};
 

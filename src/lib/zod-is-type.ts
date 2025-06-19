@@ -1,4 +1,6 @@
+import type * as zCore from 'zod/v4/core';
 import type { z } from 'zod/v4';
+import { safeParse } from 'zod/v4/core';
 
 export type ZodTypes = {
   ZodAny: z.ZodAny;
@@ -20,7 +22,7 @@ export type ZodTypes = {
   ZodPipe: z.ZodPipe;
   ZodReadonly: z.ZodReadonly;
   ZodRecord: z.ZodRecord;
-  ZodSchema: z.ZodSchema;
+  ZodSchema: z.ZodType;
   ZodString: z.ZodString;
   ZodTuple: z.ZodTuple;
   ZodType: z.ZodType;
@@ -31,7 +33,40 @@ export type ZodTypes = {
   ZodDate: z.ZodDate;
 };
 
-const ZodTypeKeys: Record<keyof ZodTypes, string> = {
+export type ZodCoreTypes = {
+  ZodAny: zCore.$ZodAny;
+  ZodArray: zCore.$ZodArray;
+  ZodBigInt: zCore.$ZodBigInt;
+  ZodBoolean: zCore.$ZodBoolean;
+  ZodDefault: zCore.$ZodDefault;
+  ZodTransform: zCore.$ZodTransform;
+  ZodEnum: zCore.$ZodEnum;
+  ZodIntersection: zCore.$ZodIntersection;
+  ZodLiteral: zCore.$ZodLiteral;
+  ZodNever: zCore.$ZodNever;
+  ZodNull: zCore.$ZodNull;
+  ZodNullable: zCore.$ZodNullable;
+  ZodNumber: zCore.$ZodNumber;
+  ZodNonOptional: zCore.$ZodNonOptional;
+  ZodObject: zCore.$ZodObject;
+  ZodOptional: zCore.$ZodOptional;
+  ZodPipe: zCore.$ZodPipe;
+  ZodReadonly: zCore.$ZodReadonly;
+  ZodRecord: zCore.$ZodRecord;
+  ZodSchema: zCore.$ZodType;
+  ZodString: zCore.$ZodString;
+  ZodTuple: zCore.$ZodTuple;
+  ZodType: zCore.$ZodType;
+  ZodUnion: zCore.$ZodUnion;
+  ZodDiscriminatedUnion: zCore.$ZodDiscriminatedUnion;
+  ZodUnknown: zCore.$ZodUnknown;
+  ZodVoid: zCore.$ZodVoid;
+  ZodDate: zCore.$ZodDate;
+};
+
+export type ZodTypeName = keyof ZodTypes;
+
+const ZodTypeKeys: Record<ZodTypeName, string> = {
   ZodAny: 'any',
   ZodArray: 'array',
   ZodBigInt: 'bigint',
@@ -62,29 +97,33 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodDate: 'date',
 };
 
-export function isZodType<TypeName extends keyof ZodTypes>(
-  schema: object,
+export function isZodType<TypeName extends ZodTypeName>(
+  schema: z.ZodType | undefined,
   typeNames: TypeName[]
 ): schema is ZodTypes[TypeName];
-export function isZodType<TypeName extends keyof ZodTypes>(
-  schema: object,
+export function isZodType<TypeName extends ZodTypeName>(
+  schema: z.ZodType | undefined,
   typeName: TypeName
 ): schema is ZodTypes[TypeName];
-export function isZodType<TypeName extends keyof ZodTypes>(
-  schema: object,
+export function isZodType<TypeName extends ZodTypeName>(
+  schema: zCore.$ZodType | undefined,
+  typeNames: TypeName[]
+): schema is ZodCoreTypes[TypeName];
+export function isZodType<TypeName extends ZodTypeName>(
+  schema: zCore.$ZodType | undefined,
+  typeName: TypeName
+): schema is ZodCoreTypes[TypeName];
+export function isZodType<TypeName extends ZodTypeName>(
+  schema: zCore.$ZodType | zCore.$ZodType | undefined,
   typeNames: TypeName | TypeName[]
-): schema is ZodTypes[TypeName] {
+): schema is ZodTypes[TypeName] | ZodCoreTypes[TypeName] {
   const typeNamesArray = Array.isArray(typeNames) ? typeNames : [typeNames];
 
   return typeNamesArray.some(typeName => {
-    const typeNameMatch =
-      (schema as z.ZodType)?.def?.type === ZodTypeKeys[typeName];
+    const typeNameMatch = schema?._zod.def?.type === ZodTypeKeys[typeName];
 
     if (typeName === 'ZodDiscriminatedUnion') {
-      return (
-        typeNameMatch &&
-        'discriminator' in (schema as z.ZodDiscriminatedUnion).def
-      );
+      return typeNameMatch && 'discriminator' in schema._zod.def;
     }
 
     return typeNameMatch;
@@ -95,18 +134,22 @@ export function isAnyZodType(schema: object): schema is z.ZodType {
   return 'def' in schema;
 }
 
+export function isAnyCoreZodType(schema: object): schema is zCore.$ZodType {
+  return '_zod' in schema;
+}
+
 /**
  * The schema.isNullable() is deprecated. This is the suggested replacement
  * as this was how isNullable operated beforehand.
  */
-export function isNullableSchema(schema: z.ZodType) {
-  return schema.safeParse(null).success;
+export function isNullableSchema(schema: zCore.$ZodType) {
+  return safeParse(schema, null).success;
 }
 
 /**
  * The schema.isOptional() is deprecated. This is the suggested replacement
  * as this was how isOptional operated beforehand.
  */
-export function isOptionalSchema(schema: z.ZodType) {
-  return schema.safeParse(undefined).success;
+export function isOptionalSchema(schema: zCore.$ZodType) {
+  return safeParse(schema, undefined).success;
 }
