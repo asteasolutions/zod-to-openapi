@@ -16,7 +16,7 @@ import {
   ResponseObject as ResponseObject30,
   SchemaObject as SchemaObject30,
   SecuritySchemeObject as SecuritySchemeObject30,
-} from 'openapi3-ts/oas30';
+} from 'openapi3-ts/oas30'
 
 import {
   CallbackObject as CallbackObject31,
@@ -36,30 +36,30 @@ import {
   ResponseObject as ResponseObject31,
   SchemaObject as SchemaObject31,
   SecuritySchemeObject as SecuritySchemeObject31,
-} from 'openapi3-ts/oas31';
+} from 'openapi3-ts/oas31'
 
-type CallbackObject = CallbackObject30 | CallbackObject31;
-type ComponentsObject = ComponentsObject30 | ComponentsObject31;
-type EncodingObject = EncodingObject30 | EncodingObject31;
-type ExampleObject = ExampleObject30 | ExampleObject31;
-type ExamplesObject = ExamplesObject30 | ExamplesObject31;
-type HeaderObject = HeaderObject30 | HeaderObject31;
-type HeadersObject = HeadersObject30 | HeadersObject31;
+type CallbackObject = CallbackObject30 | CallbackObject31
+type ComponentsObject = ComponentsObject30 | ComponentsObject31
+type EncodingObject = EncodingObject30 | EncodingObject31
+type ExampleObject = ExampleObject30 | ExampleObject31
+type ExamplesObject = ExamplesObject30 | ExamplesObject31
+type HeaderObject = HeaderObject30 | HeaderObject31
+type HeadersObject = HeadersObject30 | HeadersObject31
 type ISpecificationExtension =
   | ISpecificationExtension30
-  | ISpecificationExtension31;
-type LinkObject = LinkObject30 | LinkObject31;
-type LinksObject = LinksObject30 | LinksObject31;
-type OperationObject = OperationObject30 | OperationObject31;
-type ParameterObject = ParameterObject30 | ParameterObject31;
-type ReferenceObject = ReferenceObject30 | ReferenceObject31;
-type RequestBodyObject = RequestBodyObject30 | RequestBodyObject31;
-type ResponseObject = ResponseObject30 | ResponseObject31;
-type SchemaObject = SchemaObject30 | SchemaObject31;
-type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
+  | ISpecificationExtension31
+type LinkObject = LinkObject30 | LinkObject31
+type LinksObject = LinksObject30 | LinksObject31
+type OperationObject = OperationObject30 | OperationObject31
+type ParameterObject = ParameterObject30 | ParameterObject31
+type ReferenceObject = ReferenceObject30 | ReferenceObject31
+type RequestBodyObject = RequestBodyObject30 | RequestBodyObject31
+type ResponseObject = ResponseObject30 | ResponseObject31
+type SchemaObject = SchemaObject30 | SchemaObject31
+type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31
 
-import type { ZodObject, ZodPipe, ZodType } from 'zod/v4';
-import { Metadata } from './metadata';
+import type { ZodObject, ZodPipe, ZodType } from 'zod'
+import { Metadata } from './metadata'
 
 type Method =
   | 'get'
@@ -69,13 +69,13 @@ type Method =
   | 'patch'
   | 'head'
   | 'options'
-  | 'trace';
+  | 'trace'
 
 export interface ZodMediaTypeObject {
-  schema: ZodType<unknown> | SchemaObject | ReferenceObject;
-  examples?: ExamplesObject;
-  example?: any;
-  encoding?: EncodingObject;
+  schema: ZodType<unknown> | SchemaObject | ReferenceObject
+  examples?: ExamplesObject
+  example?: any
+  encoding?: EncodingObject
 }
 
 // Provide autocompletion on media type with most common one without restricting to anything.
@@ -84,43 +84,43 @@ export type ZodMediaType =
   | 'text/html'
   | 'text/plain'
   | 'application/xml'
-  | (string & {});
+  | (string & {})
 
 export type ZodContentObject = Partial<
   Record<ZodMediaType, ZodMediaTypeObject>
->;
+>
 
 export interface ZodRequestBody {
-  description?: string;
-  content: ZodContentObject;
-  required?: boolean;
+  description?: string
+  content: ZodContentObject
+  required?: boolean
 }
 
 export interface ResponseConfig {
-  description: string;
-  headers?: ZodObject | HeadersObject;
-  links?: LinksObject;
-  content?: ZodContentObject;
+  description: string
+  headers?: ZodObject | HeadersObject
+  links?: LinksObject
+  content?: ZodContentObject
 }
 
-type ZodObjectWithEffect = ZodObject | ZodPipe;
+type ZodObjectWithEffect = ZodObject | ZodPipe
 
-export type RouteParameter = ZodObjectWithEffect | undefined;
+export type RouteParameter = ZodObjectWithEffect | undefined
 
 export type RouteConfig = Omit<OperationObject, 'responses'> & {
-  method: Method;
-  path: string;
+  method: Method
+  path: string
   request?: {
-    body?: ZodRequestBody;
-    params?: RouteParameter;
-    query?: RouteParameter;
-    cookies?: RouteParameter;
-    headers?: RouteParameter | ZodType<unknown>[];
-  };
+    body?: ZodRequestBody
+    params?: RouteParameter
+    query?: RouteParameter
+    cookies?: RouteParameter
+    headers?: RouteParameter | ZodType<unknown>[]
+  }
   responses: {
-    [statusCode: string]: ResponseConfig | ReferenceObject;
-  };
-};
+    [statusCode: string]: ResponseConfig | ReferenceObject
+  }
+}
 
 export type OpenAPIComponentObject =
   | SchemaObject
@@ -132,57 +132,57 @@ export type OpenAPIComponentObject =
   | SecuritySchemeObject
   | LinkObject
   | CallbackObject
-  | ISpecificationExtension;
+  | ISpecificationExtension
 
-export type ComponentTypeKey = Exclude<keyof ComponentsObject, number>;
+export type ComponentTypeKey = Exclude<keyof ComponentsObject, number>
 export type ComponentTypeOf<K extends ComponentTypeKey> = NonNullable<
   ComponentsObject[K]
->[string];
+>[string]
 
-export type WebhookDefinition = { type: 'webhook'; webhook: RouteConfig };
+export type WebhookDefinition = { type: 'webhook'; webhook: RouteConfig }
 
 export type OpenAPIDefinitions =
   | {
-      type: 'component';
-      componentType: ComponentTypeKey;
-      name: string;
-      component: OpenAPIComponentObject;
-    }
+    type: 'component'
+    componentType: ComponentTypeKey
+    name: string
+    component: OpenAPIComponentObject
+  }
   | { type: 'schema'; schema: ZodType }
   | { type: 'parameter'; schema: ZodType }
   | { type: 'route'; route: RouteConfig }
-  | WebhookDefinition;
+  | WebhookDefinition
 
 export class OpenAPIRegistry {
   private _definitions: OpenAPIDefinitions[] = [];
 
-  constructor(private parents?: OpenAPIRegistry[]) {}
+  constructor(private parents?: OpenAPIRegistry[]) { }
 
   get definitions(): OpenAPIDefinitions[] {
     const parentDefinitions =
-      this.parents?.flatMap(par => par._definitions) ?? [];
+      this.parents?.flatMap(par => par._definitions) ?? []
 
-    return [...parentDefinitions, ...this._definitions];
+    return [...parentDefinitions, ...this._definitions]
   }
 
   /**
    * Registers a new component schema under /components/schemas/${name}
    */
   register<T extends ZodType>(refId: string, zodSchema: T): T {
-    const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
+    const schemaWithRefId = this.schemaWithRefId(refId, zodSchema)
 
-    this._definitions.push({ type: 'schema', schema: schemaWithRefId });
+    this._definitions.push({ type: 'schema', schema: schemaWithRefId })
 
-    return schemaWithRefId;
+    return schemaWithRefId
   }
 
   /**
    * Registers a new parameter schema under /components/parameters/${name}
    */
   registerParameter<T extends ZodType>(refId: string, zodSchema: T) {
-    const schemaWithRefId = this.schemaWithRefId(refId, zodSchema);
+    const schemaWithRefId = this.schemaWithRefId(refId, zodSchema)
 
-    const currentMetadata = Metadata.getOpenApiMetadata(schemaWithRefId) ?? {};
+    const currentMetadata = Metadata.getOpenApiMetadata(schemaWithRefId) ?? {}
 
     const schemaWithMetadata = schemaWithRefId.openapi({
       ...currentMetadata,
@@ -190,14 +190,14 @@ export class OpenAPIRegistry {
         ...currentMetadata?.param,
         name: currentMetadata?.param?.name ?? refId,
       },
-    });
+    })
 
     this._definitions.push({
       type: 'parameter',
       schema: schemaWithMetadata,
-    });
+    })
 
-    return schemaWithMetadata;
+    return schemaWithMetadata
   }
 
   /**
@@ -207,7 +207,7 @@ export class OpenAPIRegistry {
     this._definitions.push({
       type: 'route',
       route,
-    });
+    })
   }
 
   /**
@@ -217,7 +217,7 @@ export class OpenAPIRegistry {
     this._definitions.push({
       type: 'webhook',
       webhook,
-    });
+    })
   }
 
   /**
@@ -238,15 +238,15 @@ export class OpenAPIRegistry {
       componentType: type,
       name,
       component,
-    });
+    })
 
     return {
       name,
       ref: { $ref: `#/components/${type}/${name}` },
-    };
+    }
   }
 
   private schemaWithRefId<T extends ZodType>(refId: string, zodSchema: T): T {
-    return zodSchema.openapi(refId);
+    return zodSchema.openapi(refId)
   }
 }

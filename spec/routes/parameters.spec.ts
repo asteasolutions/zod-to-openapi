@@ -1,13 +1,13 @@
-import { z } from 'zod/v4';
-import { MissingParameterDataError } from '../../src/errors';
-import { generateDataForRoute, registerParameter } from '../lib/helpers';
+import { z } from 'zod'
+import { MissingParameterDataError } from '../../src/errors'
+import { generateDataForRoute, registerParameter } from '../lib/helpers'
 
 describe('parameters', () => {
   describe('query', () => {
     it('generates a query parameter for route', () => {
       const { parameters } = generateDataForRoute({
         request: { query: z.object({ test: z.string() }) },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -18,8 +18,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates query parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
@@ -31,7 +31,7 @@ describe('parameters', () => {
             .refine(({ filter }) => filter.length > 3)
             .transform(d => d),
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -42,13 +42,13 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates a query parameter for route', () => {
       const { parameters } = generateDataForRoute({
         request: { query: z.object({ test: z.string() }) },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -59,8 +59,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates a reference query parameter for route', () => {
       const TestQuery = registerParameter(
@@ -68,12 +68,12 @@ describe('parameters', () => {
         z.string().openapi({
           param: { name: 'test', in: 'query' },
         })
-      );
+      )
 
       const { parameters, documentParameters } = generateDataForRoute(
         { request: { query: z.object({ test: TestQuery.schema }) } },
         [TestQuery]
-      );
+      )
 
       expect(documentParameters).toEqual({
         TestQuery: {
@@ -84,15 +84,15 @@ describe('parameters', () => {
             $ref: '#/components/schemas/TestQuery',
           },
         },
-      });
+      })
 
       expect(parameters).toEqual([
         { $ref: '#/components/parameters/TestQuery' },
-      ]);
-    });
+      ])
+    })
 
     it('can automatically register request query parameters', () => {
-      const Person = z.object({ name: z.string() }).openapi('Person');
+      const Person = z.object({ name: z.string() }).openapi('Person')
 
       const { documentSchemas, parameters } = generateDataForRoute({
         request: {
@@ -100,7 +100,7 @@ describe('parameters', () => {
             person: Person,
           }),
         },
-      });
+      })
 
       expect(documentSchemas).toEqual({
         Person: {
@@ -110,7 +110,7 @@ describe('parameters', () => {
           },
           required: ['name'],
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -121,15 +121,15 @@ describe('parameters', () => {
             $ref: '#/components/schemas/Person',
           },
         },
-      ]);
-    });
-  });
+      ])
+    })
+  })
 
   describe('path', () => {
     it('generates a path parameter for route', () => {
       const { parameters } = generateDataForRoute({
         request: { params: z.object({ test: z.string() }) },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -140,8 +140,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates path parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
@@ -153,7 +153,7 @@ describe('parameters', () => {
             .refine(({ filter }) => filter.length > 3)
             .transform(d => d),
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -164,8 +164,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates a reference path parameter for route', () => {
       const TestParam = registerParameter(
@@ -173,12 +173,12 @@ describe('parameters', () => {
         z.string().openapi({
           param: { name: 'test', in: 'path' },
         })
-      );
+      )
 
       const { parameters, documentParameters } = generateDataForRoute(
         { request: { params: z.object({ test: TestParam.schema }) } },
         [TestParam]
-      );
+      )
 
       expect(documentParameters).toEqual({
         TestParam: {
@@ -189,15 +189,15 @@ describe('parameters', () => {
             $ref: '#/components/schemas/TestParam',
           },
         },
-      });
+      })
 
       expect(parameters).toEqual([
         { $ref: '#/components/parameters/TestParam' },
-      ]);
-    });
+      ])
+    })
 
     it('can automatically register request path parameters', () => {
-      const UserId = z.string().openapi('UserId').length(6);
+      const UserId = z.string().openapi('UserId').length(6)
 
       const { documentSchemas, parameters } = generateDataForRoute({
         request: {
@@ -205,7 +205,7 @@ describe('parameters', () => {
             id: UserId,
           }),
         },
-      });
+      })
 
       expect(documentSchemas).toEqual({
         UserId: {
@@ -213,7 +213,7 @@ describe('parameters', () => {
           minLength: 6,
           maxLength: 6,
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -224,15 +224,15 @@ describe('parameters', () => {
             $ref: '#/components/schemas/UserId',
           },
         },
-      ]);
-    });
-  });
+      ])
+    })
+  })
 
   describe('cookies', () => {
     it('generates a cookie parameter for route', () => {
       const { parameters } = generateDataForRoute({
         request: { cookies: z.object({ test: z.string() }) },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -243,8 +243,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates cookie parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
@@ -256,7 +256,7 @@ describe('parameters', () => {
             .refine(({ filter }) => filter.length > 3)
             .transform(d => d),
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -267,8 +267,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates a reference cookie parameter for route', () => {
       const TestParam = registerParameter(
@@ -276,12 +276,12 @@ describe('parameters', () => {
         z.string().openapi({
           param: { name: 'test', in: 'cookie' },
         })
-      );
+      )
 
       const { parameters, documentParameters } = generateDataForRoute(
         { request: { cookies: z.object({ test: TestParam.schema }) } },
         [TestParam]
-      );
+      )
 
       expect(documentParameters).toEqual({
         TestParam: {
@@ -292,15 +292,15 @@ describe('parameters', () => {
             $ref: '#/components/schemas/TestParam',
           },
         },
-      });
+      })
 
       expect(parameters).toEqual([
         { $ref: '#/components/parameters/TestParam' },
-      ]);
-    });
+      ])
+    })
 
     it('can automatically register request cookie parameters', () => {
-      const cookieId = z.string().openapi('cookieId').length(6);
+      const cookieId = z.string().openapi('cookieId').length(6)
 
       const { documentSchemas, parameters } = generateDataForRoute({
         request: {
@@ -308,7 +308,7 @@ describe('parameters', () => {
             id: cookieId,
           }),
         },
-      });
+      })
 
       expect(documentSchemas).toEqual({
         cookieId: {
@@ -316,7 +316,7 @@ describe('parameters', () => {
           minLength: 6,
           maxLength: 6,
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -327,9 +327,9 @@ describe('parameters', () => {
             $ref: '#/components/schemas/cookieId',
           },
         },
-      ]);
-    });
-  });
+      ])
+    })
+  })
 
   describe('header', () => {
     it('generates a header parameter with array for route', () => {
@@ -337,7 +337,7 @@ describe('parameters', () => {
         request: {
           headers: z.object({ test: z.string() }),
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -348,15 +348,15 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates a header parameter with object for route', () => {
       const { parameters } = generateDataForRoute({
         request: {
           headers: [z.string().openapi({ param: { name: 'test' } })],
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -367,8 +367,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates header parameter for route from object with effects', () => {
       const { parameters } = generateDataForRoute({
@@ -380,7 +380,7 @@ describe('parameters', () => {
             .refine(({ filter }) => filter.length > 3)
             .transform(d => d),
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -391,8 +391,8 @@ describe('parameters', () => {
             type: 'string',
           },
         },
-      ]);
-    });
+      ])
+    })
 
     it('generates a reference header parameter for route', () => {
       const TestHeader = registerParameter(
@@ -400,12 +400,12 @@ describe('parameters', () => {
         z.string().openapi({
           param: { name: 'test', in: 'header' },
         })
-      );
+      )
 
       const { parameters, documentParameters } = generateDataForRoute(
         { request: { headers: [TestHeader.schema] } },
         [TestHeader]
-      );
+      )
 
       expect(documentParameters).toEqual({
         TestHeader: {
@@ -416,15 +416,15 @@ describe('parameters', () => {
             $ref: '#/components/schemas/TestHeader',
           },
         },
-      });
+      })
 
       expect(parameters).toEqual([
         { $ref: '#/components/parameters/TestHeader' },
-      ]);
-    });
+      ])
+    })
 
     it('can automatically register request header parameters', () => {
-      const SessionToken = z.string().openapi('SessionToken').length(6);
+      const SessionToken = z.string().openapi('SessionToken').length(6)
 
       const { documentSchemas, parameters } = generateDataForRoute({
         request: {
@@ -432,7 +432,7 @@ describe('parameters', () => {
             'x-session': SessionToken,
           }),
         },
-      });
+      })
 
       expect(documentSchemas).toEqual({
         SessionToken: {
@@ -440,7 +440,7 @@ describe('parameters', () => {
           minLength: 6,
           maxLength: 6,
         },
-      });
+      })
 
       expect(parameters).toEqual([
         {
@@ -451,9 +451,9 @@ describe('parameters', () => {
             $ref: '#/components/schemas/SessionToken',
           },
         },
-      ]);
-    });
-  });
+      ])
+    })
+  })
 
   it('combines parameter definitions', () => {
     const { parameters } = generateDataForRoute({
@@ -465,7 +465,7 @@ describe('parameters', () => {
         { in: 'query', name: 'params_queryId' },
         { in: 'path', name: 'params_pathId' },
       ],
-    });
+    })
 
     expect(parameters).toEqual([
       { in: 'query', name: 'params_queryId' },
@@ -482,15 +482,15 @@ describe('parameters', () => {
         name: 'request_queryId',
         in: 'query',
       },
-    ]);
-  });
+    ])
+  })
 
   it('generates required based on inner schema', () => {
     const { parameters } = generateDataForRoute({
       request: {
         query: z.object({ test: z.string().optional().default('test') }),
       },
-    });
+    })
 
     expect(parameters).toEqual([
       {
@@ -502,8 +502,8 @@ describe('parameters', () => {
           default: 'test',
         },
       },
-    ]);
-  });
+    ])
+  })
 
   it('supports strict zod objects', () => {
     const { parameters } = generateDataForRoute({
@@ -512,7 +512,7 @@ describe('parameters', () => {
           test: z.string().optional().default('test'),
         }),
       },
-    });
+    })
 
     expect(parameters).toEqual([
       {
@@ -524,8 +524,8 @@ describe('parameters', () => {
           default: 'test',
         },
       },
-    ]);
-  });
+    ])
+  })
 
   describe('errors', () => {
     it('throws an error in case of names mismatch', () => {
@@ -537,8 +537,8 @@ describe('parameters', () => {
             }),
           },
         })
-      ).toThrowError(/^Conflicting name/);
-    });
+      ).toThrowError(/^Conflicting name/)
+    })
 
     it('throws an error in case of location mismatch', () => {
       expect(() =>
@@ -549,8 +549,8 @@ describe('parameters', () => {
             }),
           },
         })
-      ).toThrowError(/^Conflicting location/);
-    });
+      ).toThrowError(/^Conflicting location/)
+    })
 
     it('throws an error in case of location mismatch with reference', () => {
       const TestHeader = registerParameter(
@@ -558,7 +558,7 @@ describe('parameters', () => {
         z.string().openapi({
           param: { name: 'test', in: 'header' },
         })
-      );
+      )
 
       expect(() =>
         generateDataForRoute(
@@ -567,8 +567,8 @@ describe('parameters', () => {
           },
           [TestHeader]
         )
-      ).toThrowError(/^Conflicting location/);
-    });
+      ).toThrowError(/^Conflicting location/)
+    })
 
     it('throws an error in case of name mismatch with reference', () => {
       const TestQuery = registerParameter(
@@ -576,7 +576,7 @@ describe('parameters', () => {
         z.string().openapi({
           param: { name: 'test', in: 'query' },
         })
-      );
+      )
 
       expect(() =>
         generateDataForRoute(
@@ -585,8 +585,8 @@ describe('parameters', () => {
           },
           [TestQuery]
         )
-      ).toThrowError(/^Conflicting name/);
-    });
+      ).toThrowError(/^Conflicting name/)
+    })
 
     it('throws an error in case of missing name', () => {
       try {
@@ -594,15 +594,15 @@ describe('parameters', () => {
           method: 'get',
           path: '/path',
           request: { headers: [z.string()] },
-        });
+        })
 
-        expect("Should've thrown").toEqual('Did throw');
+        expect("Should've thrown").toEqual('Did throw')
       } catch (error) {
-        expect(error).toBeInstanceOf(MissingParameterDataError);
-        expect(error).toHaveProperty('data.location', 'header');
-        expect(error).toHaveProperty('data.route', 'get /path');
+        expect(error).toBeInstanceOf(MissingParameterDataError)
+        expect(error).toHaveProperty('data.location', 'header')
+        expect(error).toHaveProperty('data.route', 'get /path')
       }
-    });
+    })
 
     it('throws an error in case of missing location when registering a parameter', () => {
       const TestQuery = registerParameter(
@@ -610,11 +610,11 @@ describe('parameters', () => {
         z.string().openapi({
           param: { name: 'test' },
         })
-      );
+      )
 
       expect(() => generateDataForRoute({}, [TestQuery])).toThrowError(
         /^Missing parameter data, please specify `in`/
-      );
-    });
-  });
-});
+      )
+    })
+  })
+})

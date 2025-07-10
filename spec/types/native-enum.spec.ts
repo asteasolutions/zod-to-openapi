@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import { createSchemas, expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { createSchemas, expectSchema } from '../lib/helpers'
 
 describe('native enum', () => {
   it('supports native enums', () => {
@@ -11,7 +11,7 @@ describe('native enum', () => {
 
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi('NativeEnum', {
       description: 'A native enum in zod',
-    });
+    })
 
     expectSchema([nativeEnumSchema], {
       NativeEnum: {
@@ -19,8 +19,8 @@ describe('native enum', () => {
         description: 'A native enum in zod',
         enum: ['Option', 'Another', 'Default'],
       },
-    });
-  });
+    })
+  })
 
   it('supports native numeric enums', () => {
     enum NativeEnum {
@@ -31,7 +31,7 @@ describe('native enum', () => {
 
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi('NativeEnum', {
       description: 'A native numbers enum in zod',
-    });
+    })
 
     expectSchema([nativeEnumSchema], {
       NativeEnum: {
@@ -39,8 +39,8 @@ describe('native enum', () => {
         description: 'A native numbers enum in zod',
         enum: [1, 42, 3],
       },
-    });
-  });
+    })
+  })
 
   it('does not support mixed native enums', () => {
     enum NativeEnum {
@@ -50,12 +50,12 @@ describe('native enum', () => {
 
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi('NativeEnum', {
       description: 'A native mixed enum in zod',
-    });
+    })
 
     expect(() => {
-      createSchemas([nativeEnumSchema]);
-    }).toThrowError(/Enum has mixed string and number values/);
-  });
+      createSchemas([nativeEnumSchema])
+    }).toThrowError(/Enum has mixed string and number values/)
+  })
 
   it('can manually set type of mixed native enums', () => {
     enum NativeEnum {
@@ -66,13 +66,13 @@ describe('native enum', () => {
     const nativeEnumSchema = z.nativeEnum(NativeEnum).openapi('NativeEnum', {
       description: 'A native mixed enum in zod',
       type: 'string',
-    });
+    })
 
     expectSchema([nativeEnumSchema], {
       NativeEnum: {
         type: 'string',
         description: 'A native mixed enum in zod',
       },
-    });
-  });
-});
+    })
+  })
+})

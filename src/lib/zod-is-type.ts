@@ -1,35 +1,35 @@
-import type { z } from 'zod/v4';
+import type { z } from 'zod'
 
 export type ZodTypes = {
-  ZodAny: z.ZodAny;
-  ZodArray: z.ZodArray;
-  ZodBigInt: z.ZodBigInt;
-  ZodBoolean: z.ZodBoolean;
-  ZodDefault: z.ZodDefault;
-  ZodTransform: z.ZodTransform;
-  ZodEnum: z.ZodEnum;
-  ZodIntersection: z.ZodIntersection;
-  ZodLiteral: z.ZodLiteral;
-  ZodNever: z.ZodNever;
-  ZodNull: z.ZodNull;
-  ZodNullable: z.ZodNullable;
-  ZodNumber: z.ZodNumber;
-  ZodNonOptional: z.ZodNonOptional;
-  ZodObject: z.ZodObject;
-  ZodOptional: z.ZodOptional;
-  ZodPipe: z.ZodPipe;
-  ZodReadonly: z.ZodReadonly;
-  ZodRecord: z.ZodRecord;
-  ZodSchema: z.ZodSchema;
-  ZodString: z.ZodString;
-  ZodTuple: z.ZodTuple;
-  ZodType: z.ZodType;
-  ZodUnion: z.ZodUnion;
-  ZodDiscriminatedUnion: z.ZodDiscriminatedUnion;
-  ZodUnknown: z.ZodUnknown;
-  ZodVoid: z.ZodVoid;
-  ZodDate: z.ZodDate;
-};
+  ZodAny: z.ZodAny
+  ZodArray: z.ZodArray
+  ZodBigInt: z.ZodBigInt
+  ZodBoolean: z.ZodBoolean
+  ZodDefault: z.ZodDefault
+  ZodTransform: z.ZodTransform
+  ZodEnum: z.ZodEnum
+  ZodIntersection: z.ZodIntersection
+  ZodLiteral: z.ZodLiteral
+  ZodNever: z.ZodNever
+  ZodNull: z.ZodNull
+  ZodNullable: z.ZodNullable
+  ZodNumber: z.ZodNumber
+  ZodNonOptional: z.ZodNonOptional
+  ZodObject: z.ZodObject
+  ZodOptional: z.ZodOptional
+  ZodPipe: z.ZodPipe
+  ZodReadonly: z.ZodReadonly
+  ZodRecord: z.ZodRecord
+  ZodSchema: z.ZodSchema
+  ZodString: z.ZodString
+  ZodTuple: z.ZodTuple
+  ZodType: z.ZodType
+  ZodUnion: z.ZodUnion
+  ZodDiscriminatedUnion: z.ZodDiscriminatedUnion
+  ZodUnknown: z.ZodUnknown
+  ZodVoid: z.ZodVoid
+  ZodDate: z.ZodDate
+}
 
 const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodAny: 'any',
@@ -60,39 +60,39 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodUnknown: 'unknown',
   ZodVoid: 'void',
   ZodDate: 'date',
-};
+}
 
 export function isZodType<TypeName extends keyof ZodTypes>(
   schema: object,
   typeNames: TypeName[]
-): schema is ZodTypes[TypeName];
+): schema is ZodTypes[TypeName]
 export function isZodType<TypeName extends keyof ZodTypes>(
   schema: object,
   typeName: TypeName
-): schema is ZodTypes[TypeName];
+): schema is ZodTypes[TypeName]
 export function isZodType<TypeName extends keyof ZodTypes>(
   schema: object,
   typeNames: TypeName | TypeName[]
 ): schema is ZodTypes[TypeName] {
-  const typeNamesArray = Array.isArray(typeNames) ? typeNames : [typeNames];
+  const typeNamesArray = Array.isArray(typeNames) ? typeNames : [typeNames]
 
   return typeNamesArray.some(typeName => {
     const typeNameMatch =
-      (schema as z.ZodType)?.def?.type === ZodTypeKeys[typeName];
+      (schema as z.ZodType)?.def?.type === ZodTypeKeys[typeName]
 
     if (typeName === 'ZodDiscriminatedUnion') {
       return (
         typeNameMatch &&
         'discriminator' in (schema as z.ZodDiscriminatedUnion).def
-      );
+      )
     }
 
-    return typeNameMatch;
-  });
+    return typeNameMatch
+  })
 }
 
 export function isAnyZodType(schema: object): schema is z.ZodType {
-  return 'def' in schema;
+  return 'def' in schema
 }
 
 /**
@@ -100,7 +100,7 @@ export function isAnyZodType(schema: object): schema is z.ZodType {
  * as this was how isNullable operated beforehand.
  */
 export function isNullableSchema(schema: z.ZodType) {
-  return schema.safeParse(null).success;
+  return schema.safeParse(null).success
 }
 
 /**
@@ -108,5 +108,5 @@ export function isNullableSchema(schema: z.ZodType) {
  * as this was how isOptional operated beforehand.
  */
 export function isOptionalSchema(schema: z.ZodType) {
-  return schema.safeParse(undefined).success;
+  return schema.safeParse(undefined).success
 }

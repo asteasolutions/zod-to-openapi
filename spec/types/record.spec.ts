@@ -1,11 +1,11 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('record', () => {
   it('supports records', () => {
-    const base = z.object({ a: z.string() });
+    const base = z.object({ a: z.string() })
 
-    const record = z.record(z.string(), base).openapi('Record');
+    const record = z.record(z.string(), base).openapi('Record')
 
     expectSchema([base, record], {
       Record: {
@@ -18,13 +18,13 @@ describe('record', () => {
           required: ['a'],
         },
       },
-    });
-  });
+    })
+  })
 
   it('supports records with refs', () => {
-    const base = z.object({ a: z.string() }).openapi('Base');
+    const base = z.object({ a: z.string() }).openapi('Base')
 
-    const record = z.record(z.string(), base).openapi('Record');
+    const record = z.record(z.string(), base).openapi('Record')
 
     expectSchema([base, record], {
       Base: {
@@ -40,13 +40,13 @@ describe('record', () => {
           $ref: '#/components/schemas/Base',
         },
       },
-    });
-  });
+    })
+  })
 
   it('can automatically register record items', () => {
     const schema = z
       .record(z.string(), z.number().openapi('NumberId'))
-      .openapi('Record');
+      .openapi('Record')
 
     expectSchema([schema], {
       NumberId: {
@@ -59,22 +59,22 @@ describe('record', () => {
           $ref: '#/components/schemas/NumberId',
         },
       },
-    });
-  });
+    })
+  })
 
   describe('Enum keys', () => {
     it('supports records with enum keys', () => {
-      const continents = z.enum(['EUROPE', 'AFRICA']);
+      const continents = z.enum(['EUROPE', 'AFRICA'])
 
-      const countries = z.enum(['USA', 'CAN']);
+      const countries = z.enum(['USA', 'CAN'])
 
       const countryContent = z
         .object({ countries: countries.array() })
-        .openapi('Content');
+        .openapi('Content')
 
       const Geography = z
         .record(continents, countryContent)
-        .openapi('Geography');
+        .openapi('Geography')
 
       expectSchema([Geography], {
         Content: {
@@ -98,8 +98,8 @@ describe('record', () => {
             AFRICA: { $ref: '#/components/schemas/Content' },
           },
         },
-      });
-    });
+      })
+    })
 
     it('supports records with native enum keys', () => {
       enum Continents {
@@ -107,17 +107,17 @@ describe('record', () => {
         AFRICA,
       }
 
-      const continents = z.nativeEnum(Continents);
+      const continents = z.nativeEnum(Continents)
 
-      const countries = z.enum(['USA', 'CAN']);
+      const countries = z.enum(['USA', 'CAN'])
 
       const countryContent = z
         .object({ countries: countries.array() })
-        .openapi('Content');
+        .openapi('Content')
 
       const Geography = z
         .record(continents, countryContent)
-        .openapi('Geography');
+        .openapi('Geography')
 
       expectSchema([Geography], {
         Content: {
@@ -141,7 +141,7 @@ describe('record', () => {
             AFRICA: { $ref: '#/components/schemas/Content' },
           },
         },
-      });
-    });
-  });
-});
+      })
+    })
+  })
+})

@@ -1,8 +1,8 @@
-import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { ZodObject } from 'zod/v4';
-import { isAnyZodType, isOptionalSchema, isZodType } from '../lib/zod-is-type';
-import { mapValues, objectEquals } from '../lib/lodash';
-import { Metadata } from '../metadata';
+import { MapNullableType, MapSubSchema, SchemaObject } from '../types'
+import { ZodObject } from 'zod'
+import { isAnyZodType, isOptionalSchema, isZodType } from '../lib/zod-is-type'
+import { mapValues, objectEquals } from '../lib/lodash'
+import { Metadata } from '../metadata'
 
 export class ObjectTransformer {
   transform(
@@ -11,10 +11,10 @@ export class ObjectTransformer {
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
-    const extendedFrom = Metadata.getInternalMetadata(zodSchema)?.extendedFrom;
+    const extendedFrom = Metadata.getInternalMetadata(zodSchema)?.extendedFrom
 
-    const required = this.requiredKeysOf(zodSchema);
-    const properties = mapValues(zodSchema.def.shape, mapItem);
+    const required = this.requiredKeysOf(zodSchema)
+    const properties = mapValues(zodSchema.def.shape, mapItem)
 
     if (!extendedFrom) {
       return {
@@ -26,26 +26,26 @@ export class ObjectTransformer {
         ...(required.length > 0 ? { required } : {}),
 
         ...this.generateAdditionalProperties(zodSchema, mapItem),
-      };
+      }
     }
 
-    const parent = extendedFrom.schema;
+    const parent = extendedFrom.schema
 
     // We want to generate the parent schema so that it can be referenced down the line
-    mapItem(parent);
+    mapItem(parent)
 
-    const keysRequiredByParent = this.requiredKeysOf(parent);
-    const propsOfParent = mapValues(parent?.def.shape, mapItem);
+    const keysRequiredByParent = this.requiredKeysOf(parent)
+    const propsOfParent = mapValues(parent?.def.shape, mapItem)
 
     const propertiesToAdd = Object.fromEntries(
       Object.entries(properties).filter(([key, type]) => {
-        return !objectEquals(propsOfParent[key], type);
+        return !objectEquals(propsOfParent[key], type)
       })
-    );
+    )
 
     const additionallyRequired = required.filter(
       prop => !keysRequiredByParent.includes(prop)
-    );
+    )
 
     const objectData = {
       ...mapNullableType('object'),
@@ -57,40 +57,40 @@ export class ObjectTransformer {
         : {}),
 
       ...this.generateAdditionalProperties(zodSchema, mapItem),
-    };
+    }
 
     return {
       allOf: [
         { $ref: `#/components/schemas/${extendedFrom.refId}` },
         objectData,
       ],
-    };
+    }
   }
 
   private generateAdditionalProperties(
     zodSchema: ZodObject,
     mapItem: MapSubSchema
   ) {
-    const catchallSchema = zodSchema.def.catchall;
+    const catchallSchema = zodSchema.def.catchall
 
     if (!catchallSchema) {
-      return {};
+      return {}
     }
 
     if (isZodType(catchallSchema, 'ZodNever')) {
-      return { additionalProperties: false };
+      return { additionalProperties: false }
     }
 
     if (isAnyZodType(catchallSchema)) {
-      return { additionalProperties: mapItem(catchallSchema) };
+      return { additionalProperties: mapItem(catchallSchema) }
     }
 
-    return {};
+    return {}
   }
 
   private requiredKeysOf(objectSchema: ZodObject) {
     return Object.entries(objectSchema.def.shape)
       .filter(([_key, type]) => !isOptionalSchema(type))
-      .map(([key, _type]) => key);
+      .map(([key, _type]) => key)
   }
 }

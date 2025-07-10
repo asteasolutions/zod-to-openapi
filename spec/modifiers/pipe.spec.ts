@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('pipe', () => {
   it('can generate schema for pipes', () => {
@@ -24,8 +24,8 @@ describe('pipe', () => {
         },
       },
       '3.1.0'
-    );
-  });
+    )
+  })
 
   it('can generate schema for pipes with internal type transformation', () => {
     expectSchema(
@@ -39,6 +39,6 @@ describe('pipe', () => {
       {
         PipedNumber: { anyOf: [{ type: 'number' }, { type: 'string' }] },
       }
-    );
-  });
-});
+    )
+  })
+})

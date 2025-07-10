@@ -1,15 +1,15 @@
-import { OpenAPIRegistry } from '../src/openapi-registry';
-import { z } from 'zod/v4';
-import { extendZodWithOpenApi } from '../src/zod-extensions';
-import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator';
-import { testDocConfig } from './lib/helpers';
+import { OpenAPIRegistry } from '../src/openapi-registry'
+import { z } from 'zod'
+import { extendZodWithOpenApi } from '../src/zod-extensions'
+import { OpenApiGeneratorV3 } from '../src/v3.0/openapi-generator'
+import { testDocConfig } from './lib/helpers'
 
-extendZodWithOpenApi(z);
+extendZodWithOpenApi(z)
 
 // TODO: Tests with both generators
 describe('Custom components', () => {
   it('can register and generate security schemes', () => {
-    const registry = new OpenAPIRegistry();
+    const registry = new OpenAPIRegistry()
 
     const bearerAuth = registry.registerComponent(
       'securitySchemes',
@@ -19,7 +19,7 @@ describe('Custom components', () => {
         scheme: 'bearer',
         bearerFormat: 'JWT',
       }
-    );
+    )
 
     registry.registerPath({
       path: '/units',
@@ -35,14 +35,14 @@ describe('Custom components', () => {
           },
         },
       },
-    });
+    })
 
-    const builder = new OpenApiGeneratorV3(registry.definitions);
-    const document = builder.generateDocument(testDocConfig);
+    const builder = new OpenApiGeneratorV3(registry.definitions)
+    const document = builder.generateDocument(testDocConfig)
 
     expect(document.paths['/units']?.get?.security).toEqual([
       { bearerAuth: [] },
-    ]);
+    ])
 
     expect(document.components!.securitySchemes).toEqual({
       bearerAuth: {
@@ -50,17 +50,17 @@ describe('Custom components', () => {
         scheme: 'bearer',
         type: 'http',
       },
-    });
-  });
+    })
+  })
 
   it('can register and generate headers', () => {
-    const registry = new OpenAPIRegistry();
+    const registry = new OpenAPIRegistry()
 
     const apiKeyHeader = registry.registerComponent('headers', 'api-key', {
       example: '1234',
       required: true,
       description: 'The API Key you were given in the developer portal',
-    });
+    })
 
     registry.registerPath({
       path: '/units',
@@ -76,14 +76,14 @@ describe('Custom components', () => {
           },
         },
       },
-    });
+    })
 
-    const builder = new OpenApiGeneratorV3(registry.definitions);
-    const document = builder.generateDocument(testDocConfig);
+    const builder = new OpenApiGeneratorV3(registry.definitions)
+    const document = builder.generateDocument(testDocConfig)
 
     expect(document.paths['/units']?.get?.responses['200'].headers).toEqual({
       'x-api-key': { $ref: '#/components/headers/api-key' },
-    });
+    })
 
     expect(document.components!.headers).toEqual({
       'api-key': {
@@ -91,11 +91,11 @@ describe('Custom components', () => {
         required: true,
         description: 'The API Key you were given in the developer portal',
       },
-    });
-  });
+    })
+  })
 
   it('can generate responses', () => {
-    const registry = new OpenAPIRegistry();
+    const registry = new OpenAPIRegistry()
 
     const response = registry.registerComponent('responses', 'BadRequest', {
       description: 'BadRequest',
@@ -107,7 +107,7 @@ describe('Custom components', () => {
           },
         },
       },
-    });
+    })
 
     registry.registerPath({
       summary: 'Get user of an organization',
@@ -116,14 +116,14 @@ describe('Custom components', () => {
       responses: {
         '400': response.ref,
       },
-    });
+    })
 
-    const builder = new OpenApiGeneratorV3(registry.definitions);
-    const document = builder.generateDocument(testDocConfig);
+    const builder = new OpenApiGeneratorV3(registry.definitions)
+    const document = builder.generateDocument(testDocConfig)
 
     expect(document.paths['/test']?.get?.responses['400']).toEqual({
       $ref: '#/components/responses/BadRequest',
-    });
+    })
 
     expect(document.components!.responses).toEqual({
       BadRequest: {
@@ -137,6 +137,6 @@ describe('Custom components', () => {
           },
         },
       },
-    });
-  });
-});
+    })
+  })
+})

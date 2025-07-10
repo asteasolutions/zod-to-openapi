@@ -4,14 +4,14 @@ import {
   // OpenApiGeneratorV31
   OpenAPIRegistry,
   extendZodWithOpenApi,
-} from '../src';
-import { z } from 'zod/v4';
-import * as yaml from 'yaml';
-import * as fs from 'fs';
+} from '../src'
+import { z } from 'zod'
+import * as yaml from 'yaml'
+import * as fs from 'fs'
 
-extendZodWithOpenApi(z);
+extendZodWithOpenApi(z)
 
-const registry = new OpenAPIRegistry();
+const registry = new OpenAPIRegistry()
 
 const UserIdSchema = registry.registerParameter(
   'UserId',
@@ -22,7 +22,7 @@ const UserIdSchema = registry.registerParameter(
     },
     example: '1212121',
   })
-);
+)
 const UserSchema = z
   .object({
     id: z.string().openapi({
@@ -35,13 +35,13 @@ const UserSchema = z
       example: 42,
     }),
   })
-  .openapi('User');
+  .openapi('User')
 
 const bearerAuth = registry.registerComponent('securitySchemes', 'bearerAuth', {
   type: 'http',
   scheme: 'bearer',
   bearerFormat: 'JWT',
-});
+})
 
 registry.registerPath({
   method: 'get',
@@ -65,10 +65,10 @@ registry.registerPath({
       description: 'No content - successful operation',
     },
   },
-});
+})
 
 function getOpenApiDocumentation() {
-  const generator = new OpenApiGeneratorV3(registry.definitions);
+  const generator = new OpenApiGeneratorV3(registry.definitions)
 
   return generator.generateDocument({
     openapi: '3.0.0',
@@ -78,19 +78,19 @@ function getOpenApiDocumentation() {
       description: 'This is the API',
     },
     servers: [{ url: 'v1' }],
-  });
+  })
 }
 
 function writeDocumentation() {
   // OpenAPI JSON
-  const docs = getOpenApiDocumentation();
+  const docs = getOpenApiDocumentation()
 
   // YAML equivalent
-  const fileContent = yaml.stringify(docs);
+  const fileContent = yaml.stringify(docs)
 
   fs.writeFileSync(`${__dirname}/openapi-docs.yml`, fileContent, {
     encoding: 'utf-8',
-  });
+  })
 }
 
-writeDocumentation();
+writeDocumentation()

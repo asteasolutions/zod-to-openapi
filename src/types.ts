@@ -1,5 +1,5 @@
-import type { ZodType } from 'zod/v4';
-import type { $ZodCheck } from 'zod/v4/core';
+import type { ZodType } from 'zod'
+import type { $ZodCheck } from 'zod/core'
 import type {
   ReferenceObject as ReferenceObject30,
   ParameterObject as ParameterObject30,
@@ -14,7 +14,7 @@ import type {
   SchemaObject as SchemaObject30,
   BaseParameterObject as BaseParameterObject30,
   HeadersObject as HeadersObject30,
-} from 'openapi3-ts/oas30';
+} from 'openapi3-ts/oas30'
 import type {
   ReferenceObject as ReferenceObject31,
   ParameterObject as ParameterObject31,
@@ -29,49 +29,49 @@ import type {
   SchemaObject as SchemaObject31,
   BaseParameterObject as BaseParameterObject31,
   HeadersObject as HeadersObject31,
-} from 'openapi3-ts/oas31';
+} from 'openapi3-ts/oas31'
 
-export type ZodNumericCheck = $ZodCheck<never>;
+export type ZodNumericCheck = $ZodCheck<never>
 
-export type ReferenceObject = ReferenceObject30 & ReferenceObject31;
-export type ParameterObject = ParameterObject30 & ParameterObject31;
-export type RequestBodyObject = RequestBodyObject30 & RequestBodyObject31;
-export type PathItemObject = PathItemObject30 & PathItemObject31;
-export type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31;
-export type ComponentsObject = ComponentsObject30 & ComponentsObject31;
-export type ParameterLocation = ParameterLocation30 & ParameterLocation31;
-export type ResponseObject = ResponseObject30 & ResponseObject31;
-export type ContentObject = ContentObject30 & ContentObject31;
-export type DiscriminatorObject = DiscriminatorObject30 & DiscriminatorObject31;
-export type SchemaObject = SchemaObject30 & SchemaObject31;
-export type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31;
-export type HeadersObject = HeadersObject30 & HeadersObject31;
+export type ReferenceObject = ReferenceObject30 & ReferenceObject31
+export type ParameterObject = ParameterObject30 & ParameterObject31
+export type RequestBodyObject = RequestBodyObject30 & RequestBodyObject31
+export type PathItemObject = PathItemObject30 & PathItemObject31
+export type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31
+export type ComponentsObject = ComponentsObject30 & ComponentsObject31
+export type ParameterLocation = ParameterLocation30 & ParameterLocation31
+export type ResponseObject = ResponseObject30 & ResponseObject31
+export type ContentObject = ContentObject30 & ContentObject31
+export type DiscriminatorObject = DiscriminatorObject30 & DiscriminatorObject31
+export type SchemaObject = SchemaObject30 & SchemaObject31
+export type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31
+export type HeadersObject = HeadersObject30 & HeadersObject31
 
 export type MapNullableType = (
   type: NonNullable<SchemaObject['type']> | undefined
-) => Pick<SchemaObject, 'type' | 'nullable'>;
+) => Pick<SchemaObject, 'type' | 'nullable'>
 
 export type MapNullableTypeWithNullable = (
   type: NonNullable<SchemaObject['type']> | undefined,
   isNullable: boolean
-) => Pick<SchemaObject, 'type' | 'nullable'>;
+) => Pick<SchemaObject, 'type' | 'nullable'>
 
 export type MapNullableOfArray = (
   objects: (SchemaObject | ReferenceObject)[]
-) => (SchemaObject | ReferenceObject)[];
+) => (SchemaObject | ReferenceObject)[]
 
 export type MapNullableOfArrayWithNullable = (
   objects: (SchemaObject | ReferenceObject)[],
   isNullable: boolean
-) => (SchemaObject | ReferenceObject)[];
+) => (SchemaObject | ReferenceObject)[]
 
 export type GetNumberChecks = (
   checks: ZodNumericCheck[]
 ) => Pick<
   SchemaObject,
   'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum'
->;
+>
 
 export type MapSubSchema = (
   zodSchema: ZodType
-) => SchemaObject | ReferenceObject;
+) => SchemaObject | ReferenceObject

@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('array', () => {
   it('supports arrays of strings', () => {
@@ -8,8 +8,8 @@ describe('array', () => {
         type: 'array',
         items: { type: 'string' },
       },
-    });
-  });
+    })
+  })
 
   it('supports minLength / maxLength on arrays', () => {
     expectSchema([z.array(z.string()).min(5).max(10).openapi('Array')], {
@@ -19,11 +19,11 @@ describe('array', () => {
         minItems: 5,
         maxItems: 10,
       },
-    });
-  });
+    })
+  })
 
   it('can automatically register array items', () => {
-    const schema = z.array(z.string().openapi('StringId')).openapi('Array');
+    const schema = z.array(z.string().openapi('StringId')).openapi('Array')
 
     expectSchema([schema], {
       StringId: {
@@ -36,6 +36,6 @@ describe('array', () => {
           $ref: '#/components/schemas/StringId',
         },
       },
-    });
-  });
-});
+    })
+  })
+})

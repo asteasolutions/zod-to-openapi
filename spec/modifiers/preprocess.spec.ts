@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('preprocess', () => {
   it('supports preprocessed string -> boolean schema', () => {
@@ -8,15 +8,15 @@ describe('preprocess', () => {
         z
           .preprocess(arg => {
             if (typeof arg === 'boolean') {
-              return arg;
+              return arg
             }
 
             if (typeof arg === 'string') {
-              if (arg === 'true') return true;
-              if (arg === 'false') return false;
+              if (arg === 'true') return true
+              if (arg === 'false') return false
             }
 
-            return undefined;
+            return undefined
           }, z.boolean())
           .openapi('PreprocessedBoolean'),
       ],
@@ -25,8 +25,8 @@ describe('preprocess', () => {
           type: 'boolean',
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports preprocessed string -> number schema', () => {
     expectSchema(
@@ -34,14 +34,14 @@ describe('preprocess', () => {
         z
           .preprocess(arg => {
             if (typeof arg === 'number') {
-              return arg;
+              return arg
             }
 
             if (typeof arg === 'string') {
-              return parseInt(arg, 10);
+              return parseInt(arg, 10)
             }
 
-            return undefined;
+            return undefined
           }, z.number())
           .openapi('PreprocessedNumber'),
       ],
@@ -50,25 +50,25 @@ describe('preprocess', () => {
           type: 'number',
         },
       }
-    );
-  });
+    )
+  })
 
   // TODO: This test should probably be made to work.
   it.skip('can automatically register schemas in preprocess', () => {
     const schema = z
       .preprocess(arg => {
         if (typeof arg === 'boolean') {
-          return arg;
+          return arg
         }
 
         if (typeof arg === 'string') {
-          if (arg === 'true') return true;
-          if (arg === 'false') return false;
+          if (arg === 'true') return true
+          if (arg === 'false') return false
         }
 
-        return undefined;
+        return undefined
       }, z.boolean().openapi('PlainBoolean'))
-      .openapi('PreprocessedBoolean');
+      .openapi('PreprocessedBoolean')
 
     expectSchema([schema], {
       PlainBoolean: {
@@ -77,6 +77,6 @@ describe('preprocess', () => {
       PreprocessedBoolean: {
         type: 'boolean',
       },
-    });
-  });
-});
+    })
+  })
+})

@@ -1,15 +1,15 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('intersection', () => {
   it('supports intersection types', () => {
     const Person = z.object({
       name: z.string(),
-    });
+    })
 
     const Employee = z.object({
       role: z.string(),
-    });
+    })
 
     expectSchema([z.intersection(Person, Employee).openapi('Test')], {
       Test: {
@@ -26,21 +26,21 @@ describe('intersection', () => {
           },
         ],
       },
-    });
-  });
+    })
+  })
 
   it('can automatically register intersection items', () => {
     const Person = z
       .object({
         name: z.string(),
       })
-      .openapi('Person');
+      .openapi('Person')
 
     const Employee = z.object({
       role: z.string(),
-    });
+    })
 
-    const schema = z.intersection(Person, Employee).openapi('Intersection');
+    const schema = z.intersection(Person, Employee).openapi('Intersection')
 
     expectSchema([schema], {
       Person: {
@@ -63,17 +63,17 @@ describe('intersection', () => {
           },
         ],
       },
-    });
-  });
+    })
+  })
 
   it('supports nullable intersection types', () => {
     const Person = z.object({
       name: z.string(),
-    });
+    })
 
     const Employee = z.object({
       role: z.string(),
-    });
+    })
 
     expectSchema(
       [z.intersection(Person, Employee).nullable().openapi('Test')],
@@ -98,17 +98,17 @@ describe('intersection', () => {
           ],
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports default intersection types', () => {
     const Person = z.object({
       name: z.string(),
-    });
+    })
 
     const Employee = z.object({
       role: z.string(),
-    });
+    })
 
     expectSchema(
       [
@@ -137,17 +137,17 @@ describe('intersection', () => {
           },
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports nullable default intersection types', () => {
     const Person = z.object({
       name: z.string(),
-    });
+    })
 
     const Employee = z.object({
       role: z.string(),
-    });
+    })
 
     expectSchema(
       [
@@ -182,6 +182,6 @@ describe('intersection', () => {
           },
         },
       }
-    );
-  });
-});
+    )
+  })
+})

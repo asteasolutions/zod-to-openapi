@@ -1,5 +1,5 @@
-import { getOpenApiMetadata } from '../src/openapi-metadata';
-import { z } from 'zod/v4';
+import { getOpenApiMetadata } from '../src/openapi-metadata'
+import { z } from 'zod'
 
 describe('OpenAPI metadata', () => {
   it('can obtain nested metadata', () => {
@@ -8,13 +8,13 @@ describe('OpenAPI metadata', () => {
       .openapi({ description: 'Test', deprecated: true })
       .optional()
       .nullable()
-      .default('test');
+      .default('test')
 
     expect(getOpenApiMetadata(schema)).toEqual({
       description: 'Test',
       deprecated: true,
-    });
-  });
+    })
+  })
 
   it('can obtain overridden metadata', () => {
     const schema = z
@@ -25,13 +25,13 @@ describe('OpenAPI metadata', () => {
       .nullable()
       .openapi({ example: 'test-example' })
       .default('test')
-      .openapi({ maxLength: 40 });
+      .openapi({ maxLength: 40 })
 
     expect(getOpenApiMetadata(schema)).toEqual({
       description: 'Test',
       deprecated: true,
       example: 'test-example',
       maxLength: 40,
-    });
-  });
-});
+    })
+  })
+})

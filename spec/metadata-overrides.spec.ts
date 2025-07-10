@@ -1,48 +1,48 @@
-import { z } from 'zod/v4';
-import { expectSchema } from './lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from './lib/helpers'
 
 describe('metadata overrides', () => {
   it.todo(
     'throws error for openapi data to be provided for unrecognized literal types'
-  );
+  )
 
   it.todo(
     'throws error for openapi data to be provided for unrecognized enum types'
-  );
+  )
 
   it('does not infer the type if one is provided using .openapi', () => {
-    const schema = z.string().openapi('StringAsNumber', { type: 'number' });
+    const schema = z.string().openapi('StringAsNumber', { type: 'number' })
     expectSchema([schema], {
       StringAsNumber: { type: 'number' },
-    });
-  });
+    })
+  })
 
   it('can remove .openapi properties', () => {
     const schema = z
       .string()
       .openapi('Test', { description: 'test', deprecated: true })
-      .openapi({ description: undefined, deprecated: undefined });
+      .openapi({ description: undefined, deprecated: undefined })
 
     expectSchema([schema], {
       Test: { type: 'string' },
-    });
-  });
+    })
+  })
 
   it('generates schemas with metadata', () => {
     expectSchema(
       [z.string().openapi('SimpleString', { description: 'test' })],
       { SimpleString: { type: 'string', description: 'test' } }
-    );
-  });
+    )
+  })
 
   it('supports .openapi for registered schemas', () => {
-    const StringSchema = z.string().openapi('String');
+    const StringSchema = z.string().openapi('String')
 
     const TestSchema = z
       .object({
         key: StringSchema.openapi({ example: 'test', deprecated: true }),
       })
-      .openapi('Test');
+      .openapi('Test')
 
     expectSchema([StringSchema, TestSchema], {
       String: {
@@ -60,8 +60,8 @@ describe('metadata overrides', () => {
         },
         required: ['key'],
       },
-    });
-  });
+    })
+  })
 
   it('only adds overrides for new metadata properties', () => {
     const StringSchema = z.string().openapi('String', {
@@ -69,7 +69,7 @@ describe('metadata overrides', () => {
       title: 'same title',
       examples: ['same array'],
       discriminator: { propertyName: 'sameProperty' },
-    });
+    })
 
     const TestSchema = z
       .object({
@@ -80,7 +80,7 @@ describe('metadata overrides', () => {
           discriminator: { propertyName: 'sameProperty' },
         }),
       })
-      .openapi('Test');
+      .openapi('Test')
 
     expectSchema([StringSchema, TestSchema], {
       String: {
@@ -102,19 +102,19 @@ describe('metadata overrides', () => {
         },
         required: ['key'],
       },
-    });
-  });
+    })
+  })
 
   it('does not add schema calculated overrides if type is provided in .openapi', () => {
     const StringSchema = z.string().openapi('String', {
       example: 'existing field',
-    });
+    })
 
     const TestSchema = z
       .object({
         key: StringSchema.nullable().openapi({ type: 'boolean' }),
       })
-      .openapi('Test');
+      .openapi('Test')
 
     expectSchema([StringSchema, TestSchema], {
       String: {
@@ -133,8 +133,8 @@ describe('metadata overrides', () => {
         },
         required: ['key'],
       },
-    });
-  });
+    })
+  })
 
   // This was broken with the metadata overrides code so this feels like
   // the best support for it
@@ -144,9 +144,9 @@ describe('metadata overrides', () => {
       .transform(obj => obj as { [key: string]: never })
       .openapi('Empty', {
         type: 'object',
-      });
+      })
 
-    const TestSchema = z.object({ key: EmptySchema }).openapi('Test');
+    const TestSchema = z.object({ key: EmptySchema }).openapi('Test')
 
     expectSchema([EmptySchema, TestSchema], {
       Empty: {
@@ -161,8 +161,8 @@ describe('metadata overrides', () => {
           },
         },
       },
-    });
-  });
+    })
+  })
 
   it('supports referencing zod effects in unions', () => {
     const EmptySchema = z
@@ -170,13 +170,13 @@ describe('metadata overrides', () => {
       .transform(obj => obj as { [key: string]: never })
       .openapi('Empty', {
         type: 'object',
-      });
+      })
 
     const UnionTestSchema = z
       .union([z.string(), EmptySchema])
       .openapi('UnionTest', {
         description: 'Union with empty object',
-      });
+      })
 
     expectSchema([EmptySchema, UnionTestSchema], {
       Empty: {
@@ -186,6 +186,6 @@ describe('metadata overrides', () => {
         anyOf: [{ type: 'string' }, { $ref: '#/components/schemas/Empty' }],
         description: 'Union with empty object',
       },
-    });
-  });
-});
+    })
+  })
+})

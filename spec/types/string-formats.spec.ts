@@ -1,5 +1,5 @@
-import { z, ZodString } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z, ZodString } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('string formats', () => {
   fit.each`
@@ -20,7 +20,7 @@ describe('string formats', () => {
     ({ zodString, expected }: { zodString: ZodString; expected: string }) => {
       expectSchema([zodString.openapi('ZodString')], {
         ZodString: { type: 'string', format: expected },
-      });
+      })
     }
-  );
-});
+  )
+})

@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('refine', () => {
   it('supports refined schemas', () => {
@@ -15,8 +15,8 @@ describe('refine', () => {
           type: 'number',
         },
       }
-    );
-  });
+    )
+  })
 
   it('does not lose metadata from refine', () => {
     expectSchema(
@@ -33,8 +33,8 @@ describe('refine', () => {
           example: 42,
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports required refined schemas', () => {
     expectSchema(
@@ -56,8 +56,8 @@ describe('refine', () => {
           required: ['test'],
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports optional refined schemas', () => {
     expectSchema(
@@ -81,8 +81,8 @@ describe('refine', () => {
           },
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports optional refined schemas with default', () => {
     expectSchema(
@@ -108,8 +108,8 @@ describe('refine', () => {
           },
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports required type schemas with refine and default', () => {
     expectSchema(
@@ -134,8 +134,8 @@ describe('refine', () => {
           },
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports refined transforms when type is provided', () => {
     expectSchema(
@@ -163,8 +163,8 @@ describe('refine', () => {
           required: ['test'],
         },
       }
-    );
-  });
+    )
+  })
 
   // TODO: This test should probably be made to work.
   it.skip('can automatically register schemas in refine', () => {
@@ -172,7 +172,7 @@ describe('refine', () => {
       .string()
       .openapi('PlainString')
       .refine(data => data.length > 3)
-      .openapi('RefinedString');
+      .openapi('RefinedString')
 
     expectSchema([schema], {
       PlainString: {
@@ -181,6 +181,6 @@ describe('refine', () => {
       RefinedString: {
         type: 'string',
       },
-    });
-  });
-});
+    })
+  })
+})

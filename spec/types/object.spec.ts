@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('object', () => {
   it('generates OpenAPI schema for nested objects', () => {
@@ -28,18 +28,18 @@ describe('object', () => {
           },
         },
       }
-    );
-  });
+    )
+  })
 
   it('creates separate schemas and links them', () => {
-    const SimpleStringSchema = z.string().openapi('SimpleString');
+    const SimpleStringSchema = z.string().openapi('SimpleString')
 
     const ObjectWithStringsSchema = z
       .object({
         str1: SimpleStringSchema.optional(),
         str2: SimpleStringSchema,
       })
-      .openapi('ObjectWithStrings');
+      .openapi('ObjectWithStrings')
 
     expectSchema([SimpleStringSchema, ObjectWithStringsSchema], {
       SimpleString: { type: 'string' },
@@ -51,8 +51,8 @@ describe('object', () => {
         },
         required: ['str2'],
       },
-    });
-  });
+    })
+  })
 
   it('maps additionalProperties to false for strict objects', () => {
     expectSchema(
@@ -75,13 +75,13 @@ describe('object', () => {
           },
         },
       }
-    );
-  });
+    )
+  })
 
   it('can automatically register object properties', () => {
     const schema = z
       .object({ key: z.string().openapi('Test') })
-      .openapi('Object');
+      .openapi('Object')
 
     expectSchema([schema], {
       Test: {
@@ -97,17 +97,17 @@ describe('object', () => {
         },
         required: ['key'],
       },
-    });
-  });
+    })
+  })
 
   it('can automatically register extended parent properties', () => {
-    const schema = z.object({ id: z.number().openapi('NumberId') });
+    const schema = z.object({ id: z.number().openapi('NumberId') })
 
     const extended = schema
       .extend({
         name: z.string().openapi('Name'),
       })
-      .openapi('ExtendedObject');
+      .openapi('ExtendedObject')
 
     expectSchema([extended], {
       Name: {
@@ -130,19 +130,19 @@ describe('object', () => {
         },
         required: ['id', 'name'],
       },
-    });
-  });
+    })
+  })
 
   it('can automatically register extended schemas', () => {
     const schema = z
       .object({ id: z.string().openapi('StringId') })
-      .openapi('Object');
+      .openapi('Object')
 
     const extended = schema
       .extend({
         id: z.number().openapi('NumberId'),
       })
-      .openapi('ExtendedObject');
+      .openapi('ExtendedObject')
 
     expectSchema([extended], {
       StringId: {
@@ -174,6 +174,6 @@ describe('object', () => {
           },
         ],
       },
-    });
-  });
-});
+    })
+  })
+})

@@ -1,6 +1,6 @@
-import { ZodType, ZodUnion } from 'zod/v4';
-import { MapNullableOfArray, MapSubSchema } from '../types';
-import { isAnyZodType, isZodType } from '../lib/zod-is-type';
+import { ZodType, ZodUnion } from 'zod'
+import { MapNullableOfArray, MapSubSchema } from '../types'
+import { isAnyZodType, isZodType } from '../lib/zod-is-type'
 
 export class UnionTransformer {
   transform(
@@ -8,42 +8,42 @@ export class UnionTransformer {
     mapNullableOfArray: MapNullableOfArray,
     mapItem: MapSubSchema
   ) {
-    const options = this.flattenUnionTypes(zodSchema);
+    const options = this.flattenUnionTypes(zodSchema)
 
     const schemas = options.map(schema => {
       // If any of the underlying schemas of a union is .nullable then the whole union
       // would be nullable. `mapNullableOfArray` would place it where it belongs.
       // Therefor we are stripping the additional nullables from the inner schemas
       // See https://github.com/asteasolutions/zod-to-openapi/issues/149
-      const optionToGenerate = this.unwrapNullable(schema);
+      const optionToGenerate = this.unwrapNullable(schema)
 
-      return mapItem(optionToGenerate);
-    });
+      return mapItem(optionToGenerate)
+    })
 
     return {
       anyOf: mapNullableOfArray(schemas),
-    };
+    }
   }
 
   private flattenUnionTypes(schema: ZodType): ZodType[] {
     if (!isZodType(schema, 'ZodUnion')) {
-      return [schema];
+      return [schema]
     }
 
-    const options = schema.def.options;
+    const options = schema.def.options
 
     return options.flatMap(option =>
       isAnyZodType(option) ? this.flattenUnionTypes(option) : []
-    );
+    )
   }
 
   private unwrapNullable(schema: ZodType): ZodType {
     if (isZodType(schema, 'ZodNullable')) {
-      const unwrapped = schema.unwrap();
+      const unwrapped = schema.unwrap()
       if (isAnyZodType(unwrapped)) {
-        return this.unwrapNullable(unwrapped);
+        return this.unwrapNullable(unwrapped)
       }
     }
-    return schema;
+    return schema
   }
 }

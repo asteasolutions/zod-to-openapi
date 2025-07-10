@@ -1,5 +1,5 @@
-import { ZodNumber } from 'zod/v4';
-import { MapNullableType, GetNumberChecks } from '../types';
+import { ZodNumber } from 'zod'
+import { MapNullableType, GetNumberChecks } from '../types'
 
 export class NumberTransformer {
   transform(
@@ -11,6 +11,6 @@ export class NumberTransformer {
       ...mapNullableType('number'),
       ...mapNullableType(zodSchema.format === 'safeint' ? 'integer' : 'number'),
       ...getNumberChecks(zodSchema.def.checks ?? []),
-    };
+    }
   }
 }

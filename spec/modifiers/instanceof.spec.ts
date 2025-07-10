@@ -1,9 +1,9 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 // File as a class is not available on older node versions
 // so I am defining this just for testing purposes
-class File {}
+class File { }
 
 describe('instanceof', () => {
   it('generates OpenAPI schema for instanceof type', () => {
@@ -13,15 +13,15 @@ describe('instanceof', () => {
         type: 'string',
         format: 'binary',
       })
-      .openapi('File');
+      .openapi('File')
 
     expectSchema([FileSchema], {
       File: {
         type: 'string',
         format: 'binary',
       },
-    });
-  });
+    })
+  })
 
   it('generates OpenAPI schema for instanceof type in object', () => {
     const FileUploadSchema = z
@@ -31,7 +31,7 @@ describe('instanceof', () => {
           format: 'binary',
         }),
       })
-      .openapi('FileUpload');
+      .openapi('FileUpload')
 
     expectSchema([FileUploadSchema], {
       FileUpload: {
@@ -41,6 +41,6 @@ describe('instanceof', () => {
         },
         required: ['file'],
       },
-    });
-  });
-});
+    })
+  })
+})

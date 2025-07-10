@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import { expectSchema } from '../lib/helpers';
+import { z } from 'zod'
+import { expectSchema } from '../lib/helpers'
 
 describe('tuple', () => {
   it('supports tuples in 3.0.0', () => {
@@ -20,8 +20,8 @@ describe('tuple', () => {
         },
       },
       '3.0.0'
-    );
-  });
+    )
+  })
 
   it('supports tuples in 3.1.0', () => {
     expectSchema(
@@ -37,8 +37,8 @@ describe('tuple', () => {
         },
       },
       '3.1.0'
-    );
-  });
+    )
+  })
 
   it('supports tuples of the same single type', () => {
     expectSchema([z.tuple([z.string(), z.string()]).openapi('Test')], {
@@ -50,8 +50,8 @@ describe('tuple', () => {
         minItems: 2,
         maxItems: 2,
       },
-    });
-  });
+    })
+  })
 
   it('supports tuples of duplicate types in 3.0.0', () => {
     expectSchema(
@@ -66,8 +66,8 @@ describe('tuple', () => {
           maxItems: 3,
         },
       }
-    );
-  });
+    )
+  })
 
   it('supports tuples of duplicate types in 3.1.0', () => {
     expectSchema(
@@ -83,15 +83,15 @@ describe('tuple', () => {
         },
       },
       '3.1.0'
-    );
-  });
+    )
+  })
 
   it('supports tuples of referenced schemas', () => {
-    const stringSchema = z.string().openapi('String');
+    const stringSchema = z.string().openapi('String')
 
     const testSchema = z
       .tuple([stringSchema, z.number(), z.string()])
-      .openapi('Test');
+      .openapi('Test')
 
     expectSchema([stringSchema, testSchema], {
       String: {
@@ -109,13 +109,13 @@ describe('tuple', () => {
         minItems: 3,
         maxItems: 3,
       },
-    });
-  });
+    })
+  })
 
   it('can automatically register tuple items', () => {
     const schema = z
       .tuple([z.string().openapi('StringId'), z.number().openapi('NumberId')])
-      .openapi('Tuple');
+      .openapi('Tuple')
 
     expectSchema([schema], {
       StringId: {
@@ -138,8 +138,8 @@ describe('tuple', () => {
         maxItems: 2,
         minItems: 2,
       },
-    });
-  });
+    })
+  })
 
   describe('nullable', () => {
     it('supports tuples with nullable in 3.0.0', () => {
@@ -156,8 +156,8 @@ describe('tuple', () => {
           },
         },
         '3.0.0'
-      );
-    });
+      )
+    })
 
     it('supports tuples with nullable in 3.1.0', () => {
       expectSchema(
@@ -176,8 +176,8 @@ describe('tuple', () => {
           },
         },
         '3.1.0'
-      );
-    });
+      )
+    })
 
     it('supports nullable tuples in 3.0.0', () => {
       expectSchema(
@@ -194,8 +194,8 @@ describe('tuple', () => {
           },
         },
         '3.0.0'
-      );
-    });
+      )
+    })
 
     it('supports nullable tuples in 3.1.0', () => {
       expectSchema(
@@ -207,7 +207,7 @@ describe('tuple', () => {
           },
         },
         '3.1.0'
-      );
-    });
-  });
-});
+      )
+    })
+  })
+})
