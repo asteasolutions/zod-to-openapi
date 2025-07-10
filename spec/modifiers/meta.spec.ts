@@ -1,5 +1,5 @@
-import { expectSchema } from '../lib/helpers'
-import { z } from 'zod'
+import { expectSchema } from '../lib/helpers';
+import { z } from 'zod';
 
 describe('meta', () => {
   it('should preserve metadata through the meta modifier', () => {
@@ -10,7 +10,7 @@ describe('meta', () => {
         deprecated: true,
         example: 'test',
       })
-      .openapi('SomeString')
+      .openapi('SomeString');
 
     expectSchema([schema], {
       SomeString: {
@@ -19,8 +19,8 @@ describe('meta', () => {
         deprecated: true,
         example: 'test',
       },
-    })
-  })
+    });
+  });
 
   it('should override metadata when calling .openapi', () => {
     const schema = z
@@ -33,7 +33,7 @@ describe('meta', () => {
       .openapi('SomeString', {
         description: 'Some description override',
         example: 'test override',
-      })
+      });
 
     expectSchema([schema], {
       SomeString: {
@@ -42,8 +42,8 @@ describe('meta', () => {
         deprecated: true,
         example: 'test override',
       },
-    })
-  })
+    });
+  });
 
   it('should override metadata when calling .meta', () => {
     const schema = z
@@ -56,7 +56,7 @@ describe('meta', () => {
       .meta({
         description: 'Some description override',
         example: 'test override',
-      })
+      });
 
     expectSchema([schema], {
       SomeString: {
@@ -65,24 +65,24 @@ describe('meta', () => {
         deprecated: true,
         example: 'test override',
       },
-    })
-  })
+    });
+  });
   it('should register schema when given an id in .meta', () => {
-    const schema = z.string().meta({ id: 'SomeString' })
+    const schema = z.string().meta({ id: 'SomeString' });
 
     expectSchema([schema], {
       SomeString: { type: 'string' },
-    })
-  })
+    });
+  });
 
   it('should use the refId from .openapi as priority over the one in .meta', () => {
     const schema = z
       .string()
       .meta({ id: 'MetaString' })
-      .openapi('SomeOpenApiString')
+      .openapi('SomeOpenApiString');
 
     expectSchema([schema], {
       SomeOpenApiString: { type: 'string' },
-    })
-  })
-})
+    });
+  });
+});

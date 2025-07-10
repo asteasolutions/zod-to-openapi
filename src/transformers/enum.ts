@@ -1,11 +1,11 @@
-import { ZodEnum } from 'zod'
-import { MapNullableType } from '../types'
-import { enumInfo } from '../lib/enum-info'
-import { ZodToOpenAPIError } from '../errors'
+import { ZodEnum } from 'zod';
+import { MapNullableType } from '../types';
+import { enumInfo } from '../lib/enum-info';
+import { ZodToOpenAPIError } from '../errors';
 
 export class EnumTransformer {
   transform(zodSchema: ZodEnum, mapNullableType: MapNullableType) {
-    const { type, values } = enumInfo(zodSchema._zod.def.entries)
+    const { type, values } = enumInfo(zodSchema._zod.def.entries);
 
     if (type === 'mixed') {
       // enum Test {
@@ -18,12 +18,12 @@ export class EnumTransformer {
       // This is an error, so we can't just say it's a 'string'
       throw new ZodToOpenAPIError(
         'Enum has mixed string and number values, please specify the OpenAPI type manually'
-      )
+      );
     }
 
     return {
       ...mapNullableType(type === 'numeric' ? 'integer' : 'string'),
       enum: values,
-    }
+    };
   }
 }

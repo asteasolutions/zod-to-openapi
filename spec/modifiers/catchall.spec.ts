@@ -1,9 +1,9 @@
-import { z } from 'zod'
-import { expectSchema } from '../lib/helpers'
+import { z } from 'zod';
+import { expectSchema } from '../lib/helpers';
 
 describe('catchall', () => {
   it('generates an additionalProperties schema for objects with catchall', () => {
-    const schema = z.object({}).catchall(z.string()).openapi('CatchallObject')
+    const schema = z.object({}).catchall(z.string()).openapi('CatchallObject');
 
     expectSchema([schema], {
       CatchallObject: {
@@ -13,14 +13,14 @@ describe('catchall', () => {
           type: 'string',
         },
       },
-    })
-  })
+    });
+  });
 
   it('generates a referenced additionalProperties schema', () => {
     const schema = z
       .object({})
       .catchall(z.string().openapi('SomeString'))
-      .openapi('CatchallObject')
+      .openapi('CatchallObject');
 
     expectSchema([schema], {
       SomeString: {
@@ -33,17 +33,17 @@ describe('catchall', () => {
           $ref: '#/components/schemas/SomeString',
         },
       },
-    })
-  })
+    });
+  });
 
   it('can override previous catchalls', () => {
     const BaseSchema = z
       .object({ id: z.string() })
       .catchall(z.string())
-      .openapi('Base')
+      .openapi('Base');
     const ExtendedSchema = BaseSchema.extend({ bonus: z.number() })
       .catchall(z.union([z.boolean(), z.number(), z.string()]))
-      .openapi('Extended')
+      .openapi('Extended');
 
     expectSchema([BaseSchema, ExtendedSchema], {
       Base: {
@@ -75,6 +75,6 @@ describe('catchall', () => {
           },
         ],
       },
-    })
-  })
-})
+    });
+  });
+});

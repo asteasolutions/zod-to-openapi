@@ -1,18 +1,18 @@
-import { z } from 'zod'
-import { expectSchema } from '../lib/helpers'
+import { z } from 'zod';
+import { expectSchema } from '../lib/helpers';
 
 describe('optional', () => {
   it('generates OpenAPI schema for optional after the metadata', () => {
     expectSchema([z.string().optional().openapi('SimpleString')], {
       SimpleString: { type: 'string' },
-    })
-  })
+    });
+  });
 
   it('generates OpenAPI schema for optional before the metadata', () => {
     expectSchema([z.string().optional().openapi('SimpleString')], {
       SimpleString: { type: 'string' },
-    })
-  })
+    });
+  });
 
   it('supports optional nullable', () => {
     expectSchema(
@@ -34,6 +34,6 @@ describe('optional', () => {
           },
         },
       }
-    )
-  })
-})
+    );
+  });
+});

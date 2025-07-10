@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { expectSchema } from '../lib/helpers'
+import { z } from 'zod';
+import { expectSchema } from '../lib/helpers';
 
 describe('default', () => {
   it('supports defaults', () => {
@@ -8,8 +8,8 @@ describe('default', () => {
         type: 'string',
         default: 'test',
       },
-    })
-  })
+    });
+  });
 
   it('supports defaults override', () => {
     expectSchema(
@@ -26,8 +26,8 @@ describe('default', () => {
           default: 'override',
         },
       }
-    )
-  })
+    );
+  });
 
   it('supports falsy defaults', () => {
     expectSchema([z.boolean().default(false).openapi('BooleanWithDefault')], {
@@ -35,13 +35,13 @@ describe('default', () => {
         type: 'boolean',
         default: false,
       },
-    })
-  })
+    });
+  });
 
   it('supports optional defaults', () => {
     const schema = z
       .object({ test: z.string().optional().default('test') })
-      .openapi('ObjectWithDefault')
+      .openapi('ObjectWithDefault');
 
     expectSchema([schema], {
       ObjectWithDefault: {
@@ -53,15 +53,15 @@ describe('default', () => {
           },
         },
       },
-    })
-  })
+    });
+  });
 
   it('supports required types with defaults', () => {
     const schema = z
       .object({
         test: z.string().default('test'),
       })
-      .openapi('ObjectWithDefault')
+      .openapi('ObjectWithDefault');
 
     expectSchema([schema], {
       ObjectWithDefault: {
@@ -73,8 +73,8 @@ describe('default', () => {
           },
         },
       },
-    })
-  })
+    });
+  });
 
   it('supports optional default schemas with refine', () => {
     expectSchema(
@@ -100,8 +100,8 @@ describe('default', () => {
           },
         },
       }
-    )
-  })
+    );
+  });
 
   it('supports required types with default and refine', () => {
     expectSchema(
@@ -126,8 +126,8 @@ describe('default', () => {
           },
         },
       }
-    )
-  })
+    );
+  });
 
   it('supports overriding default with .openapi', () => {
     expectSchema(
@@ -145,13 +145,13 @@ describe('default', () => {
           examples: ['b'],
         },
       }
-    )
-  })
+    );
+  });
 
   it('supports input type examples with default', () => {
     const example = {
       requiredField: 'required',
-    }
+    };
 
     const schema = z
       .object({
@@ -159,7 +159,7 @@ describe('default', () => {
         requiredField: z.string(),
       })
       // This throws an error if z.infer was used (as before)
-      .openapi('TestTypescriptExample', { example })
+      .openapi('TestTypescriptExample', { example });
 
     expectSchema([schema], {
       TestTypescriptExample: {
@@ -178,6 +178,6 @@ describe('default', () => {
         },
         required: ['requiredField'],
       },
-    })
-  })
-})
+    });
+  });
+});

@@ -1,5 +1,5 @@
-import { expectSchema } from '../lib/helpers'
-import { z } from 'zod'
+import { expectSchema } from '../lib/helpers';
+import { z } from 'zod';
 
 describe('required', () => {
   it('can generate a schema with required', () => {
@@ -9,7 +9,7 @@ describe('required', () => {
         name: z.string().optional(),
       })
       .required()
-      .openapi('RequiredSchema')
+      .openapi('RequiredSchema');
 
     expectSchema([Schema], {
       RequiredSchema: {
@@ -20,6 +20,6 @@ describe('required', () => {
         },
         required: ['id', 'name'],
       },
-    })
-  })
-})
+    });
+  });
+});

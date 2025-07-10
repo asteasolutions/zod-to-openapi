@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { expectSchema } from '../lib/helpers'
+import { z } from 'zod';
+import { expectSchema } from '../lib/helpers';
 
 describe('union', () => {
   it('supports union types', () => {
@@ -7,7 +7,7 @@ describe('union', () => {
       Test: {
         anyOf: [{ type: 'string' }, { type: 'number' }],
       },
-    })
+    });
 
     expectSchema(
       [z.string().or(z.number()).or(z.array(z.string())).openapi('Test')],
@@ -20,13 +20,13 @@ describe('union', () => {
           ],
         },
       }
-    )
-  })
+    );
+  });
 
   it('can automatically register union items', () => {
     const schema = z
       .union([z.string().openapi('StringId'), z.number().openapi('NumberId')])
-      .openapi('Union')
+      .openapi('Union');
 
     expectSchema([schema], {
       StringId: {
@@ -43,16 +43,16 @@ describe('union', () => {
           { $ref: '#/components/schemas/NumberId' },
         ],
       },
-    })
-  })
+    });
+  });
 
   it('supports nullable union types', () => {
     expectSchema([z.string().or(z.number()).nullable().openapi('Test')], {
       Test: {
         anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
       },
-    })
-  })
+    });
+  });
 
   it('supports nullable union types in 3.1.0', () => {
     expectSchema(
@@ -63,27 +63,27 @@ describe('union', () => {
         },
       },
       '3.1.0'
-    )
-  })
+    );
+  });
 
   it('supports inner nullable union types', () => {
     // adding to .nullable() for the recursive check
     const test = z
       .union([z.string(), z.number().nullable().nullable()])
-      .openapi('Test')
+      .openapi('Test');
 
     expectSchema([test], {
       Test: {
         anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
       },
-    })
-  })
+    });
+  });
 
   it('supports inner nullable union types in 3.1.-', () => {
     // adding to .nullable() for the recursive check
     const test = z
       .union([z.string(), z.number().nullable().nullable()])
-      .openapi('Test')
+      .openapi('Test');
 
     expectSchema(
       [test],
@@ -93,6 +93,6 @@ describe('union', () => {
         },
       },
       '3.1.0'
-    )
-  })
-})
+    );
+  });
+});

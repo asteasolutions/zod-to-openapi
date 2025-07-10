@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { expectSchema } from '../lib/helpers'
+import { z } from 'zod';
+import { expectSchema } from '../lib/helpers';
 
 describe('readonly', () => {
   it('supports readonly', () => {
@@ -7,6 +7,6 @@ describe('readonly', () => {
       ReadonlyString: {
         type: 'string',
       },
-    })
-  })
-})
+    });
+  });
+});

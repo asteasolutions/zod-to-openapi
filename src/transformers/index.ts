@@ -1,22 +1,22 @@
-import { SchemaObject, ReferenceObject, MapSubSchema } from '../types'
-import { ZodType } from 'zod'
-import { UnknownZodTypeError } from '../errors'
-import { isZodType } from '../lib/zod-is-type'
-import { Metadata } from '../metadata'
-import { ArrayTransformer } from './array'
-import { BigIntTransformer } from './big-int'
-import { DiscriminatedUnionTransformer } from './discriminated-union'
-import { EnumTransformer } from './enum'
-import { IntersectionTransformer } from './intersection'
-import { LiteralTransformer } from './literal'
-import { NumberTransformer } from './number'
-import { ObjectTransformer } from './object'
-import { RecordTransformer } from './record'
-import { StringTransformer } from './string'
-import { TupleTransformer } from './tuple'
-import { UnionTransformer } from './union'
-import { OpenApiVersionSpecifics } from '../openapi-generator'
-import { DateTransformer } from './date'
+import { SchemaObject, ReferenceObject, MapSubSchema } from '../types';
+import { ZodType } from 'zod';
+import { UnknownZodTypeError } from '../errors';
+import { isZodType } from '../lib/zod-is-type';
+import { Metadata } from '../metadata';
+import { ArrayTransformer } from './array';
+import { BigIntTransformer } from './big-int';
+import { DiscriminatedUnionTransformer } from './discriminated-union';
+import { EnumTransformer } from './enum';
+import { IntersectionTransformer } from './intersection';
+import { LiteralTransformer } from './literal';
+import { NumberTransformer } from './number';
+import { ObjectTransformer } from './object';
+import { RecordTransformer } from './record';
+import { StringTransformer } from './string';
+import { TupleTransformer } from './tuple';
+import { UnionTransformer } from './union';
+import { OpenApiVersionSpecifics } from '../openapi-generator';
+import { DateTransformer } from './date';
 
 export class OpenApiTransformer {
   private objectTransformer = new ObjectTransformer();
@@ -27,14 +27,14 @@ export class OpenApiTransformer {
   private literalTransformer = new LiteralTransformer();
   private enumTransformer = new EnumTransformer();
   private arrayTransformer = new ArrayTransformer();
-  private tupleTransformer: TupleTransformer
+  private tupleTransformer: TupleTransformer;
   private unionTransformer = new UnionTransformer();
   private discriminatedUnionTransformer = new DiscriminatedUnionTransformer();
   private intersectionTransformer = new IntersectionTransformer();
   private recordTransformer = new RecordTransformer();
 
   constructor(private versionSpecifics: OpenApiVersionSpecifics) {
-    this.tupleTransformer = new TupleTransformer(versionSpecifics)
+    this.tupleTransformer = new TupleTransformer(versionSpecifics);
   }
 
   transform<T>(
@@ -45,11 +45,11 @@ export class OpenApiTransformer {
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
     if (isZodType(zodSchema, 'ZodNull')) {
-      return this.versionSpecifics.nullType
+      return this.versionSpecifics.nullType;
     }
 
     if (isZodType(zodSchema, 'ZodUnknown') || isZodType(zodSchema, 'ZodAny')) {
-      return this.versionSpecifics.mapNullableType(undefined, isNullable)
+      return this.versionSpecifics.mapNullableType(undefined, isNullable);
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
@@ -58,7 +58,7 @@ export class OpenApiTransformer {
         defaultValue as object, // verified on TS level from input
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
         mapItem
-      )
+      );
     }
 
     const schema = this.transformSchemaWithoutDefault(
@@ -66,9 +66,9 @@ export class OpenApiTransformer {
       isNullable,
       mapItem,
       generateSchemaRef
-    )
+    );
 
-    return { ...schema, default: defaultValue }
+    return { ...schema, default: defaultValue };
   }
 
   private transformSchemaWithoutDefault(
@@ -78,13 +78,13 @@ export class OpenApiTransformer {
     generateSchemaRef: (ref: string) => string
   ): SchemaObject | ReferenceObject {
     if (isZodType(zodSchema, 'ZodUnknown') || isZodType(zodSchema, 'ZodAny')) {
-      return this.versionSpecifics.mapNullableType(undefined, isNullable)
+      return this.versionSpecifics.mapNullableType(undefined, isNullable);
     }
 
     if (isZodType(zodSchema, 'ZodString')) {
       return this.stringTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodNumber')) {
@@ -92,29 +92,29 @@ export class OpenApiTransformer {
         zodSchema,
         schema => this.versionSpecifics.mapNullableType(schema, isNullable),
         _ => this.versionSpecifics.getNumberChecks(_)
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodBigInt')) {
       return this.bigIntTransformer.transform(schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodBoolean')) {
-      return this.versionSpecifics.mapNullableType('boolean', isNullable)
+      return this.versionSpecifics.mapNullableType('boolean', isNullable);
     }
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
       return this.literalTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodEnum')) {
       return this.enumTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodArray')) {
@@ -122,7 +122,7 @@ export class OpenApiTransformer {
         zodSchema,
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
         mapItem
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodTuple')) {
@@ -130,7 +130,7 @@ export class OpenApiTransformer {
         zodSchema,
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
         mapItem
-      )
+      );
     }
 
     // Note: It is important that this goes above the union transformer
@@ -142,7 +142,7 @@ export class OpenApiTransformer {
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
         mapItem,
         generateSchemaRef
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodUnion')) {
@@ -150,7 +150,7 @@ export class OpenApiTransformer {
         zodSchema,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
         mapItem
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodIntersection')) {
@@ -159,7 +159,7 @@ export class OpenApiTransformer {
         isNullable,
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
         mapItem
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodRecord')) {
@@ -167,20 +167,20 @@ export class OpenApiTransformer {
         zodSchema,
         _ => this.versionSpecifics.mapNullableType(_, isNullable),
         mapItem
-      )
+      );
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
       return this.dateTransformer.transform(_ =>
         this.versionSpecifics.mapNullableType(_, isNullable)
-      )
+      );
     }
 
-    const refId = Metadata.getRefId(zodSchema)
+    const refId = Metadata.getRefId(zodSchema);
 
     throw new UnknownZodTypeError({
       currentSchema: zodSchema.def,
       schemaName: refId,
-    })
+    });
   }
 }

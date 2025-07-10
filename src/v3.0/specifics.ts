@@ -1,12 +1,12 @@
-import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30'
-import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core'
-import { OpenApiVersionSpecifics } from '../openapi-generator'
-import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types'
-import { uniq } from '../lib/lodash'
+import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
+import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core';
+import { OpenApiVersionSpecifics } from '../openapi-generator';
+import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
+import { uniq } from '../lib/lodash';
 
 export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
   get nullType() {
-    return { nullable: true }
+    return { nullable: true };
   }
 
   mapNullableOfArray(
@@ -14,9 +14,9 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
     isNullable: boolean
   ): (SchemaObject | ReferenceObject)[] {
     if (isNullable) {
-      return [...objects, this.nullType]
+      return [...objects, this.nullType];
     }
-    return objects
+    return objects;
   }
 
   mapNullableType(
@@ -26,11 +26,11 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
     return {
       ...(type ? { type } : undefined),
       ...(isNullable ? this.nullType : undefined),
-    }
+    };
   }
 
   mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
-    const uniqueSchemas = uniq(schemas)
+    const uniqueSchemas = uniq(schemas);
 
     return {
       items:
@@ -39,7 +39,7 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
           : { anyOf: uniqueSchemas },
       minItems: schemas.length,
       maxItems: schemas.length,
-    }
+    };
   }
 
   getNumberChecks(
@@ -53,28 +53,28 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
       ...checks.map<SchemaObject>(check => {
         switch (check._zod.def.check) {
           case 'greater_than': {
-            const greaterThanCheck = check as $ZodCheckGreaterThan
+            const greaterThanCheck = check as $ZodCheckGreaterThan;
 
             return greaterThanCheck._zod.def.inclusive
               ? { minimum: Number(greaterThanCheck._zod.def.value) }
               : {
-                minimum: Number(greaterThanCheck._zod.def.value),
-                exclusiveMinimum: true,
-              }
+                  minimum: Number(greaterThanCheck._zod.def.value),
+                  exclusiveMinimum: true,
+                };
           }
           case 'less_than': {
-            const lessThanCheck = check as $ZodCheckLessThan
+            const lessThanCheck = check as $ZodCheckLessThan;
             return lessThanCheck._zod.def.inclusive
               ? { maximum: Number(lessThanCheck._zod.def.value) }
               : {
-                maximum: Number(lessThanCheck._zod.def.value),
-                exclusiveMaximum: !lessThanCheck._zod.def.inclusive,
-              }
+                  maximum: Number(lessThanCheck._zod.def.value),
+                  exclusiveMaximum: !lessThanCheck._zod.def.inclusive,
+                };
           }
           default:
-            return {}
+            return {};
         }
       })
-    )
+    );
   }
 }
