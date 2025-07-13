@@ -6,7 +6,7 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
+import type { z, ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 
 type ExampleValue<T> = T extends Date ? string : T;
@@ -54,6 +54,13 @@ declare module 'zod' {
       refId: string,
       metadata?: Partial<ZodOpenAPIMetadata<z.input<T>>>
     ): T;
+
+    openapi<T extends ZodTypeAny>(
+      this: T,
+      refId: string,
+      description: string,
+      metadata?: Partial<Omit<ZodOpenAPIMetadata<z.input<T>>,'description'>>
+    ): T;
   }
 }
 
@@ -82,18 +89,36 @@ export function extendZodWithOpenApi(zod: typeof z) {
   }
 
   zod.ZodType.prototype.openapi = function (
-    refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
-    metadata?: Partial<ZodOpenAPIMetadata<any>>
+    arg1?: string | Partial<ZodOpenAPIMetadata>,
+    arg2?: string | Partial<ZodOpenAPIMetadata>,
+    arg3?: Partial<ZodOpenAPIMetadata>
   ) {
-    const openapi = typeof refOrOpenapi === 'string' ? metadata : refOrOpenapi;
+    let refId: string | undefined;
+    let openapi: Partial<ZodOpenAPIMetadata> | undefined;
+
+    if (typeof arg1 === 'string' && typeof arg2 === 'string') {
+      refId = arg1;
+      openapi = {
+        description: arg2,
+        title: arg1,
+        ...(arg3 || {}),
+      };
+    } else if (
+      typeof arg1 === 'string' &&
+      (arg2 === undefined || typeof arg2 === 'object')
+    ) {
+      refId = arg1;
+      openapi = arg2 || {};
+    } else if (typeof arg1 !== 'string') {
+      refId = this._def.openapi?._internal?.refId;
+      openapi = arg1;
+    }
 
     const { param, ...restOfOpenApi } = openapi ?? {};
 
     const _internal = {
       ...this._def.openapi?._internal,
-      ...(typeof refOrOpenapi === 'string'
-        ? { refId: refOrOpenapi }
-        : undefined),
+      ...(typeof refId === 'string' ? { refId } : undefined),
     };
 
     const resultMetadata = {
