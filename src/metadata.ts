@@ -1,6 +1,11 @@
 import { ZodType, z } from 'zod/v4';
 import { ZodTypes, isAnyZodType, isZodType } from './lib/zod-is-type';
-import { ZodOpenAPIMetadata, ZodOpenApiFullMetadata } from './zod-extensions';
+import {
+  ZodOpenAPIInternalMetadata,
+  ZodOpenAPIMetadata,
+  ZodOpenApiFullMetadata,
+  ZodOpenApiFullMetadataForRegistry,
+} from './zod-extensions';
 import { isUndefined, omit, omitBy } from './lib/lodash';
 import { ParameterObject, ReferenceObject, SchemaObject } from './types';
 
@@ -8,7 +13,8 @@ import { ParameterObject, ReferenceObject, SchemaObject } from './types';
  * @deprecated This is not really deprecated but this should always be used with
  * caution. Using it may alter the behavior of the library and the generated schemas.
  */
-export const zodToOpenAPIRegistry = z.registry<ZodOpenApiFullMetadata>();
+export const zodToOpenAPIRegistry =
+  z.registry<ZodOpenApiFullMetadataForRegistry>();
 
 export class Metadata {
   static collectMetadata(
@@ -82,7 +88,9 @@ export class Metadata {
     return rest;
   }
 
-  static getInternalMetadata<T extends any>(zodSchema: ZodType<T>) {
+  static getInternalMetadata<T extends any>(
+    zodSchema: ZodType<T>
+  ): ZodOpenAPIInternalMetadata | undefined {
     return this.collectMetadata(zodSchema)?._internal;
   }
 
@@ -192,9 +200,7 @@ export class Metadata {
       | undefined;
   }
 
-  static getMetadataFromRegistry(
-    zodSchema: ZodType
-  ): ZodOpenApiFullMetadata | undefined {
+  static getMetadataFromRegistry(zodSchema: ZodType): any {
     const internal = this.getMetadataFromInternalRegistry(zodSchema);
     const general = zodSchema.meta();
 

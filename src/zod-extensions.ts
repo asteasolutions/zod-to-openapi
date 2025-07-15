@@ -27,15 +27,40 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   _internal?: never;
 };
 
-export interface ZodOpenAPIInternalMetadata {
+/**
+ *
+ * Since this commit https://github.com/colinhacks/zod/commit/6707ebb14c885b1c577ce64a240475e26e3ff182
+ * zod started preserving metadata from functions. Since the ZodObject type contains some function types
+ * that also have generics this leads to a too deep type instantiation. We only use this type internally
+ * so I've opted to type the _internal metadata in the registry as any. However the Metadata.getInternalMetadata
+ * method has an explicit return type of ZodOpenAPIInternalMetadata.
+ */
+interface InternalUserOnlyZodOpenAPIInternalMetadata {
   refId?: string;
+  extendedFrom?: { refId: string; schema: any };
+}
+
+/**
+ *
+ * The metadata that is received from the registry should be obtained using the Metadata methods that have an
+ * explicit return type of ZodOpenApiFullMetadata or ZodOpenAPIInternalMetadata.
+ *
+ * @deprecated Do not use for anything other than the registry. See the comment above for more details.
+ */
+export interface ZodOpenApiFullMetadataForRegistry<T = any>
+  extends Omit<ZodOpenAPIMetadata<T>, '_internal'> {
+  _internal?: InternalUserOnlyZodOpenAPIInternalMetadata;
+  [k: string]: unknown;
+}
+
+export interface ZodOpenAPIInternalMetadata
+  extends InternalUserOnlyZodOpenAPIInternalMetadata {
   extendedFrom?: { refId: string; schema: ZodObject };
 }
 
 export interface ZodOpenApiFullMetadata<T = any>
-  extends Omit<ZodOpenAPIMetadata<T>, '_internal'> {
+  extends ZodOpenApiFullMetadataForRegistry<T> {
   _internal?: ZodOpenAPIInternalMetadata;
-  [k: string]: unknown;
 }
 
 declare module 'zod/v4' {
