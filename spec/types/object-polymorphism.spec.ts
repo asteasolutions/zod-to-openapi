@@ -8,7 +8,7 @@ describe('object polymorphism', () => {
       'Extended'
     );
 
-    expectSchema([BaseSchema, ExtendedSchema], {
+    expectSchema([ExtendedSchema], {
       Base: {
         type: 'object',
         required: ['id'],
@@ -114,9 +114,9 @@ describe('object polymorphism', () => {
   });
 
   it('can apply nullable', () => {
-    const BaseSchema = z.object({ id: z.ostring() }).openapi('Base');
+    const BaseSchema = z.object({ id: z.string().optional() }).openapi('Base');
     const ExtendedSchema = BaseSchema.extend({
-      bonus: z.onumber(),
+      bonus: z.number().optional(),
     })
       .nullable()
       .openapi('Extended');
@@ -146,7 +146,7 @@ describe('object polymorphism', () => {
   it('can override properties', () => {
     const AnimalSchema = z
       .object({
-        name: z.ostring(),
+        name: z.string().optional(),
         type: z.enum(['dog', 'cat']).optional(),
       })
       .openapi('Animal', {

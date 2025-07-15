@@ -8,6 +8,7 @@ describe('date', () => {
     expectSchema([schema], {
       Date: {
         type: 'string',
+        format: 'date',
       },
     });
   });
@@ -19,6 +20,7 @@ describe('date', () => {
     expectSchema([schema], {
       Date: {
         type: 'string',
+        format: 'date',
         example,
       },
     });

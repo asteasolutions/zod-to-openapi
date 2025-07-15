@@ -9,5 +9,7 @@ export {
   ZodRequestBody,
 } from './openapi-registry';
 
+export { zodToOpenAPIRegistry } from './metadata';
+
 export { OpenApiGeneratorV3 } from './v3.0/openapi-generator';
 export { OpenApiGeneratorV31 } from './v3.1/openapi-generator';

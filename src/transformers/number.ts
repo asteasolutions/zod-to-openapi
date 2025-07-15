@@ -8,8 +8,9 @@ export class NumberTransformer {
     getNumberChecks: GetNumberChecks
   ) {
     return {
-      ...mapNullableType(zodSchema.isInt ? 'integer' : 'number'),
-      ...getNumberChecks(zodSchema._def.checks),
+      ...mapNullableType('number'),
+      ...mapNullableType(zodSchema.format === 'safeint' ? 'integer' : 'number'),
+      ...getNumberChecks(zodSchema.def.checks ?? []),
     };
   }
 }

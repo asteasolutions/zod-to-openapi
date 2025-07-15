@@ -3,12 +3,12 @@ import {
   MapSubSchema,
   SchemaObject,
 } from '../types';
-import { ZodIntersection, ZodTypeAny } from 'zod';
-import { isZodType } from '../lib/zod-is-type';
+import { ZodIntersection, ZodType } from 'zod';
+import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 
 export class IntersectionTransformer {
   transform(
-    zodSchema: ZodIntersection<ZodTypeAny, ZodTypeAny>,
+    zodSchema: ZodIntersection,
     isNullable: boolean,
     mapNullableOfArray: MapNullableOfArrayWithNullable,
     mapItem: MapSubSchema
@@ -28,13 +28,17 @@ export class IntersectionTransformer {
     return allOfSchema;
   }
 
-  private flattenIntersectionTypes(schema: ZodTypeAny): ZodTypeAny[] {
+  private flattenIntersectionTypes(schema: ZodType): ZodType[] {
     if (!isZodType(schema, 'ZodIntersection')) {
       return [schema];
     }
 
-    const leftSubTypes = this.flattenIntersectionTypes(schema._def.left);
-    const rightSubTypes = this.flattenIntersectionTypes(schema._def.right);
+    const leftSubTypes = isAnyZodType(schema._zod.def.left)
+      ? this.flattenIntersectionTypes(schema._zod.def.left)
+      : [];
+    const rightSubTypes = isAnyZodType(schema._zod.def.right)
+      ? this.flattenIntersectionTypes(schema._zod.def.right)
+      : [];
 
     return [...leftSubTypes, ...rightSubTypes];
   }

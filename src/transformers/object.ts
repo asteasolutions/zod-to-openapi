@@ -1,12 +1,12 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
-import { UnknownKeysParam, ZodObject, ZodRawShape, z } from 'zod';
-import { isZodType } from '../lib/zod-is-type';
+import { ZodObject } from 'zod';
+import { isAnyZodType, isOptionalSchema, isZodType } from '../lib/zod-is-type';
 import { mapValues, objectEquals } from '../lib/lodash';
 import { Metadata } from '../metadata';
 
 export class ObjectTransformer {
   transform(
-    zodSchema: ZodObject<ZodRawShape>,
+    zodSchema: ZodObject,
     defaultValue: object,
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
@@ -14,7 +14,7 @@ export class ObjectTransformer {
     const extendedFrom = Metadata.getInternalMetadata(zodSchema)?.extendedFrom;
 
     const required = this.requiredKeysOf(zodSchema);
-    const properties = mapValues(zodSchema._def.shape(), mapItem);
+    const properties = mapValues(zodSchema.def.shape, mapItem);
 
     if (!extendedFrom) {
       return {
@@ -30,11 +30,12 @@ export class ObjectTransformer {
     }
 
     const parent = extendedFrom.schema;
+
     // We want to generate the parent schema so that it can be referenced down the line
     mapItem(parent);
 
     const keysRequiredByParent = this.requiredKeysOf(parent);
-    const propsOfParent = mapValues(parent?._def.shape(), mapItem);
+    const propsOfParent = mapValues(parent?.def.shape, mapItem);
 
     const propertiesToAdd = Object.fromEntries(
       Object.entries(properties).filter(([key, type]) => {
@@ -67,29 +68,29 @@ export class ObjectTransformer {
   }
 
   private generateAdditionalProperties(
-    zodSchema: ZodObject<ZodRawShape, UnknownKeysParam>,
+    zodSchema: ZodObject,
     mapItem: MapSubSchema
   ) {
-    const unknownKeysOption = zodSchema._def.unknownKeys;
+    const catchallSchema = zodSchema.def.catchall;
 
-    const catchallSchema = zodSchema._def.catchall;
-
-    if (isZodType(catchallSchema, 'ZodNever')) {
-      if (unknownKeysOption === 'strict') {
-        return { additionalProperties: false };
-      }
-
+    if (!catchallSchema) {
       return {};
     }
 
-    return { additionalProperties: mapItem(catchallSchema) };
+    if (isZodType(catchallSchema, 'ZodNever')) {
+      return { additionalProperties: false };
+    }
+
+    if (isAnyZodType(catchallSchema)) {
+      return { additionalProperties: mapItem(catchallSchema) };
+    }
+
+    return {};
   }
 
-  private requiredKeysOf(
-    objectSchema: ZodObject<ZodRawShape, UnknownKeysParam>
-  ) {
-    return Object.entries(objectSchema._def.shape())
-      .filter(([_key, type]) => !Metadata.isOptionalSchema(type))
+  private requiredKeysOf(objectSchema: ZodObject) {
+    return Object.entries(objectSchema.def.shape)
+      .filter(([_key, type]) => !isOptionalSchema(type))
       .map(([key, _type]) => key);
   }
 }

@@ -7,12 +7,20 @@ describe('pipe', () => {
       [
         z
           .date()
-          .or(z.string().min(1).pipe(z.coerce.date()))
+          .or(
+            z
+              .string()
+              .min(1)
+              .pipe(z.transform(val => z.coerce.date().parse(val)))
+          )
           .openapi('PipedDate'),
       ],
       {
         PipedDate: {
-          anyOf: [{ type: 'string' }, { type: 'string', minLength: 1 }],
+          anyOf: [
+            { type: 'string', format: 'date' },
+            { type: 'string', minLength: 1 },
+          ],
         },
       },
       '3.1.0'
@@ -25,7 +33,7 @@ describe('pipe', () => {
         z
           .number()
           .or(z.string())
-          .pipe(z.coerce.number())
+          .pipe(z.transform(val => z.coerce.number().parse(val)))
           .openapi('PipedNumber'),
       ],
       {

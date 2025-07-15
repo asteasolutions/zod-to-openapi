@@ -6,8 +6,10 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodRawShape, ZodTypeAny, z } from 'zod';
+import type { ZodObject, ZodType } from 'zod';
+import { z } from 'zod';
 import { isZodType } from './lib/zod-is-type';
+import { Metadata } from './metadata';
 
 type ExampleValue<T> = T extends Date ? string : T;
 
@@ -22,55 +24,81 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   example?: E;
   examples?: E[];
   default?: T;
+  _internal?: never;
 };
 
-export interface ZodOpenAPIInternalMetadata {
+/**
+ *
+ * Since this commit https://github.com/colinhacks/zod/commit/6707ebb14c885b1c577ce64a240475e26e3ff182
+ * zod started preserving metadata from functions. Since the ZodObject type contains some function types
+ * that also have generics this leads to a too deep type instantiation. We only use this type internally
+ * so I've opted to type the _internal metadata in the registry as any. However the Metadata.getInternalMetadata
+ * method has an explicit return type of ZodOpenAPIInternalMetadata.
+ */
+interface InternalUserOnlyZodOpenAPIInternalMetadata {
   refId?: string;
-  extendedFrom?: { refId: string; schema: ZodObject<ZodRawShape> };
+  extendedFrom?: { refId: string; schema: any };
 }
 
-export interface ZodOpenApiFullMetadata<T = any> {
+/**
+ *
+ * The metadata that is received from the registry should be obtained using the Metadata methods that have an
+ * explicit return type of ZodOpenApiFullMetadata or ZodOpenAPIInternalMetadata.
+ *
+ * @deprecated Do not use for anything other than the registry. See the comment above for more details.
+ */
+export interface ZodOpenApiFullMetadataForRegistry<T = any>
+  extends Omit<ZodOpenAPIMetadata<T>, '_internal'> {
+  _internal?: InternalUserOnlyZodOpenAPIInternalMetadata;
+  [k: string]: unknown;
+}
+
+export interface ZodOpenAPIInternalMetadata
+  extends InternalUserOnlyZodOpenAPIInternalMetadata {
+  extendedFrom?: { refId: string; schema: ZodObject };
+}
+
+export interface ZodOpenApiFullMetadata<T = any>
+  extends ZodOpenApiFullMetadataForRegistry<T> {
   _internal?: ZodOpenAPIInternalMetadata;
-  metadata?: ZodOpenAPIMetadata<T>;
 }
 
 declare module 'zod' {
-  interface ZodTypeDef {
-    openapi?: ZodOpenApiFullMetadata;
-  }
-
-  interface ZodType<
-    Output = any,
-    Def extends ZodTypeDef = ZodTypeDef,
-    Input = Output
-  > {
-    openapi<T extends ZodTypeAny>(
+  interface ZodType<Output = unknown, Input = unknown> {
+    openapi<T extends ZodType>(
       this: T,
-      metadata: Partial<ZodOpenAPIMetadata<z.input<T>>>
+      metadata: Partial<ZodOpenAPIMetadata<Input>>
     ): T;
 
-    openapi<T extends ZodTypeAny>(
+    openapi<T extends ZodType>(
       this: T,
       refId: string,
-      metadata?: Partial<ZodOpenAPIMetadata<z.input<T>>>
+      metadata?: Partial<ZodOpenAPIMetadata<Input>>
     ): T;
   }
 }
 
-function preserveMetadataFromModifier(
-  zod: typeof z,
-  modifier: keyof typeof z.ZodType.prototype
+function preserveMetadataFromModifier<T extends ZodType, K extends keyof T>(
+  zodSchema: T,
+  modifier: K
 ) {
-  const zodModifier = zod.ZodType.prototype[modifier];
-  (zod.ZodType.prototype[modifier] as any) = function (
-    this: any,
-    ...args: any[]
-  ) {
+  const zodModifier = zodSchema[modifier];
+
+  if (typeof zodModifier !== 'function') {
+    return;
+  }
+
+  zodSchema[modifier] = function (this: T, ...args: any[]) {
     const result = zodModifier.apply(this, args);
-    result._def.openapi = this._def.openapi;
+
+    const meta = Metadata.getMetadataFromRegistry(this);
+
+    if (meta) {
+      Metadata.setMetadataInRegistry(result, meta);
+    }
 
     return result;
-  };
+  } as T[K];
 }
 
 export function extendZodWithOpenApi(zod: typeof z) {
@@ -89,94 +117,92 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     const { param, ...restOfOpenApi } = openapi ?? {};
 
+    const allMetadata = Metadata.getMetadataFromRegistry(this);
+    const { _internal: internalMetadata, ...currentMetadata } =
+      allMetadata ?? {};
+
     const _internal = {
-      ...this._def.openapi?._internal,
+      ...internalMetadata,
       ...(typeof refOrOpenapi === 'string'
         ? { refId: refOrOpenapi }
         : undefined),
     };
 
     const resultMetadata = {
-      ...this._def.openapi?.metadata,
+      ...currentMetadata,
       ...restOfOpenApi,
-      ...(this._def.openapi?.metadata?.param || param
+      ...(currentMetadata?.param || param
         ? {
             param: {
-              ...this._def.openapi?.metadata?.param,
+              ...currentMetadata?.param,
               ...param,
             },
           }
         : undefined),
     };
 
-    const result = new (this as any).constructor({
-      ...this._def,
-      openapi: {
-        ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
-        ...(Object.keys(resultMetadata).length > 0
-          ? { metadata: resultMetadata }
-          : undefined),
-      },
-    });
+    // We need to create a new instance of the schema so that sequential
+    // calls to .openapi from keys do not override each other
+    // See the test in metadata-overrides.spec.ts (only adds overrides for new metadata properties)
+    const result = new this.constructor(this._def);
 
-    if (isZodType(this, 'ZodObject')) {
-      const originalExtend = this.extend;
+    Metadata.setMetadataInRegistry(result, {
+      ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
+      ...resultMetadata,
+    } as ZodOpenApiFullMetadata);
 
-      result.extend = function (...args: any) {
-        const extendedResult = originalExtend.apply(this, args);
+    if (isZodType(result, 'ZodObject')) {
+      const currentMetadata = Metadata.getMetadataFromRegistry(result);
 
-        extendedResult._def.openapi = {
+      const originalExtend = result.extend;
+      result.extend = function (...args: Parameters<typeof originalExtend>) {
+        const extendedResult = originalExtend.apply(result, args);
+
+        const { _internal, ...rest } = currentMetadata ?? {};
+
+        Metadata.setMetadataInRegistry(extendedResult, {
           _internal: {
-            extendedFrom: this._def.openapi?._internal?.refId
-              ? { refId: this._def.openapi?._internal?.refId, schema: this }
-              : this._def.openapi?._internal?.extendedFrom,
+            extendedFrom: _internal?.refId
+              ? { refId: _internal.refId, schema: result }
+              : _internal?.extendedFrom,
           },
-          metadata: extendedResult._def.openapi?.metadata,
-        };
+        });
 
-        return extendedResult;
-      };
+        // This is hacky. Yes we can do that directly in the meta call above,
+        // but that would not override future calls to .extend. That's why
+        // we call openapi explicitly here. And in that case might as well add the metadata
+        // here instead of through the meta call
+        return extendedResult.openapi(rest);
+      } as typeof originalExtend;
+
+      preserveMetadataFromModifier(result, 'catchall');
     }
 
-    return result;
-  };
+    preserveMetadataFromModifier(result, 'optional');
+    preserveMetadataFromModifier(result, 'nullable');
+    preserveMetadataFromModifier(result, 'default');
 
-  preserveMetadataFromModifier(zod, 'optional');
-  preserveMetadataFromModifier(zod, 'nullable');
-  preserveMetadataFromModifier(zod, 'default');
+    preserveMetadataFromModifier(result, 'transform');
+    preserveMetadataFromModifier(result, 'refine');
+    preserveMetadataFromModifier(result, 'length');
+    preserveMetadataFromModifier(result, 'min');
+    preserveMetadataFromModifier(result, 'max');
 
-  preserveMetadataFromModifier(zod, 'transform');
-  preserveMetadataFromModifier(zod, 'refine');
+    const originalMeta = result.meta;
+    result.meta = function (this, ...args: Parameters<typeof originalMeta>) {
+      const result = originalMeta.apply(this, args);
+      if (args[0]) {
+        const meta = Metadata.getMetadataFromInternalRegistry(this);
+        if (meta) {
+          Metadata.setMetadataInRegistry(result, {
+            ...meta,
+            ...args[0],
+          });
+        }
+      }
 
-  const zodDeepPartial = zod.ZodObject.prototype.deepPartial;
-  zod.ZodObject.prototype.deepPartial = function (this: any) {
-    const initialShape = this._def.shape();
-
-    const result = zodDeepPartial.apply(this);
-
-    const resultShape = result._def.shape();
-
-    Object.entries(resultShape).forEach(([key, value]) => {
-      value._def.openapi = initialShape[key]?._def?.openapi;
-    });
-
-    result._def.openapi = undefined;
-
-    return result;
-  };
-
-  const zodPick = zod.ZodObject.prototype.pick as any;
-  zod.ZodObject.prototype.pick = function (this: any, ...args: any[]) {
-    const result = zodPick.apply(this, args);
-    result._def.openapi = undefined;
-
-    return result;
-  };
-
-  const zodOmit = zod.ZodObject.prototype.omit as any;
-  zod.ZodObject.prototype.omit = function (this: any, ...args: any[]) {
-    const result = zodOmit.apply(this, args);
-    result._def.openapi = undefined;
+      return result;
+    };
 
     return result;
   };
