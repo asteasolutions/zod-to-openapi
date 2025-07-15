@@ -3,7 +3,6 @@ import type { OpenAPIObject } from 'openapi3-ts/oas30';
 import {
   OpenAPIGenerator,
   OpenApiGeneratorOptions,
-  OpenApiVersion,
 } from '../openapi-generator';
 import { ZodType } from 'zod';
 import { OpenApiGeneratorV30Specifics } from './specifics';
