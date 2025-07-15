@@ -1,13 +1,24 @@
 import { ZodType, ZodUnion } from 'zod';
 import { MapNullableOfArray, MapSubSchema } from '../types';
 import { isAnyZodType, isZodType } from '../lib/zod-is-type';
+import { Metadata } from '../metadata';
+import { UnionPreferredType } from '../zod-extensions';
 
 export class UnionTransformer {
+  constructor(private options?: { unionPreferredType?: UnionPreferredType }) {}
+
   transform(
     zodSchema: ZodUnion,
     mapNullableOfArray: MapNullableOfArray,
     mapItem: MapSubSchema
   ) {
+    const internalMetadata = Metadata.getInternalMetadata(zodSchema);
+
+    const preferredType =
+      internalMetadata?.unionPreferredType ??
+      this.options?.unionPreferredType ??
+      'anyOf';
+
     const options = this.flattenUnionTypes(zodSchema);
 
     const schemas = options.map(schema => {
@@ -21,7 +32,7 @@ export class UnionTransformer {
     });
 
     return {
-      anyOf: mapNullableOfArray(schemas),
+      [preferredType]: mapNullableOfArray(schemas),
     };
   }
 

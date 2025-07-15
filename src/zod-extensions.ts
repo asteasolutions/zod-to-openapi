@@ -16,6 +16,8 @@ type ExampleValue<T> = T extends Date ? string : T;
 type ParameterObject = ParameterObject30 | ParameterObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 
+export type UnionPreferredType = 'oneOf' | 'anyOf';
+
 export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   SchemaObject,
   'example' | 'examples' | 'default'
@@ -27,6 +29,10 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   _internal?: never;
 };
 
+interface OpenApiOptions {
+  unionPreferredType?: UnionPreferredType;
+}
+
 /**
  *
  * Since this commit https://github.com/colinhacks/zod/commit/6707ebb14c885b1c577ce64a240475e26e3ff182
@@ -35,7 +41,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
  * so I've opted to type the _internal metadata in the registry as any. However the Metadata.getInternalMetadata
  * method has an explicit return type of ZodOpenAPIInternalMetadata.
  */
-interface InternalUserOnlyZodOpenAPIInternalMetadata {
+interface InternalUserOnlyZodOpenAPIInternalMetadata extends OpenApiOptions {
   refId?: string;
   extendedFrom?: { refId: string; schema: any };
 }
@@ -67,13 +73,15 @@ declare module 'zod' {
   interface ZodType<Output = unknown, Input = unknown> {
     openapi<T extends ZodType>(
       this: T,
-      metadata: Partial<ZodOpenAPIMetadata<Input>>
+      metadata: Partial<ZodOpenAPIMetadata<Input>>,
+      options?: OpenApiOptions
     ): T;
 
     openapi<T extends ZodType>(
       this: T,
       refId: string,
-      metadata?: Partial<ZodOpenAPIMetadata<Input>>
+      metadata?: Partial<ZodOpenAPIMetadata<Input>>,
+      options?: OpenApiOptions
     ): T;
   }
 }
@@ -110,12 +118,11 @@ export function extendZodWithOpenApi(zod: typeof z) {
   }
 
   zod.ZodType.prototype.openapi = function (
-    refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
-    metadata?: Partial<ZodOpenAPIMetadata<any>>
+    ...args: Parameters<typeof getOpenApiConfiguration>
   ) {
-    const openapi = typeof refOrOpenapi === 'string' ? metadata : refOrOpenapi;
+    const { refId, metadata, options } = getOpenApiConfiguration(...args);
 
-    const { param, ...restOfOpenApi } = openapi ?? {};
+    const { param, ...restOfOpenApi } = metadata ?? {};
 
     const allMetadata = Metadata.getMetadataFromRegistry(this);
     const { _internal: internalMetadata, ...currentMetadata } =
@@ -123,9 +130,8 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     const _internal = {
       ...internalMetadata,
-      ...(typeof refOrOpenapi === 'string'
-        ? { refId: refOrOpenapi }
-        : undefined),
+      ...options,
+      ...(refId ? { refId } : undefined),
     };
 
     const resultMetadata = {
@@ -205,5 +211,25 @@ export function extendZodWithOpenApi(zod: typeof z) {
     };
 
     return result;
+  };
+}
+
+function getOpenApiConfiguration(
+  refOrOpenapi: string | Partial<ZodOpenAPIMetadata<any>>,
+  metadataOrOptions?: Partial<ZodOpenAPIMetadata<any>> | OpenApiOptions,
+  options?: OpenApiOptions
+) {
+  if (typeof refOrOpenapi === 'string') {
+    return {
+      refId: refOrOpenapi,
+      metadata: metadataOrOptions as Partial<ZodOpenAPIMetadata<any>>,
+      options,
+    };
+  }
+
+  return {
+    refId: undefined,
+    metadata: refOrOpenapi,
+    options: metadataOrOptions as OpenApiOptions | undefined,
   };
 }

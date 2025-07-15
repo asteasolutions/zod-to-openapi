@@ -12,7 +12,7 @@ describe('null', () => {
           nullable: true,
         },
       },
-      '3.0.0'
+      { version: '3.0.0' }
     );
   });
 
@@ -26,7 +26,7 @@ describe('null', () => {
           type: 'null',
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 });

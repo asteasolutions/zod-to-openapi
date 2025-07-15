@@ -43,6 +43,7 @@ import {
 } from './types';
 import { Metadata } from './metadata';
 import { OpenApiTransformer } from './transformers';
+import { UnionPreferredType } from './zod-extensions';
 
 // List of Open API Versions. Please make sure these are in ascending order
 const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
@@ -74,6 +75,10 @@ export interface OpenApiVersionSpecifics {
   getNumberChecks(checks: ZodNumericCheck[]): any;
 }
 
+export interface OpenApiGeneratorOptions {
+  unionPreferredType?: UnionPreferredType;
+}
+
 export class OpenAPIGenerator {
   private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
   private paramRefs: Record<string, ParameterObject> = {};
@@ -88,9 +93,10 @@ export class OpenAPIGenerator {
 
   constructor(
     private definitions: (OpenAPIDefinitions | ZodType)[],
-    private versionSpecifics: OpenApiVersionSpecifics
+    private versionSpecifics: OpenApiVersionSpecifics,
+    options?: OpenApiGeneratorOptions
   ) {
-    this.openApiTransformer = new OpenApiTransformer(versionSpecifics);
+    this.openApiTransformer = new OpenApiTransformer(versionSpecifics, options);
     this.sortDefinitions();
   }
 
@@ -446,7 +452,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    // New metadata from ZodSchema properties.
+    // New metadata from zodSchema properties.
     const newSchemaMetadata = omitBy(
       this.constructReferencedOpenAPISchema(zodSchema),
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])

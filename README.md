@@ -20,6 +20,7 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
    8. [A full example](#a-full-example)
    9. [Adding it as part of your build](#adding-it-as-part-of-your-build)
    10. [Using schemas vs a registry](#using-schemas-vs-a-registry)
+   11. [Generation options](#generation-options)
 3. [Zod schema types](#zod-schema-types)
    1. [Supported types](#supported-types)
    2. [Unsupported types](#unsupported-types)
@@ -504,7 +505,7 @@ Adding a `NewSchema` into `file3.ts` and using `registry.register` would NOT req
 Using an `OpenAPIRegistry` instance is mostly useful if you would want your resulting document to contain unreferenced schemas.
 That can sometimes be useful - for example when you are slowly integrating an already existing documentation with `@asteasolutions/zod-to-openapi` and you are migrating small pieces at a time. Those pieces can then be referenced directly from an existing documentation.
 
-### Adding it as part of your build
+#### Adding it as part of your build
 
 In a file inside your project you can have a file like so:
 
@@ -521,6 +522,34 @@ export function generateOpenAPI() {
 You then use the exported `registry` object to register all schemas, parameters and routes where appropriate.
 
 Then you can create a script that executes the exported `generateOpenAPI` function. This script can be executed as a part of your build step so that it can write the result to some file like `openapi-docs.json`.
+
+### Generation options
+Schema generation can be altered in certain scenarios. This can be done by either:
+
+* Passing a configuration as second argument for the generator:
+
+```ts
+const generator = new OpenApiGeneratorV3(registry.definitions, options);
+```
+
+* or as a one-off usage for a single schema:
+
+```ts
+// Note it is valid for metadata to be undefined in both of the bellow cases:
+
+schema.openapi('Schema', metadata, options); // when registering a schema or
+schema.openapi(metadata, options) // when simply adding some metadata to it
+```
+
+There list of currently supported options is:
+```ts
+const options = {
+  unionPreferredType: 'oneOf' | 'anyOf' // configures whether oneOf or anyOf is used when generating a schema for a zod union
+}
+```
+
+
+Currently there is only one thing that can be configured within
 
 ## Zod schema types
 

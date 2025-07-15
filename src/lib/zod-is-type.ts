@@ -20,7 +20,6 @@ export type ZodTypes = {
   ZodPipe: z.ZodPipe;
   ZodReadonly: z.ZodReadonly;
   ZodRecord: z.ZodRecord;
-  ZodSchema: z.ZodSchema;
   ZodString: z.ZodString;
   ZodTuple: z.ZodTuple;
   ZodType: z.ZodType;
@@ -51,7 +50,6 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodPipe: 'pipe',
   ZodReadonly: 'readonly',
   ZodRecord: 'record',
-  ZodSchema: 'schema',
   ZodString: 'string',
   ZodTuple: 'tuple',
   ZodType: 'type',

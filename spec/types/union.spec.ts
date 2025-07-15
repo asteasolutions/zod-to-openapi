@@ -62,7 +62,7 @@ describe('union', () => {
           anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -92,7 +92,77 @@ describe('union', () => {
           anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
+  });
+
+  describe('unionPreferredType', () => {
+    it('supports changing default union type to usage of oneOf', () => {
+      const union1 = z.union([z.string(), z.number()]).openapi('Union1');
+      const union2 = z.union([z.string(), z.boolean()]).openapi('Union2');
+
+      expectSchema(
+        [union1, union2],
+        {
+          Union1: {
+            oneOf: [{ type: 'string' }, { type: 'number' }],
+          },
+          Union2: {
+            oneOf: [{ type: 'string' }, { type: 'boolean' }],
+          },
+        },
+        { unionPreferredType: 'oneOf' }
+      );
+    });
+
+    it('supports overriding default oneOf for union to anyOf', () => {
+      const union1 = z
+        .union([z.string(), z.number()])
+        .openapi(
+          'Union1',
+          { description: 'Some union' },
+          { unionPreferredType: 'anyOf' }
+        );
+      const union2 = z.union([z.string(), z.boolean()]).openapi('Union2');
+
+      expectSchema(
+        [union1, union2],
+        {
+          Union1: {
+            anyOf: [{ type: 'string' }, { type: 'number' }],
+            description: 'Some union',
+          },
+          Union2: {
+            oneOf: [{ type: 'string' }, { type: 'boolean' }],
+          },
+        },
+        { unionPreferredType: 'oneOf' }
+      );
+    });
+
+    it('supports overriding default anyOf for union to oneOf', () => {
+      const union1 = z
+        .union([z.string(), z.number()])
+        .openapi(
+          'Union1',
+          { description: 'Some union' },
+          { unionPreferredType: 'oneOf' }
+        );
+      const union2 = z.union([z.string(), z.boolean()]).openapi('Union2');
+
+      expectSchema(
+        [union1, union2],
+        {
+          Union1: {
+            oneOf: [{ type: 'string' }, { type: 'number' }],
+            description: 'Some union',
+          },
+          Union2: {
+            anyOf: [{ type: 'string' }, { type: 'boolean' }],
+          },
+        },
+        { unionPreferredType: 'anyOf' }
+      );
+    });
   });
 });

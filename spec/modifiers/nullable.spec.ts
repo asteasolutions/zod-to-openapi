@@ -62,7 +62,7 @@ describe('nullable', () => {
       {
         NullableString: { type: ['string', 'null'] },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -92,7 +92,7 @@ describe('nullable', () => {
           required: ['key'],
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -117,7 +117,7 @@ describe('nullable', () => {
           required: ['key'],
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -197,7 +197,7 @@ describe('nullable', () => {
           },
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -244,7 +244,7 @@ describe('nullable', () => {
           example: null,
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 });
