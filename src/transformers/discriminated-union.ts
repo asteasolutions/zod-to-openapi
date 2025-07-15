@@ -16,7 +16,7 @@ export class DiscriminatedUnionTransformer {
     mapItem: MapSubSchema,
     generateSchemaRef: (schema: string) => string
   ) {
-    const options = [...zodSchema._zod.def.options] as ZodObject[];
+    const options = [...zodSchema.def.options] as ZodObject[];
 
     const optionSchema = options.map(mapItem);
 
@@ -26,7 +26,7 @@ export class DiscriminatedUnionTransformer {
       };
     }
 
-    const discriminator = zodSchema.def.discriminator;
+    const discriminator = zodSchema._zod.def.discriminator;
 
     if (!discriminator) {
       console.error(
