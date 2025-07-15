@@ -131,6 +131,64 @@ This should be done only once in a common-entrypoint file of your project (for e
 
 It can be bit tricky to achieve this in your codebase, because *require* is synchronous and *import* is a async.
 
+#### Using zod's .meta
+Starting from v8 (and zod v4) you can also use zod's .meta to provide metadata and we will read it accordingly.
+
+With zod's new option for generating JSON schemas and maintaining registries we've added a pretty much seamless support for all metadata information coming from `.meta` calls as if that was metadata passed into `.openapi`.
+
+So the following 2 schemas produce exactly the same results:
+```ts
+const schema = z
+  .string()
+  .openapi('Schema', { description: 'Name of the user', example: 'Test' });
+
+const schema2 = z
+  .string()
+  .meta({ id: 'Schema2', description: 'Name of the user', example: 'Test' });
+```
+
+> Note: This also means that you unless you are using some of our more complicated scenarios you could even generate a schema without using `extendZodWithOpenApi` in your codebase and only rely on `.meta` to provide additional metadata information and schema names (using the `id` property).
+
+#### Scenarios that require using `extendZodWithOpenApi` and `.openapi`
+1. When extending registered schemas that are both registered and want the extended one to use `anyOf` i.e:
+
+```ts
+const schema = z.object({ name: z.string() }).openapi('Schema');
+
+const schema2 = schema.extend({ age: z.number() }).openapi('Schema2'); // this one would have anyOf and a reference to the first one
+```
+2. Defining parameter metadata. So for example when doing:
+```ts
+registry.registerPath({
+  // ...
+  request: {
+    query: z.object({
+      name: z.string().openapi({
+        description: 'Schema level description',
+        param: { description: 'Param level description' },
+      }),
+    }),
+  },
+});
+```
+
+the result would be:
+```json
+  "parameters": [
+      {
+        "schema": {
+          "type": "string",
+          "description": "Schema level description" // comes directly from description
+        },
+        "required": true,
+        "description": "Param level description", // comes from param.description
+        "name": "name",
+        "in": "query"
+      }
+  ],
+```
+
+
 ### The basic idea
 
 ```ts
