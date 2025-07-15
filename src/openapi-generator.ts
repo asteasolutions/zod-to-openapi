@@ -452,7 +452,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    // New metadata from ZodSchema properties.
+    // New metadata from zodSchema properties.
     const newSchemaMetadata = omitBy(
       this.constructReferencedOpenAPISchema(zodSchema),
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])

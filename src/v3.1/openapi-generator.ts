@@ -3,9 +3,8 @@ import type { OpenAPIObject, PathItemObject } from 'openapi3-ts/oas31';
 import {
   OpenAPIGenerator,
   OpenApiGeneratorOptions,
-  OpenApiVersion,
 } from '../openapi-generator';
-import { ZodSchema } from 'zod';
+import { ZodType } from 'zod';
 import { OpenApiGeneratorV31Specifics } from './specifics';
 import {
   OpenAPIDefinitions,
@@ -14,7 +13,7 @@ import {
 } from '../openapi-registry';
 
 function isWebhookDefinition(
-  definition: OpenAPIDefinitions | ZodSchema
+  definition: OpenAPIDefinitions | ZodType
 ): definition is WebhookDefinition {
   return 'type' in definition && definition.type === 'webhook';
 }
@@ -29,7 +28,7 @@ export class OpenApiGeneratorV31 {
   private webhookRefs: Record<string, PathItemObject> = {};
 
   constructor(
-    private definitions: (OpenAPIDefinitions | ZodSchema)[],
+    private definitions: (OpenAPIDefinitions | ZodType)[],
     options?: OpenApiGeneratorOptions
   ) {
     const specifics = new OpenApiGeneratorV31Specifics();

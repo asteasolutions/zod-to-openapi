@@ -5,7 +5,7 @@ import {
   OpenApiGeneratorOptions,
   OpenApiVersion,
 } from '../openapi-generator';
-import { ZodSchema } from 'zod';
+import { ZodType } from 'zod';
 import { OpenApiGeneratorV30Specifics } from './specifics';
 import { OpenAPIDefinitions } from '../openapi-registry';
 
@@ -18,7 +18,7 @@ export class OpenApiGeneratorV3 {
   private generator;
 
   constructor(
-    definitions: (OpenAPIDefinitions | ZodSchema)[],
+    definitions: (OpenAPIDefinitions | ZodType)[],
     options?: OpenApiGeneratorOptions
   ) {
     const specifics = new OpenApiGeneratorV30Specifics();
