@@ -173,7 +173,7 @@ registry.registerPath({
 ```
 
 the result would be:
-```
+```ts
   "parameters": [
       {
         "schema": {
