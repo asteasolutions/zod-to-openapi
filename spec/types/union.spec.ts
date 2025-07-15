@@ -118,8 +118,11 @@ describe('union', () => {
     it('supports overriding default oneOf for union to anyOf', () => {
       const union1 = z
         .union([z.string(), z.number()])
-        .openapiAs('anyOf')
-        .openapi('Union1');
+        .openapi(
+          'Union1',
+          { description: 'Some union' },
+          { unionPreferredType: 'anyOf' }
+        );
       const union2 = z.union([z.string(), z.boolean()]).openapi('Union2');
 
       expectSchema(
@@ -127,6 +130,7 @@ describe('union', () => {
         {
           Union1: {
             anyOf: [{ type: 'string' }, { type: 'number' }],
+            description: 'Some union',
           },
           Union2: {
             oneOf: [{ type: 'string' }, { type: 'boolean' }],
@@ -139,8 +143,11 @@ describe('union', () => {
     it('supports overriding default anyOf for union to oneOf', () => {
       const union1 = z
         .union([z.string(), z.number()])
-        .openapiAs('oneOf')
-        .openapi('Union1');
+        .openapi(
+          'Union1',
+          { description: 'Some union' },
+          { unionPreferredType: 'oneOf' }
+        );
       const union2 = z.union([z.string(), z.boolean()]).openapi('Union2');
 
       expectSchema(
@@ -148,6 +155,7 @@ describe('union', () => {
         {
           Union1: {
             oneOf: [{ type: 'string' }, { type: 'number' }],
+            description: 'Some union',
           },
           Union2: {
             anyOf: [{ type: 'string' }, { type: 'boolean' }],
