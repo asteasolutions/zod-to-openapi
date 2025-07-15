@@ -1,10 +1,16 @@
-import type { ZodObject, ZodType } from 'zod/v4';
+import type { ZodObject, ZodType } from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
   enhanceMissingParametersError,
 } from './errors';
-import { compact, isNil, mapValues, objectEquals, omitBy } from './lib/lodash';
+import {
+  compact,
+  isUndefined,
+  mapValues,
+  objectEquals,
+  omitBy,
+} from './lib/lodash';
 import {
   isAnyZodType,
   isNullableSchema,
@@ -391,7 +397,7 @@ export class OpenAPIGenerator {
 
     return metadata
       ? Metadata.applySchemaMetadata(result, metadata)
-      : omitBy(result, isNil);
+      : omitBy(result, isUndefined);
   }
 
   /**

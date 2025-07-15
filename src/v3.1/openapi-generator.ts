@@ -3,8 +3,9 @@ import type { OpenAPIObject, PathItemObject } from 'openapi3-ts/oas31';
 import {
   OpenAPIGenerator,
   OpenApiGeneratorOptions,
+  OpenApiVersion,
 } from '../openapi-generator';
-import { ZodSchema } from 'zod/v4';
+import { ZodSchema } from 'zod';
 import { OpenApiGeneratorV31Specifics } from './specifics';
 import {
   OpenAPIDefinitions,

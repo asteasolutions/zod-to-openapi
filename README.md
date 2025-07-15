@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
 
 > [!IMPORTANT]
-> **For Zod v4 support, please use version 8.0.0-beta!** Install with: `npm install @asteasolutions/zod-to-openapi@beta`
+> **For Zod v3 support, please use the v7.3.4 version. However keep in mind that we do not intend to actively support that version going forward** Install with: `npm install @asteasolutions/zod-to-openapi@7.3.4`
 
 A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate an Open API Swagger documentation.
 
@@ -134,7 +134,7 @@ It can be bit tricky to achieve this in your codebase, because *require* is sync
 
 ```ts
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 extendZodWithOpenApi(z);
 
@@ -148,7 +148,7 @@ z.string().openapi({ description: 'Some string' });
 //zod-extend.ts
 
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 extendZodWithOpenApi(z);
 
@@ -162,7 +162,7 @@ extendZodWithOpenApi(z);
 
 ```
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 extendZodWithOpenApi(z);
 
@@ -593,5 +593,5 @@ You can still register such schemas on your own by providing a `type` via the `.
 ## Technologies
 
 - [Typescript](https://www.typescriptlang.org/)
-- [Zod 3.x](https://github.com/colinhacks/zod)
+- [Zod 4.x](https://github.com/colinhacks/zod)
 - [OpenAPI 3.x TS](https://github.com/metadevpro/openapi3-ts)

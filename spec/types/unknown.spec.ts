@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { expectSchema } from '../lib/helpers';
 
 // Based on the "Any Type" section of https://swagger.io/docs/specification/data-models/data-types/

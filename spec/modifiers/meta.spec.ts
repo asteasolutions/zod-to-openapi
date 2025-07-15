@@ -1,5 +1,5 @@
 import { expectSchema } from '../lib/helpers';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 describe('meta', () => {
   it('should preserve metadata through the meta modifier', () => {

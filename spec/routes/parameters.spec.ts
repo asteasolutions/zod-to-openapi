@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { MissingParameterDataError } from '../../src/errors';
 import { generateDataForRoute, registerParameter } from '../lib/helpers';
 

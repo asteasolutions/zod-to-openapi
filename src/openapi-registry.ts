@@ -58,7 +58,7 @@ type ResponseObject = ResponseObject30 | ResponseObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 type SecuritySchemeObject = SecuritySchemeObject30 | SecuritySchemeObject31;
 
-import type { ZodObject, ZodPipe, ZodType } from 'zod/v4';
+import type { ZodObject, ZodPipe, ZodType } from 'zod';
 import { Metadata } from './metadata';
 
 type Method =
