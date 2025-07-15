@@ -1,4 +1,4 @@
-import { ZodDiscriminatedUnion, ZodObject } from 'zod/v4';
+import { ZodDiscriminatedUnion, ZodObject } from 'zod';
 import {
   DiscriminatorObject,
   MapNullableOfArrayWithNullable,

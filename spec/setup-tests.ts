@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { extendZodWithOpenApi } from '../src/zod-extensions';
 
 extendZodWithOpenApi(z);

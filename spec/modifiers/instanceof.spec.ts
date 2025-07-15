@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { expectSchema } from '../lib/helpers';
 
 // File as a class is not available on older node versions

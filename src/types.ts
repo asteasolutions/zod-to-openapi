@@ -1,5 +1,4 @@
-import type { ZodType } from 'zod/v4';
-import type { $ZodCheck } from 'zod/v4/core';
+import type { ZodType } from 'zod';
 import type {
   ReferenceObject as ReferenceObject30,
   ParameterObject as ParameterObject30,
@@ -30,6 +29,7 @@ import type {
   BaseParameterObject as BaseParameterObject31,
   HeadersObject as HeadersObject31,
 } from 'openapi3-ts/oas31';
+import { $ZodCheck } from 'zod/v4/core';
 
 export type ZodNumericCheck = $ZodCheck<never>;
 

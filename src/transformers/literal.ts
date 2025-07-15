@@ -1,4 +1,4 @@
-import { ZodLiteral } from 'zod/v4';
+import { ZodLiteral } from 'zod';
 import { MapNullableType } from '../types';
 import { BigIntTransformer } from './big-int';
 

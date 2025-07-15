@@ -1,4 +1,4 @@
-import { ZodType, z } from 'zod/v4';
+import { ZodType, z } from 'zod';
 import { ZodTypes, isAnyZodType, isZodType } from './lib/zod-is-type';
 import {
   ZodOpenAPIInternalMetadata,

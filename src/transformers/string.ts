@@ -1,11 +1,11 @@
-import { ZodString } from 'zod/v4';
+import { ZodString } from 'zod';
 import { MapNullableType } from '../types';
 import {
   $ZodCheck,
   $ZodCheckLengthEquals,
   $ZodCheckRegex,
   $ZodCheckStringFormat,
-} from 'zod/v4/core';
+} from 'zod/core';
 
 function isZodCheckLengthEquals(
   check: $ZodCheck<string>

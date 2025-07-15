@@ -3,7 +3,7 @@ import {
   MapSubSchema,
   SchemaObject,
 } from '../types';
-import { ZodIntersection, ZodType } from 'zod/v4';
+import { ZodIntersection, ZodType } from 'zod';
 import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 
 export class IntersectionTransformer {

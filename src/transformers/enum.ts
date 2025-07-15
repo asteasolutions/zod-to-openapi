@@ -1,4 +1,4 @@
-import { ZodEnum } from 'zod/v4';
+import { ZodEnum } from 'zod';
 import { MapNullableType } from '../types';
 import { enumInfo } from '../lib/enum-info';
 import { ZodToOpenAPIError } from '../errors';

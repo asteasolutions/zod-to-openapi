@@ -6,8 +6,8 @@ import {
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
-import type { ZodObject, ZodType } from 'zod/v4';
-import { z } from 'zod/v4';
+import type { ZodObject, ZodType } from 'zod';
+import { z } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 import { Metadata } from './metadata';
 
@@ -63,7 +63,7 @@ export interface ZodOpenApiFullMetadata<T = any>
   _internal?: ZodOpenAPIInternalMetadata;
 }
 
-declare module 'zod/v4' {
+declare module 'zod' {
   interface ZodType<Output = unknown, Input = unknown> {
     openapi<T extends ZodType>(
       this: T,

@@ -1,5 +1,5 @@
 import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
-import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/v4/core';
+import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
 
