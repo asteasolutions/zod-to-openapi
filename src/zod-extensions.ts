@@ -8,6 +8,7 @@ import {
 } from 'openapi3-ts/oas31';
 import type { ZodObject, ZodType } from 'zod';
 import { z } from 'zod';
+import type { core } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 import { Metadata } from './metadata';
 
@@ -70,19 +71,17 @@ export interface ZodOpenApiFullMetadata<T = any>
 }
 
 declare module 'zod' {
-  interface ZodType<Output = unknown, Input = unknown> {
-    openapi<T extends ZodType>(
-      this: T,
+  interface ZodType<out Output = unknown, out Input = unknown, out Internals extends core.$ZodTypeInternals<Output, Input> = core.$ZodTypeInternals<Output, Input>> {
+    openapi(
       metadata: Partial<ZodOpenAPIMetadata<Input>>,
       options?: OpenApiOptions
-    ): T;
+    ): this;
 
-    openapi<T extends ZodType>(
-      this: T,
+    openapi(
       refId: string,
       metadata?: Partial<ZodOpenAPIMetadata<Input>>,
       options?: OpenApiOptions
-    ): T;
+    ): this;
   }
 }
 
