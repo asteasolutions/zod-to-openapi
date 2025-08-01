@@ -7,8 +7,6 @@ export class LazyTransformer {
     zodSchema: ZodLazy,
     mapItem: MapSubSchema
   ): SchemaObject | ReferenceObject {
-    const val = zodSchema._zod.def.getter() as ZodType;
-    console.log('WILL TRY WITH', Metadata.getMetadata(val));
-    return mapItem(val);
+    return mapItem(zodSchema._zod.def.getter() as ZodType);
   }
 }

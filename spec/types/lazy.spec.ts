@@ -25,8 +25,6 @@ describe('lazy', () => {
   it('supports registered non-recursive lazy schemas', () => {
     const lazySchema = z.lazy(() => z.string()).openapi('LazyString');
 
-    console.log(lazySchema._zod.def.getter());
-
     expectSchema([lazySchema], {
       LazyString: {
         type: 'string',

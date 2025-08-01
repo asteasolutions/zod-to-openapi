@@ -81,8 +81,10 @@ export interface OpenApiGeneratorOptions {
   sortComponents?: 'alphabetically';
 }
 
+type SchemaRefValue = SchemaObject | ReferenceObject | 'pending';
+
 export class OpenAPIGenerator {
-  private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
+  private schemaRefs: Record<string, SchemaRefValue> = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
@@ -128,7 +130,7 @@ export class OpenAPIGenerator {
 
     const allSchemas = {
       ...(rawComponents.schemas ?? {}),
-      ...this.schemaRefs,
+      ...this.filteredSchemaRefs,
     };
 
     const schemas =
@@ -149,7 +151,18 @@ export class OpenAPIGenerator {
     return { ...rawComponents, schemas, parameters };
   }
 
-  private sortObjectKeys(object: Record<string, object>) {}
+  private isNotPendingRefEntry(
+    entry: [string, SchemaRefValue]
+  ): entry is [string, SchemaObject | ReferenceObject] {
+    return entry[1] !== 'pending';
+  }
+
+  private get filteredSchemaRefs() {
+    const filtered = Object.entries(this.schemaRefs).filter(
+      this.isNotPendingRefEntry
+    );
+    return Object.fromEntries(filtered);
+  }
 
   private sortDefinitions() {
     const generationOrder: OpenAPIDefinitions['type'][] = [
@@ -400,12 +413,17 @@ export class OpenAPIGenerator {
     const defaultValue = Metadata.getDefaultValue(zodSchema);
     const refId = Metadata.getRefId(zodSchema);
 
-    if (refId && this.schemaRefs[refId] === ('pending' as any)) {
+    // If there is already a pending generation with this name
+    // reference it directly. This means that it is recursive
+    if (refId && this.schemaRefs[refId] === 'pending') {
       return { $ref: this.generateSchemaRef(refId) };
     }
 
+    // We start the generation by setting the ref to pending for
+    // any future recursive definition. It would get set to a proper
+    // value within `generateSchemaWithRef`
     if (refId && !this.schemaRefs[refId]) {
-      this.schemaRefs[refId] = 'pending' as any;
+      this.schemaRefs[refId] = 'pending';
     }
 
     const result = metadata?.type
@@ -459,7 +477,8 @@ export class OpenAPIGenerator {
       $ref: this.generateSchemaRef(refId),
     };
 
-    if (this.schemaRefs[refId] === ('pending' as any)) {
+    // We are currently calculating this schema or there is nothing
+    if (this.schemaRefs[refId] === 'pending') {
       return referenceObject;
     }
 
@@ -507,7 +526,7 @@ export class OpenAPIGenerator {
   private generateSchemaWithRef(zodSchema: ZodType) {
     const refId = Metadata.getRefId(zodSchema);
 
-    if (refId && this.schemaRefs[refId] === undefined) {
+    if (refId && !this.schemaRefs[refId]) {
       this.schemaRefs[refId] = this.generateSimpleSchema(zodSchema);
 
       return { $ref: this.generateSchemaRef(refId) };
