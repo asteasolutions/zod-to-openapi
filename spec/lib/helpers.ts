@@ -18,6 +18,7 @@ import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 import {
   OpenApiGeneratorOptions,
   OpenApiVersion,
+  SchemaRefValue,
 } from '../../src/openapi-generator';
 
 export function createSchemas(
@@ -36,10 +37,18 @@ export function createSchemas(
   const OpenApiGenerator =
     openApiVersion === '3.1.0' ? OpenApiGeneratorV31 : OpenApiGeneratorV3;
 
-  const { components } = new OpenApiGenerator(
-    definitions,
-    options
-  ).generateComponents();
+  const generator = new OpenApiGenerator(definitions, options);
+
+  const { components } = generator.generateComponents();
+
+  const schemaRefs: Record<string, SchemaRefValue> = (generator as any)
+    .generator.schemaRefs;
+  const schemaValues = Object.values(schemaRefs);
+
+  // At no point should we have pending as leftover in the specs.
+  // They are filtered when generating the final document but
+  // in general we should never have a schema left in pending state
+  expect(schemaValues).not.toContain('pending');
 
   return components;
 }
