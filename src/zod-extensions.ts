@@ -71,7 +71,14 @@ export interface ZodOpenApiFullMetadata<T = any>
 }
 
 declare module 'zod' {
-  interface ZodType<out Output = unknown, out Input = unknown, out Internals extends core.$ZodTypeInternals<Output, Input> = core.$ZodTypeInternals<Output, Input>> {
+  interface ZodType<
+    out Output = unknown,
+    out Input = unknown,
+    out Internals extends core.$ZodTypeInternals<
+      Output,
+      Input
+    > = core.$ZodTypeInternals<Output, Input>
+  > {
     openapi(
       metadata: Partial<ZodOpenAPIMetadata<Input>>,
       options?: OpenApiOptions
