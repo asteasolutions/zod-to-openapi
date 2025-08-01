@@ -398,6 +398,15 @@ export class OpenAPIGenerator {
     const innerSchema = Metadata.unwrapChained(zodSchema);
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const defaultValue = Metadata.getDefaultValue(zodSchema);
+    const refId = Metadata.getRefId(zodSchema);
+
+    if (refId && this.schemaRefs[refId] === ('pending' as any)) {
+      return { $ref: this.generateSchemaRef(refId) };
+    }
+
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = 'pending' as any;
+    }
 
     const result = metadata?.type
       ? { type: metadata.type }
@@ -450,6 +459,10 @@ export class OpenAPIGenerator {
       $ref: this.generateSchemaRef(refId),
     };
 
+    if (this.schemaRefs[refId] === ('pending' as any)) {
+      return referenceObject;
+    }
+
     // Metadata provided from .openapi() that is new to what we had already registered
     const newMetadata = omitBy(
       Metadata.buildSchemaMetadata(metadata ?? {}),
@@ -494,15 +507,13 @@ export class OpenAPIGenerator {
   private generateSchemaWithRef(zodSchema: ZodType) {
     const refId = Metadata.getRefId(zodSchema);
 
-    const result = this.generateSimpleSchema(zodSchema);
-
     if (refId && this.schemaRefs[refId] === undefined) {
-      this.schemaRefs[refId] = result;
+      this.schemaRefs[refId] = this.generateSimpleSchema(zodSchema);
 
       return { $ref: this.generateSchemaRef(refId) };
     }
 
-    return result;
+    return this.generateSimpleSchema(zodSchema);
   }
 
   private generateSchemaRef(refId: string) {
