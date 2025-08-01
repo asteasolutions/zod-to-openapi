@@ -10,6 +10,7 @@ import {
   mapValues,
   objectEquals,
   omitBy,
+  sortObjectByKeys,
 } from './lib/lodash';
 import {
   isAnyZodType,
@@ -77,6 +78,7 @@ export interface OpenApiVersionSpecifics {
 
 export interface OpenApiGeneratorOptions {
   unionPreferredType?: UnionPreferredType;
+  sortComponents?: 'alphabetically';
 }
 
 export class OpenAPIGenerator {
@@ -94,7 +96,7 @@ export class OpenAPIGenerator {
   constructor(
     private definitions: (OpenAPIDefinitions | ZodType)[],
     private versionSpecifics: OpenApiVersionSpecifics,
-    options?: OpenApiGeneratorOptions
+    private options?: OpenApiGeneratorOptions
   ) {
     this.openApiTransformer = new OpenApiTransformer(versionSpecifics, options);
     this.sortDefinitions();
@@ -124,20 +126,30 @@ export class OpenAPIGenerator {
       rawComponents[componentType][name] = component;
     });
 
-    return {
-      ...rawComponents,
-
-      schemas: {
-        ...(rawComponents.schemas ?? {}),
-        ...this.schemaRefs,
-      },
-
-      parameters: {
-        ...(rawComponents.parameters ?? {}),
-        ...this.paramRefs,
-      },
+    const allSchemas = {
+      ...(rawComponents.schemas ?? {}),
+      ...this.schemaRefs,
     };
+
+    const schemas =
+      this.options?.sortComponents === 'alphabetically'
+        ? sortObjectByKeys(allSchemas)
+        : allSchemas;
+
+    const allParameters = {
+      ...(rawComponents.parameters ?? {}),
+      ...this.paramRefs,
+    };
+
+    const parameters =
+      this.options?.sortComponents === 'alphabetically'
+        ? sortObjectByKeys(allParameters)
+        : allParameters;
+
+    return { ...rawComponents, schemas, parameters };
   }
+
+  private sortObjectKeys(object: Record<string, object>) {}
 
   private sortDefinitions() {
     const generationOrder: OpenAPIDefinitions['type'][] = [

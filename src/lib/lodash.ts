@@ -66,3 +66,11 @@ export function uniq<T>(values: T[]) {
 export function isString(val: unknown): val is string {
   return typeof val === 'string';
 }
+
+export function sortObjectByKeys<T>(obj: Record<string, T>): Record<string, T> {
+  return Object.fromEntries(
+    Object.entries(obj).sort(([leftKey], [rightKey]) =>
+      leftKey.localeCompare(rightKey)
+    )
+  );
+}

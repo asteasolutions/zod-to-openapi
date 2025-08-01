@@ -582,15 +582,27 @@ You then use the exported `registry` object to register all schemas, parameters 
 Then you can create a script that executes the exported `generateOpenAPI` function. This script can be executed as a part of your build step so that it can write the result to some file like `openapi-docs.json`.
 
 ### Generation options
+
 Schema generation can be altered in certain scenarios. This can be done by either:
 
-* Passing a configuration as second argument for the generator:
+#### Passing a global configuration as second argument for the generator:
 
 ```ts
 const generator = new OpenApiGeneratorV3(registry.definitions, options);
 ```
 
-* or as a one-off usage for a single schema:
+
+There list of currently supported global options is:
+```ts
+const options = {
+  unionPreferredType: 'oneOf' | 'anyOf' // configures whether oneOf or anyOf is used when generating a schema for a zod union
+  sortComponents?: 'alphabetically'; // if sortComponents is passed with the value 'alphabetically' it would sort all schemas and parameters.
+                                     // If not - they would appear in the order they were defined
+}
+```
+
+
+#### Passing options for a one-off usage for a single schema:
 
 ```ts
 // Note it is valid for metadata to be undefined in both of the bellow cases:
@@ -599,15 +611,12 @@ schema.openapi('Schema', metadata, options); // when registering a schema or
 schema.openapi(metadata, options) // when simply adding some metadata to it
 ```
 
-There list of currently supported options is:
+There list of currently supported one-off options is:
 ```ts
 const options = {
   unionPreferredType: 'oneOf' | 'anyOf' // configures whether oneOf or anyOf is used when generating a schema for a zod union
 }
 ```
-
-
-Currently there is only one thing that can be configured within
 
 ## Zod schema types
 
