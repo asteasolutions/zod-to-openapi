@@ -130,7 +130,7 @@ describe('discriminated union', () => {
     );
   });
 
-  it('does not create a discriminator mapping when the discrimnated union is nullable', () => {
+  it('does not create a discriminator mapping when the discriminated union is nullable', () => {
     const Text = z
       .object({ type: z.literal('text'), text: z.string() })
       .openapi('obj1');
