@@ -1,12 +1,28 @@
 import { Metadata } from '../metadata';
-import { MapSubSchema, ReferenceObject, SchemaObject } from '../types';
+import {
+  MapNullableType,
+  MapSubSchema,
+  ReferenceObject,
+  SchemaObject,
+} from '../types';
 import { ZodLazy, ZodType } from 'zod';
 
 export class LazyTransformer {
   transform(
     zodSchema: ZodLazy,
-    mapItem: MapSubSchema
+    mapItem: MapSubSchema,
+    mapNullableType: MapNullableType
   ): SchemaObject | ReferenceObject {
-    return mapItem(zodSchema._zod.def.getter() as ZodType);
+    const result = mapItem(zodSchema._zod.def.getter() as ZodType);
+
+    if ('$ref' in result) {
+      return result;
+    }
+
+    if (result.type) {
+      return { ...result, ...mapNullableType(result.type) };
+    }
+
+    return result;
   }
 }
