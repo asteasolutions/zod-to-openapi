@@ -194,7 +194,7 @@ export class OpenAPIGenerator {
 
   private generateSingle(definition: OpenAPIDefinitions | ZodType): void {
     if (!('type' in definition)) {
-      this.generateSchemaWithRef(definition);
+      this.generateSingleSchemaFromRegistry(definition);
       return;
     }
 
@@ -204,7 +204,7 @@ export class OpenAPIGenerator {
         return;
 
       case 'schema':
-        this.generateSchemaWithRef(definition.schema);
+        this.generateSingleSchemaFromRegistry(definition.schema);
         return;
 
       case 'route':
@@ -215,6 +215,17 @@ export class OpenAPIGenerator {
         this.rawComponents.push(definition);
         return;
     }
+  }
+
+  private generateSingleSchemaFromRegistry(zodSchema: ZodType) {
+    const refId = Metadata.getRefId(zodSchema);
+
+    // Avoid starting calculations from schemas that have already been defined
+    if (refId && typeof this.schemaRefs[refId] === 'object') {
+      return this.schemaRefs[refId];
+    }
+
+    return this.generateSchemaWithRef(zodSchema);
   }
 
   private generateParameterDefinition(

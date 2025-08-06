@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { expectSchema } from '../lib/helpers';
+import { SchemaObject } from 'src/types';
 
 // Based on the "Any Type" section of https://swagger.io/docs/specification/data-models/data-types/
 
@@ -613,10 +614,11 @@ describe('lazy', () => {
 
   describe('performance and stability', () => {
     it('handles deep recursive nesting without stack overflow', () => {
+      const levels = 9;
+
       // Create a deeply nested structure
       let currentSchema: z.ZodType<any> = z.string();
-
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i <= levels; i++) {
         const nextSchema = currentSchema;
         currentSchema = z.lazy(() =>
           z.object({
@@ -628,25 +630,22 @@ describe('lazy', () => {
 
       const deepSchema = currentSchema.openapi('DeepNesting');
 
-      // This should not throw and should generate a valid schema
-      expect(() => {
-        expectSchema([deepSchema], {
-          DeepNesting: {
-            type: 'object',
-            properties: {
-              level: { type: 'number', default: 9 },
-              nested: {
-                type: 'object',
-                properties: {
-                  level: { type: 'number', default: 8 },
-                  // ... nested structure continues
-                },
-              },
-            },
-            required: ['level'],
+      function getExpectedData(level: number): SchemaObject {
+        if (level < 0) return { type: 'string' };
+
+        return {
+          type: 'object',
+          properties: {
+            level: { type: 'number', default: level },
+            nested: getExpectedData(level - 1),
           },
-        });
-      }).not.toThrow();
+        };
+      }
+
+      // This should not throw and should generate a valid schema
+      expectSchema([deepSchema], {
+        DeepNesting: getExpectedData(levels),
+      });
     });
 
     it('handles multiple independent lazy schemas efficiently', () => {
@@ -670,7 +669,7 @@ describe('lazy', () => {
               id: { type: 'string' as const },
               value: { type: 'number' as const, default: i },
             },
-            required: ['id', 'value'],
+            required: ['id'],
           },
         ])
       ) as Record<string, any>;
