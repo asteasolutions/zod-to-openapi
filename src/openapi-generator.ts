@@ -194,7 +194,7 @@ export class OpenAPIGenerator {
 
   private generateSingle(definition: OpenAPIDefinitions | ZodType): void {
     if (!('type' in definition)) {
-      this.generateSingleSchemaFromRegistry(definition);
+      this.generateSchemaWithRef(definition);
       return;
     }
 
@@ -204,7 +204,7 @@ export class OpenAPIGenerator {
         return;
 
       case 'schema':
-        this.generateSingleSchemaFromRegistry(definition.schema);
+        this.generateSchemaWithRef(definition.schema);
         return;
 
       case 'route':
@@ -215,17 +215,6 @@ export class OpenAPIGenerator {
         this.rawComponents.push(definition);
         return;
     }
-  }
-
-  private generateSingleSchemaFromRegistry(zodSchema: ZodType) {
-    const refId = Metadata.getRefId(zodSchema);
-
-    // Avoid starting calculations from schemas that have already been defined
-    if (refId && typeof this.schemaRefs[refId] === 'object') {
-      return this.schemaRefs[refId];
-    }
-
-    return this.generateSchemaWithRef(zodSchema);
   }
 
   private generateParameterDefinition(
@@ -424,6 +413,11 @@ export class OpenAPIGenerator {
     const defaultValue = Metadata.getDefaultValue(zodSchema);
     const refId = Metadata.getRefId(zodSchema);
 
+    // TODO: Do I need a similar implementation as bellow inside constructReferencedOpenAPISchema
+    if (refId && typeof this.schemaRefs[refId] === 'object') {
+      return this.schemaRefs[refId];
+    }
+
     // If there is already a pending generation with this name
     // reference it directly. This means that it is recursive
     if (refId && this.schemaRefs[refId] === 'pending') {
@@ -458,12 +452,45 @@ export class OpenAPIGenerator {
   ): SchemaObject | ReferenceObject {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const innerSchema = Metadata.unwrapChained(zodSchema);
-
     const defaultValue = Metadata.getDefaultValue(zodSchema);
     const isNullable = isNullableSchema(zodSchema);
 
     if (metadata?.type) {
       return this.versionSpecifics.mapNullableType(metadata.type, isNullable);
+    }
+
+    const refId = Metadata.getRefId(zodSchema);
+
+    // TODO: Extract this in a Recursive transformer and reuse here and within LazyTransformer
+    if (refId && typeof this.schemaRefs[refId] === 'object') {
+      if ('$ref' in this.schemaRefs[refId]) {
+        return this.schemaRefs[refId];
+      }
+
+      if (this.schemaRefs[refId].type) {
+        return {
+          ...this.schemaRefs[refId],
+          ...this.versionSpecifics.mapNullableType(
+            this.schemaRefs[refId].type,
+            isNullable
+          ),
+        };
+      }
+
+      return this.schemaRefs[refId];
+    }
+
+    // If there is already a pending generation with this name
+    // reference it directly. This means that it is recursive
+    if (refId && this.schemaRefs[refId] === 'pending') {
+      return { $ref: this.generateSchemaRef(refId) };
+    }
+
+    // We start the generation by setting the ref to pending for
+    // any future recursive definition. It would get set to a proper
+    // value within `generateSchemaWithRef`
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = 'pending';
     }
 
     return this.toOpenAPISchema(innerSchema, isNullable, defaultValue);
