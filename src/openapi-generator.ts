@@ -81,13 +81,12 @@ export interface OpenApiGeneratorOptions {
   sortComponents?: 'alphabetically';
 }
 
-export type SchemaRefValue =
-  | SchemaObject
-  | ReferenceObject
-  | ['pending', ZodType];
+type SchemaRefValue = SchemaObject | ReferenceObject | ['pending', ZodType];
+
+export type SchemaRefs = Record<string, SchemaRefValue>;
 
 export class OpenAPIGenerator {
-  private schemaRefs: Record<string, SchemaRefValue> = {};
+  private schemaRefs: SchemaRefs = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
