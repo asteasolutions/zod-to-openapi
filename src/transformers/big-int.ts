@@ -1,9 +1,13 @@
 import { MapNullableType } from '../types';
 
 export class BigIntTransformer {
+  get openApiType() {
+    return 'string' as const;
+  }
+
   transform(mapNullableType: MapNullableType) {
     return {
-      ...mapNullableType('string'),
+      ...mapNullableType(this.openApiType),
       pattern: `^\d+$`,
     };
   }

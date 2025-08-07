@@ -121,6 +121,7 @@ export function extendZodWithOpenApi(zod: typeof z) {
     // This zod instance is already extended with the required methods,
     // doing it again will just result in multiple wrapper methods for
     // `optional` and `nullable`
+    
     return;
   }
 

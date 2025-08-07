@@ -3,12 +3,25 @@ import {
   DiscriminatorObject,
   MapNullableOfArrayWithNullable,
   MapSubSchema,
+  SchemaObject,
 } from '../types';
 import { isString } from '../lib/lodash';
 import { isZodType } from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
 
 export class DiscriminatedUnionTransformer {
+  openApiType(zodSchema: ZodDiscriminatedUnion, mapToType: MapSubSchema) {
+    const options = [...zodSchema.def.options] as ZodObject[];
+
+    const optionSchema = options.map(mapToType);
+
+    const oneOfSchema: SchemaObject = {
+      oneOf: optionSchema,
+    };
+
+    return oneOfSchema;
+  }
+
   transform(
     zodSchema: ZodDiscriminatedUnion,
     isNullable: boolean,

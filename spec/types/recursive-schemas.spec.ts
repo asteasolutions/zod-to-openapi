@@ -297,7 +297,9 @@ describe('recursive schemas (new getter approach)', () => {
         .object({
           name: z.string(),
           get child() {
-            return recursiveSchema.optional();
+            return recursiveSchema.optional().openapi({
+              deprecated: true,
+            });
           },
         })
         .openapi('RecursiveWithMeta', {
@@ -312,7 +314,12 @@ describe('recursive schemas (new getter approach)', () => {
           example: { name: 'root', child: { name: 'child' } },
           properties: {
             name: { type: 'string' },
-            child: { $ref: '#/components/schemas/RecursiveWithMeta' },
+            child: {
+              allOf: [
+                { $ref: '#/components/schemas/RecursiveWithMeta' },
+                { deprecated: true },
+              ],
+            },
           },
           required: ['name'],
         },
@@ -324,10 +331,12 @@ describe('recursive schemas (new getter approach)', () => {
         .object({
           value: z.string(),
           get next() {
-            return recursiveSchema.nullable().optional();
+            return recursiveSchema
+              .nullable()
+              .openapi({ description: 'This can be null' });
           },
         })
-        .openapi('NullableRecursive');
+        .openapi('NullableRecursive', { deprecated: true });
 
       expectSchema([recursiveSchema], {
         NullableRecursive: {
@@ -335,11 +344,51 @@ describe('recursive schemas (new getter approach)', () => {
           properties: {
             value: { type: 'string' },
             next: {
-              $ref: '#/components/schemas/NullableRecursive',
-              nullable: true,
+              allOf: [
+                {
+                  oneOf: [
+                    { $ref: '#/components/schemas/NullableRecursive' },
+                    { nullable: true },
+                  ],
+                },
+                { description: 'This can be null' },
+              ],
             },
           },
-          required: ['value'],
+          deprecated: true,
+
+          required: ['value', 'next'],
+        },
+      });
+    });
+
+    it('supports recursive schemas with manual type passed as metadata', () => {
+      const recursiveSchema = z
+        .object({
+          value: z.string(),
+          get next() {
+            return recursiveSchema.openapi({
+              type: 'object',
+            });
+          },
+        })
+        .openapi('RecursiveWithMetadata', { example: 3 });
+
+      expectSchema([recursiveSchema], {
+        RecursiveWithMetadata: {
+          type: 'object',
+          properties: {
+            value: { type: 'string' },
+            next: {
+              allOf: [
+                { $ref: '#/components/schemas/RecursiveWithMetadata' },
+                { type: 'object' },
+              ],
+            },
+          },
+          example: 3,
+
+          required: ['value', 'next'],
         },
       });
     });
@@ -468,7 +517,7 @@ describe('recursive schemas (new getter approach)', () => {
             properties: {
               value: { type: 'string' },
               child: {
-                anyOf: [
+                oneOf: [
                   { $ref: '#/components/schemas/RecursiveNullable' },
                   { type: 'null' },
                 ],
@@ -499,8 +548,10 @@ describe('recursive schemas (new getter approach)', () => {
             properties: {
               value: { type: 'string' },
               child: {
-                $ref: '#/components/schemas/RecursiveNullable',
-                nullable: true,
+                oneOf: [
+                  { $ref: '#/components/schemas/RecursiveNullable' },
+                  { nullable: true },
+                ],
               },
             },
             required: ['value'],

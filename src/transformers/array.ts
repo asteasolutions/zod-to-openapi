@@ -3,6 +3,10 @@ import { MapNullableType, MapSubSchema } from '../types';
 import { $ZodCheckMinLength, $ZodCheckMaxLength } from 'zod/core';
 import { isAnyZodType } from '../lib/zod-is-type';
 export class ArrayTransformer {
+  get openApiType() {
+    return 'array' as const;
+  }
+
   transform(
     zodSchema: ZodArray,
     mapNullableType: MapNullableType,
@@ -21,7 +25,7 @@ export class ArrayTransformer {
     )?._zod.def.maximum;
 
     return {
-      ...mapNullableType('array'),
+      ...mapNullableType(this.openApiType),
       items: isAnyZodType(itemType) ? mapItems(itemType) : {},
 
       minItems,

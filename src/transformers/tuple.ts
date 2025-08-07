@@ -6,6 +6,10 @@ import { isAnyZodType } from '../lib/zod-is-type';
 export class TupleTransformer {
   constructor(private versionSpecifics: OpenApiVersionSpecifics) {}
 
+  get openApiType() {
+    return 'array' as const;
+  }
+
   transform(
     zodSchema: ZodTuple,
     mapNullableType: MapNullableType,
@@ -18,7 +22,7 @@ export class TupleTransformer {
     );
 
     return {
-      ...mapNullableType('array'),
+      ...mapNullableType(this.openApiType),
       ...this.versionSpecifics.mapTupleItems(schemas),
     };
   }

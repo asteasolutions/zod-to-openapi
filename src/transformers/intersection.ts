@@ -7,17 +7,23 @@ import { ZodIntersection, ZodType } from 'zod';
 import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 
 export class IntersectionTransformer {
+  openApiType(zodSchema: ZodIntersection, mapToType: MapSubSchema) {
+    const subtypes = this.flattenIntersectionTypes(zodSchema);
+
+    const allOfSchema: SchemaObject = {
+      allOf: subtypes.map(mapToType),
+    };
+
+    return allOfSchema;
+  }
+
   transform(
     zodSchema: ZodIntersection,
     isNullable: boolean,
     mapNullableOfArray: MapNullableOfArrayWithNullable,
     mapItem: MapSubSchema
   ): SchemaObject {
-    const subtypes = this.flattenIntersectionTypes(zodSchema);
-
-    const allOfSchema: SchemaObject = {
-      allOf: subtypes.map(mapItem),
-    };
+    const allOfSchema = this.openApiType(zodSchema, mapItem);
 
     if (isNullable) {
       return {

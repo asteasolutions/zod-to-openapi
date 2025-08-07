@@ -1,12 +1,21 @@
-import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
+import {
+  MapNullableTypeWithNullable,
+  MapSubSchema,
+  SchemaObject,
+} from '../types';
 import { ZodRecord } from 'zod';
 import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 import { isString } from '../lib/lodash';
 
 export class RecordTransformer {
+  get openApiType() {
+    return 'object' as const;
+  }
+
   transform(
     zodSchema: ZodRecord,
-    mapNullableType: MapNullableType,
+    isNullable: boolean,
+    mapNullableType: MapNullableTypeWithNullable,
     mapItem: MapSubSchema
   ): SchemaObject {
     const propertiesType = zodSchema.valueType;
@@ -30,13 +39,13 @@ export class RecordTransformer {
       );
 
       return {
-        ...mapNullableType('object'),
+        ...mapNullableType(this.openApiType, isNullable),
         properties,
       };
     }
 
     return {
-      ...mapNullableType('object'),
+      ...mapNullableType(this.openApiType, isNullable),
       additionalProperties: propertiesSchema,
     };
   }

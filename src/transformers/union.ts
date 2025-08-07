@@ -1,5 +1,9 @@
 import { ZodType, ZodUnion } from 'zod';
-import { MapNullableOfArray, MapSubSchema } from '../types';
+import {
+  MapNullableOfArrayWithNullable,
+  MapSubSchema,
+  SchemaObject,
+} from '../types';
 import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
 import { UnionPreferredType } from '../zod-extensions';
@@ -7,9 +11,37 @@ import { UnionPreferredType } from '../zod-extensions';
 export class UnionTransformer {
   constructor(private options?: { unionPreferredType?: UnionPreferredType }) {}
 
+  openApiType(zodSchema: ZodUnion, mapToType: MapSubSchema) {
+    const internalMetadata = Metadata.getInternalMetadata(zodSchema);
+
+    const preferredType =
+      internalMetadata?.unionPreferredType ??
+      this.options?.unionPreferredType ??
+      'anyOf';
+
+    const options = this.flattenUnionTypes(zodSchema);
+
+    const schemas = options.map(schema => {
+      // If any of the underlying schemas of a union is .nullable then the whole union
+      // would be nullable. `mapNullableOfArray` would place it where it belongs.
+      // Therefor we are stripping the additional nullables from the inner schemas
+      // See https://github.com/asteasolutions/zod-to-openapi/issues/149
+      const optionToGenerate = this.unwrapNullable(schema);
+
+      return mapToType(optionToGenerate);
+    });
+
+    const preferredTypeSchema: SchemaObject = {
+      [preferredType]: schemas,
+    };
+
+    return preferredTypeSchema;
+  }
+
   transform(
     zodSchema: ZodUnion,
-    mapNullableOfArray: MapNullableOfArray,
+    isNullable: boolean,
+    mapNullableOfArray: MapNullableOfArrayWithNullable,
     mapItem: MapSubSchema
   ) {
     const internalMetadata = Metadata.getInternalMetadata(zodSchema);
@@ -32,7 +64,7 @@ export class UnionTransformer {
     });
 
     return {
-      [preferredType]: mapNullableOfArray(schemas),
+      [preferredType]: mapNullableOfArray(schemas, isNullable),
     };
   }
 

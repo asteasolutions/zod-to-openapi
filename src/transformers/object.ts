@@ -5,6 +5,10 @@ import { mapValues, objectEquals } from '../lib/lodash';
 import { Metadata } from '../metadata';
 
 export class ObjectTransformer {
+  get openApiType() {
+    return 'object' as const;
+  }
+
   transform(
     zodSchema: ZodObject,
     defaultValue: object,
@@ -18,7 +22,7 @@ export class ObjectTransformer {
 
     if (!extendedFrom) {
       return {
-        ...mapNullableType('object'),
+        ...mapNullableType(this.openApiType),
         properties,
 
         default: defaultValue,

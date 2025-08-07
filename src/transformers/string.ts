@@ -21,6 +21,10 @@ function isZodCheckRegex(check: $ZodCheck<string>): check is $ZodCheckRegex {
 }
 
 export class StringTransformer {
+  get openApiType() {
+    return 'string' as const;
+  }
+
   transform(zodSchema: ZodString, mapNullableType: MapNullableType) {
     const regexCheck = zodSchema.def.checks?.find(isZodCheckRegex);
     // toString generates an additional / at the beginning and end of the pattern
@@ -40,7 +44,7 @@ export class StringTransformer {
       : undefined;
 
     return {
-      ...mapNullableType('string'),
+      ...mapNullableType(this.openApiType),
       // FIXME: https://github.com/colinhacks/zod/commit/d78047e9f44596a96d637abb0ce209cd2732d88c
       minLength: length ?? maxLength,
       maxLength: length ?? minLength,

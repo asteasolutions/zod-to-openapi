@@ -80,6 +80,141 @@ export class OpenApiTransformer {
     return { ...schema, default: defaultValue };
   }
 
+  toNullableType(zodSchema: ZodType, isNullable: boolean) {
+    const innerSchema = Metadata.unwrapChained(zodSchema);
+    return this.toNullableTypeInner(innerSchema, isNullable);
+  }
+
+  private toNullableTypeInner(zodSchema: ZodType, isNullable: boolean) {
+    if (isZodType(zodSchema, 'ZodNull')) {
+      return this.versionSpecifics.nullType;
+    }
+
+    if (isZodType(zodSchema, 'ZodUnknown') || isZodType(zodSchema, 'ZodAny')) {
+      return this.versionSpecifics.mapNullableType(undefined, isNullable);
+    }
+
+    if (isZodType(zodSchema, 'ZodObject')) {
+      return this.versionSpecifics.mapNullableType(
+        this.objectTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodString')) {
+      return this.versionSpecifics.mapNullableType(
+        this.stringTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodNumber')) {
+      return this.versionSpecifics.mapNullableType(
+        this.numberTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodBigInt')) {
+      return this.versionSpecifics.mapNullableType(
+        this.bigIntTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodBoolean')) {
+      return this.versionSpecifics.mapNullableType('boolean', isNullable);
+    }
+
+    // if (isZodType(zodSchema, 'ZodLazy')) {
+    //   return this.lazyTransformer.transform(zodSchema, mapItem, schema =>
+    //     this.versionSpecifics.mapNullableType(schema, true)
+    //   );
+    // }
+
+    if (isZodType(zodSchema, 'ZodLiteral')) {
+      const { type } = this.literalTransformer.transform(zodSchema, schema =>
+        this.versionSpecifics.mapNullableType(schema, isNullable)
+      );
+
+      return this.versionSpecifics.mapNullableType(type, isNullable);
+    }
+
+    if (isZodType(zodSchema, 'ZodEnum')) {
+      const { type } = this.enumTransformer.transform(zodSchema, schema =>
+        this.versionSpecifics.mapNullableType(schema, isNullable)
+      );
+
+      return this.versionSpecifics.mapNullableType(type, isNullable);
+    }
+
+    if (isZodType(zodSchema, 'ZodArray')) {
+      return this.versionSpecifics.mapNullableType(
+        this.arrayTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodTuple')) {
+      return this.versionSpecifics.mapNullableType(
+        this.tupleTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    // Note: It is important that this goes above the union transformer
+    // because the discriminated union is still a union
+    // if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
+    //   return this.discriminatedUnionTransformer.transform(
+    //     zodSchema,
+    //     true,
+    //     _ => this.versionSpecifics.mapNullableOfArray(_, true),
+    //     mapItem,
+    //     generateSchemaRef
+    //   );
+    // }
+
+    if (isZodType(zodSchema, 'ZodUnion')) {
+      const baseSchema = this.unionTransformer.openApiType(zodSchema, schema =>
+        this.toNullableType(schema, isNullable)
+      );
+
+      return this.versionSpecifics.mapNullableOfArray([baseSchema], true);
+    }
+
+    if (isZodType(zodSchema, 'ZodIntersection')) {
+      const allOfSchema = this.intersectionTransformer.openApiType(
+        zodSchema,
+        schema => this.toNullableType(schema, isNullable)
+      );
+
+      return this.versionSpecifics.mapNullableOfArray([allOfSchema], true);
+    }
+
+    if (isZodType(zodSchema, 'ZodRecord')) {
+      return this.versionSpecifics.mapNullableType(
+        this.recordTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodDate')) {
+      return this.versionSpecifics.mapNullableType(
+        this.dateTransformer.openApiType,
+        isNullable
+      );
+    }
+
+    const refId = Metadata.getRefId(zodSchema);
+
+    console.log('>>>>>>>>>>>>>>>>>>>>>>>>> WILL THROW', zodSchema);
+
+    throw new UnknownZodTypeError({
+      currentSchema: zodSchema.def,
+      schemaName: refId,
+    });
+  }
+
   private transformSchemaWithoutDefault(
     zodSchema: ZodType,
     isNullable: boolean,
@@ -163,7 +298,8 @@ export class OpenApiTransformer {
     if (isZodType(zodSchema, 'ZodUnion')) {
       return this.unionTransformer.transform(
         zodSchema,
-        _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
+        isNullable,
+        (...args) => this.versionSpecifics.mapNullableOfArray(...args),
         mapItem
       );
     }
@@ -172,7 +308,7 @@ export class OpenApiTransformer {
       return this.intersectionTransformer.transform(
         zodSchema,
         isNullable,
-        _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
+        (...args) => this.versionSpecifics.mapNullableOfArray(...args),
         mapItem
       );
     }
@@ -180,7 +316,8 @@ export class OpenApiTransformer {
     if (isZodType(zodSchema, 'ZodRecord')) {
       return this.recordTransformer.transform(
         zodSchema,
-        _ => this.versionSpecifics.mapNullableType(_, isNullable),
+        isNullable,
+        (...args) => this.versionSpecifics.mapNullableType(...args),
         mapItem
       );
     }
