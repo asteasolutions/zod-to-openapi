@@ -416,13 +416,6 @@ export class OpenAPIGenerator {
     const defaultValue = Metadata.getDefaultValue(zodSchema);
     const refId = Metadata.getRefId(zodSchema);
 
-    console.log(
-      'generateSchemaWithMetadata before ifs',
-      zodSchema._zod.def,
-      Metadata.getMetadata(zodSchema),
-      this.schemaRefs
-    );
-
     // TODO: Do I need a similar implementation as bellow inside constructReferencedOpenAPISchema
     if (
       refId &&
@@ -435,14 +428,6 @@ export class OpenAPIGenerator {
     // If there is already a pending generation with this name
     // reference it directly. This means that it is recursive
     if (refId && Array.isArray(this.schemaRefs[refId])) {
-      console.log(
-        'generateSchemaWithMetadata Returning from pending',
-        zodSchema._zod.def,
-        Metadata.getMetadata(zodSchema),
-        { defaultValue },
-        this.schemaRefs
-      );
-
       return { $ref: this.generateSchemaRef(refId) };
     }
 
@@ -477,13 +462,6 @@ export class OpenAPIGenerator {
     const defaultValue = Metadata.getDefaultValue(zodSchema);
     const isNullable = isNullableSchema(zodSchema);
 
-    console.log(
-      'constructReferencedOpenAPISchema before if',
-      zodSchema._zod.def,
-      Metadata.getMetadata(zodSchema),
-      this.schemaRefs
-    );
-
     if (metadata?.type) {
       return this.versionSpecifics.mapNullableType(metadata.type, isNullable);
     }
@@ -516,16 +494,6 @@ export class OpenAPIGenerator {
     // If there is already a pending generation with this name
     // reference it directly. This means that it is recursive
     if (refId && Array.isArray(this.schemaRefs[refId])) {
-      console.log(
-        'constructReferencedOpenAPISchema Returning from pending',
-        zodSchema._zod.def,
-        Metadata.getMetadata(zodSchema),
-        {
-          isNullable,
-          defaultValue,
-        },
-        this.schemaRefs
-      );
       return { $ref: this.generateSchemaRef(refId) };
     }
 
@@ -549,13 +517,6 @@ export class OpenAPIGenerator {
 
     const refId = Metadata.getRefId(zodSchema);
 
-    console.log(
-      'generateSimpleSchema before if',
-      zodSchema._zod.def,
-      Metadata.getMetadata(zodSchema),
-      this.schemaRefs
-    );
-
     if (!refId || !this.schemaRefs[refId]) {
       return this.generateSchemaWithMetadata(zodSchema);
     }
@@ -566,7 +527,6 @@ export class OpenAPIGenerator {
 
     // We are currently calculating this schema or there is nothing
     if (Array.isArray(this.schemaRefs[refId])) {
-      console.log('>>>>>>>>>>>>>>>>>>>>>>>>>INSIDE PENDING');
       const schemaAtDefinition = this.schemaRefs[refId][1];
 
       const metadataAtDefinition =
@@ -579,8 +539,6 @@ export class OpenAPIGenerator {
         (value, key) =>
           value === undefined || objectEquals(value, schemaRef[key])
       );
-
-      console.log('>>>>>>>>>>>>>>>>>>>>>>>>>', { newMetadata });
 
       // Do not calculate schema metadata overrides if type is provided in .openapi
       // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
@@ -610,10 +568,6 @@ export class OpenAPIGenerator {
       // );
 
       let typeSchema: SchemaObject | ReferenceObject = referenceObject;
-      console.log('>>>>>>>>>>>>>>>>>>>>>>>>>', {
-        isNullableSchema: isNullableSchema(zodSchema),
-        isNullableSchemaAtDefinition: isNullableSchema(schemaAtDefinition),
-      });
       if (
         isNullableSchema(zodSchema) &&
         !isNullableSchema(schemaAtDefinition)
@@ -624,7 +578,6 @@ export class OpenAPIGenerator {
             true
           ),
         };
-        console.log('>>>>>>>>>>>>>>>>>>>>>>>>>', { typeSchema });
       }
 
       if (Object.keys(newMetadata).length > 0) {
@@ -644,8 +597,6 @@ export class OpenAPIGenerator {
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
     );
 
-    console.log({ newMetadata });
-
     // Do not calculate schema metadata overrides if type is provided in .openapi
     // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
     if (newMetadata.type) {
@@ -659,8 +610,6 @@ export class OpenAPIGenerator {
       this.constructReferencedOpenAPISchema(zodSchema),
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
     );
-
-    console.log({ newSchemaMetadata });
 
     const appliedMetadata = Metadata.applySchemaMetadata(
       newSchemaMetadata,
@@ -902,13 +851,6 @@ export class OpenAPIGenerator {
     isNullable: boolean,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
-    console.log(
-      'toOpenAPISchema',
-      zodSchema._zod.def,
-      Metadata.getMetadata(zodSchema),
-      this.schemaRefs
-    );
-
     const result = this.openApiTransformer.transform(
       zodSchema,
       isNullable,

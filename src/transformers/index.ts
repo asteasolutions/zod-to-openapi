@@ -207,8 +207,6 @@ export class OpenApiTransformer {
 
     const refId = Metadata.getRefId(zodSchema);
 
-    console.log('>>>>>>>>>>>>>>>>>>>>>>>>> WILL THROW', zodSchema);
-
     throw new UnknownZodTypeError({
       currentSchema: zodSchema.def,
       schemaName: refId,
