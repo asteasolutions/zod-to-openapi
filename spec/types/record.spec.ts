@@ -97,6 +97,7 @@ describe('record', () => {
             EUROPE: { $ref: '#/components/schemas/Content' },
             AFRICA: { $ref: '#/components/schemas/Content' },
           },
+          required: ['EUROPE', 'AFRICA'],
         },
       });
     });
@@ -140,6 +141,7 @@ describe('record', () => {
             EUROPE: { $ref: '#/components/schemas/Content' },
             AFRICA: { $ref: '#/components/schemas/Content' },
           },
+          required: ['EUROPE', 'AFRICA'],
         },
       });
     });
