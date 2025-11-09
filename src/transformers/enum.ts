@@ -4,7 +4,11 @@ import { enumInfo } from '../lib/enum-info';
 import { ZodToOpenAPIError } from '../errors';
 
 export class EnumTransformer {
-  transform(zodSchema: ZodEnum, mapNullableType: MapNullableType) {
+  transform(
+    zodSchema: ZodEnum,
+    isNullable: boolean,
+    mapNullableType: MapNullableType
+  ) {
     const { type, values } = enumInfo(zodSchema._zod.def.entries);
 
     if (type === 'mixed') {
@@ -23,7 +27,7 @@ export class EnumTransformer {
 
     return {
       ...mapNullableType(type === 'numeric' ? 'integer' : 'string'),
-      enum: values,
+      enum: isNullable ? [...values, null] : values,
     };
   }
 }

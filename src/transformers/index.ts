@@ -119,7 +119,7 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodEnum')) {
-      return this.enumTransformer.transform(zodSchema, schema =>
+      return this.enumTransformer.transform(zodSchema, isNullable, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }

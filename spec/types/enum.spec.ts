@@ -15,4 +15,20 @@ describe('enum', () => {
       },
     });
   });
+
+  it('supports nullable enums', () => {
+    const schema = z
+      .enum(['option1', 'option2'])
+      .nullable()
+      .openapi('Enum', { description: 'All possible options' });
+
+    expectSchema([schema], {
+      Enum: {
+        type: 'string',
+        nullable: true,
+        description: 'All possible options',
+        enum: ['option1', 'option2', null],
+      },
+    });
+  });
 });
