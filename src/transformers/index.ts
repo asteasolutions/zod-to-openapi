@@ -1,7 +1,7 @@
 import { SchemaObject, ReferenceObject, MapSubSchema } from '../types';
 import { ZodType } from 'zod';
 import { UnknownZodTypeError } from '../errors';
-import { isZodType } from '../lib/zod-is-type';
+import { isSkippableZodType, isZodType } from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
 import { ArrayTransformer } from './array';
 import { BigIntTransformer } from './big-int';
@@ -51,6 +51,10 @@ export class OpenApiTransformer {
     generateSchemaRef: (ref: string) => string,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
+    if (isSkippableZodType(zodSchema)) {
+      return {};
+    }
+
     if (isZodType(zodSchema, 'ZodNull')) {
       return this.versionSpecifics.nullType;
     }

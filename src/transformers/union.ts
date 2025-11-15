@@ -1,7 +1,16 @@
 import { ZodType, ZodUnion } from 'zod';
-import { MapNullableOfArray, MapSubSchema } from '../types';
-import { isAnyZodType, isZodType } from '../lib/zod-is-type';
+import {
+  isAnyZodType,
+  isZodType,
+  isSkippableZodType,
+} from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
+import {
+  MapNullableOfArray,
+  MapSubSchema,
+  ReferenceObject,
+  SchemaObject,
+} from '../types';
 import { UnionPreferredType } from '../zod-extensions';
 
 export class UnionTransformer {
@@ -11,7 +20,7 @@ export class UnionTransformer {
     zodSchema: ZodUnion,
     mapNullableOfArray: MapNullableOfArray,
     mapItem: MapSubSchema
-  ) {
+  ): SchemaObject | ReferenceObject {
     const internalMetadata = Metadata.getInternalMetadata(zodSchema);
 
     const preferredType =
@@ -19,7 +28,9 @@ export class UnionTransformer {
       this.options?.unionPreferredType ??
       'anyOf';
 
-    const options = this.flattenUnionTypes(zodSchema);
+    const options = this.flattenUnionTypes(zodSchema).filter(
+      schema => !isSkippableZodType(Metadata.unwrapChained(schema))
+    );
 
     const schemas = options.map(schema => {
       // If any of the underlying schemas of a union is .nullable then the whole union
@@ -31,8 +42,27 @@ export class UnionTransformer {
       return mapItem(optionToGenerate);
     });
 
+    const mappedSchemas = mapNullableOfArray(schemas);
+
+    return this.wrapSchemaInUnion(mappedSchemas, preferredType);
+  }
+
+  private wrapSchemaInUnion(
+    schemas: (SchemaObject | ReferenceObject)[],
+    preferredType: UnionPreferredType
+  ): SchemaObject | ReferenceObject {
+    // union with zero options is contradictory (no valid values)
+    if (schemas.length === 0) {
+      return {};
+    }
+
+    // union with one option is redundant (no actual choice)
+    if (schemas.length === 1) {
+      return schemas[0]!;
+    }
+
     return {
-      [preferredType]: mapNullableOfArray(schemas),
+      [preferredType]: schemas,
     };
   }
 
