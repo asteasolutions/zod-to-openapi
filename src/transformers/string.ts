@@ -54,6 +54,7 @@ export class StringTransformer {
    * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
    */
   private mapStringFormat(zodString: ZodString): string | undefined {
+    if (zodString.format === 'guid') return 'guid';
     if (zodString.format === 'uuid') return 'uuid';
     if (zodString.format === 'email') return 'email';
     if (zodString.format === 'url') return 'uri';
