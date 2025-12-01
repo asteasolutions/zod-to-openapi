@@ -4,7 +4,7 @@ export class DateTransformer {
   transform(mapNullableType: MapNullableType) {
     return {
       ...mapNullableType('string'),
-      format: 'date',
+      format: 'date-time',
     };
   }
 }
