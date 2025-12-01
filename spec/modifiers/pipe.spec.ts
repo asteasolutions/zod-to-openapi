@@ -18,7 +18,7 @@ describe('pipe', () => {
       {
         PipedDate: {
           anyOf: [
-            { type: 'string', format: 'date' },
+            { type: 'string', format: 'date-time' },
             { type: 'string', minLength: 1 },
           ],
         },
