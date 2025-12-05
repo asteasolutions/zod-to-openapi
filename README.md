@@ -630,6 +630,7 @@ The list of all supported types as of now is:
 - `ZodBoolean`
 - `ZodDate`
 - `ZodDefault`
+- `ZodPrefault`
 - `ZodDiscriminatedUnion`
   - including `discriminator` mapping when all Zod objects in the union are registered with `.register()` or contain a `refId`.
 - `ZodEffects`

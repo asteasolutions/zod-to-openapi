@@ -45,6 +45,7 @@ export class Metadata {
         'ZodOptional',
         'ZodNullable',
         'ZodDefault',
+        'ZodPrefault',
         'ZodReadonly',
         'ZodNonOptional',
       ]) &&
@@ -143,7 +144,9 @@ export class Metadata {
   }
 
   static getDefaultValue<T>(zodSchema: ZodType): T | undefined {
-    const unwrapped = this.unwrapUntil(zodSchema, 'ZodDefault');
+    const unwrapped =
+      this.unwrapUntil(zodSchema, 'ZodDefault') ??
+      this.unwrapUntil(zodSchema, 'ZodPrefault');
 
     return unwrapped?._zod.def.defaultValue as T | undefined;
   }
@@ -166,6 +169,7 @@ export class Metadata {
         'ZodOptional',
         'ZodNullable',
         'ZodDefault',
+        'ZodPrefault',
         'ZodReadonly',
         'ZodNonOptional',
       ]) &&
