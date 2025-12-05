@@ -6,6 +6,7 @@ export type ZodTypes = {
   ZodBigInt: z.ZodBigInt;
   ZodBoolean: z.ZodBoolean;
   ZodDefault: z.ZodDefault;
+  ZodPrefault: z.ZodPrefault;
   ZodTransform: z.ZodTransform;
   ZodEnum: z.ZodEnum;
   ZodIntersection: z.ZodIntersection;
@@ -36,6 +37,7 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodBigInt: 'bigint',
   ZodBoolean: 'boolean',
   ZodDefault: 'default',
+  ZodPrefault: 'prefault',
   ZodTransform: 'transform',
   ZodEnum: 'enum',
   ZodIntersection: 'intersection',
