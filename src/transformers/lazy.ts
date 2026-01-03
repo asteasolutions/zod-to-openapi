@@ -15,14 +15,21 @@ export class LazyTransformer {
   ): SchemaObject | ReferenceObject {
     const result = mapItem(zodSchema._zod.def.getter() as ZodType);
 
-    if ('$ref' in result) {
-      return result;
+    return LazyTransformer.mapRecursive(result, mapNullableType);
+  }
+
+  static mapRecursive(
+    schema: SchemaObject | ReferenceObject,
+    mapNullableType: MapNullableType
+  ): SchemaObject | ReferenceObject {
+    if ('$ref' in schema) {
+      return schema;
     }
 
-    if (result.type) {
-      return { ...result, ...mapNullableType(result.type) };
+    if (schema.type) {
+      return { ...schema, ...mapNullableType(schema.type) };
     }
 
-    return result;
+    return schema;
   }
 }

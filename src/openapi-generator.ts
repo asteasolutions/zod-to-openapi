@@ -45,6 +45,7 @@ import {
 import { Metadata } from './metadata';
 import { OpenApiTransformer } from './transformers';
 import { UnionPreferredType } from './zod-extensions';
+import { LazyTransformer } from './transformers/lazy';
 
 // List of Open API Versions. Please make sure these are in ascending order
 const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
@@ -474,21 +475,9 @@ export class OpenAPIGenerator {
       this.schemaRefs[refId] &&
       !Array.isArray(this.schemaRefs[refId])
     ) {
-      if ('$ref' in this.schemaRefs[refId]) {
-        return this.schemaRefs[refId];
-      }
-
-      if (this.schemaRefs[refId].type) {
-        return {
-          ...this.schemaRefs[refId],
-          ...this.versionSpecifics.mapNullableType(
-            this.schemaRefs[refId].type,
-            isNullable
-          ),
-        };
-      }
-
-      return this.schemaRefs[refId];
+      return LazyTransformer.mapRecursive(this.schemaRefs[refId], schema =>
+        this.versionSpecifics.mapNullableType(schema, isNullable)
+      );
     }
 
     // If there is already a pending generation with this name
