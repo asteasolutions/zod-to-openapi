@@ -13,12 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'npm'
 
+      - run: npm -v
+
       - run: npm install -g npm@latest
+
+      - run: npm -v
 
       - run: npm ci
       - run: npm test
