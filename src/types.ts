@@ -51,6 +51,13 @@ export type MapNullableType = (
   type: NonNullable<SchemaObject['type']> | undefined
 ) => Pick<SchemaObject, 'type' | 'nullable'>;
 
+export type MapNullableRef = (
+  ref: ReferenceObject
+) =>
+  | ReferenceObject
+  | { anyOf: (ReferenceObject | { type: 'null' })[] }
+  | (ReferenceObject & { nullable?: boolean });
+
 export type MapNullableTypeWithNullable = (
   type: NonNullable<SchemaObject['type']> | undefined,
   isNullable: boolean

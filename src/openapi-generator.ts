@@ -67,6 +67,14 @@ export interface OpenApiVersionSpecifics {
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'>;
 
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ):
+    | ReferenceObject
+    | (ReferenceObject & { nullable?: boolean })
+    | { anyOf: (ReferenceObject | { type: 'null' })[] };
+
   mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {
     items?: SchemaObject | ReferenceObject;
     minItems?: number;
@@ -422,7 +430,11 @@ export class OpenAPIGenerator {
     // If there is already a pending generation with this name
     // reference it directly. This means that it is recursive
     if (refId && this.schemaRefs[refId] === 'pending') {
-      return { $ref: this.generateSchemaRef(refId) };
+      const refSchema = { $ref: this.generateSchemaRef(refId) };
+      return this.versionSpecifics.mapNullableOfRef(
+        refSchema,
+        isNullableSchema(zodSchema)
+      );
     }
 
     // We start the generation by setting the ref to pending for
@@ -463,15 +475,18 @@ export class OpenAPIGenerator {
     const refId = Metadata.getRefId(zodSchema);
 
     if (refId && typeof this.schemaRefs[refId] === 'object') {
-      return LazyTransformer.mapRecursive(this.schemaRefs[refId], schema =>
-        this.versionSpecifics.mapNullableType(schema, isNullable)
+      return LazyTransformer.mapRecursive(
+        this.schemaRefs[refId],
+        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+        schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
       );
     }
 
     // If there is already a pending generation with this name
     // reference it directly. This means that it is recursive
     if (refId && this.schemaRefs[refId] === 'pending') {
-      return { $ref: this.generateSchemaRef(refId) };
+      const refSchema = { $ref: this.generateSchemaRef(refId) };
+      return this.versionSpecifics.mapNullableOfRef(refSchema, isNullable);
     }
 
     // We start the generation by setting the ref to pending for
@@ -505,7 +520,10 @@ export class OpenAPIGenerator {
 
     // We are currently calculating this schema or there is nothing
     if (this.schemaRefs[refId] === 'pending') {
-      return referenceObject;
+      return this.versionSpecifics.mapNullableOfRef(
+        referenceObject,
+        isNullableSchema(zodSchema)
+      );
     }
 
     // Metadata provided from .openapi() that is new to what we had already registered

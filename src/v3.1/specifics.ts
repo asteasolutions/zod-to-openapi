@@ -46,6 +46,18 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
     return { type };
   }
 
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ): ReferenceObject | { anyOf: (ReferenceObject | { type: 'null' })[] } {
+    if (isNullable) {
+      return {
+        anyOf: [ref, this.nullType],
+      };
+    }
+    return ref;
+  }
+
   mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
     return {
       prefixItems: schemas,

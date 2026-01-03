@@ -115,8 +115,11 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodLazy')) {
-      return this.lazyTransformer.transform(zodSchema, mapItem, schema =>
-        this.versionSpecifics.mapNullableType(schema, isNullable)
+      return this.lazyTransformer.transform(
+        zodSchema,
+        mapItem,
+        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+        schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
       );
     }
 

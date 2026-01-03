@@ -1,5 +1,6 @@
 import { Metadata } from '../metadata';
 import {
+  MapNullableRef,
   MapNullableType,
   MapSubSchema,
   ReferenceObject,
@@ -11,19 +12,25 @@ export class LazyTransformer {
   transform(
     zodSchema: ZodLazy,
     mapItem: MapSubSchema,
-    mapNullableType: MapNullableType
+    mapNullableType: MapNullableType,
+    mapNullableRef: MapNullableRef
   ): SchemaObject | ReferenceObject {
     const result = mapItem(zodSchema._zod.def.getter() as ZodType);
 
-    return LazyTransformer.mapRecursive(result, mapNullableType);
+    return LazyTransformer.mapRecursive(
+      result,
+      mapNullableType,
+      mapNullableRef
+    );
   }
 
   static mapRecursive(
     schema: SchemaObject | ReferenceObject,
-    mapNullableType: MapNullableType
+    mapNullableType: MapNullableType,
+    mapNullableRef: MapNullableRef
   ): SchemaObject | ReferenceObject {
     if ('$ref' in schema) {
-      return schema;
+      return mapNullableRef(schema);
     }
 
     if (schema.type) {
