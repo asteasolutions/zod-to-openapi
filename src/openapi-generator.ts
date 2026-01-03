@@ -72,8 +72,8 @@ export interface OpenApiVersionSpecifics {
     isNullable: boolean
   ):
     | ReferenceObject
-    | (ReferenceObject & { nullable?: boolean })
-    | { anyOf: (ReferenceObject | { type: 'null' })[] };
+    | { allOf: (ReferenceObject | { nullable: boolean })[] }
+    | { oneOf: (ReferenceObject | { type: 'null' })[] };
 
   mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {
     items?: SchemaObject | ReferenceObject;

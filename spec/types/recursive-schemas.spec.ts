@@ -324,10 +324,10 @@ describe('recursive schemas (new getter approach)', () => {
         .object({
           value: z.string(),
           get next() {
-            return recursiveSchema.nullable().optional();
+            return recursiveSchema.nullable();
           },
         })
-        .openapi('NullableRecursive');
+        .openapi('NullableRecursive', { deprecated: true });
 
       expectSchema([recursiveSchema], {
         NullableRecursive: {
@@ -335,11 +335,15 @@ describe('recursive schemas (new getter approach)', () => {
           properties: {
             value: { type: 'string' },
             next: {
-              $ref: '#/components/schemas/NullableRecursive',
-              nullable: true,
+              allOf: [
+                { $ref: '#/components/schemas/NullableRecursive' },
+                { nullable: true },
+              ],
             },
           },
-          required: ['value'],
+          deprecated: true,
+
+          required: ['value', 'next'],
         },
       });
     });
@@ -468,7 +472,7 @@ describe('recursive schemas (new getter approach)', () => {
             properties: {
               value: { type: 'string' },
               child: {
-                anyOf: [
+                oneOf: [
                   { $ref: '#/components/schemas/RecursiveNullable' },
                   { type: 'null' },
                 ],
@@ -499,8 +503,10 @@ describe('recursive schemas (new getter approach)', () => {
             properties: {
               value: { type: 'string' },
               child: {
-                $ref: '#/components/schemas/RecursiveNullable',
-                nullable: true,
+                allOf: [
+                  { $ref: '#/components/schemas/RecursiveNullable' },
+                  { nullable: true },
+                ],
               },
             },
             required: ['value'],

@@ -32,11 +32,10 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
   mapNullableOfRef(
     ref: ReferenceObject,
     isNullable: boolean
-  ): ReferenceObject & { nullable?: boolean } {
+  ): ReferenceObject | { allOf: (ReferenceObject | { nullable: boolean })[] } {
     if (isNullable) {
       return {
-        ...ref,
-        ...this.nullType,
+        allOf: [ref, this.nullType],
       };
     }
     return ref;

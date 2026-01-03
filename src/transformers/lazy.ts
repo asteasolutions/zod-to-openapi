@@ -1,4 +1,3 @@
-import { Metadata } from '../metadata';
 import {
   MapNullableRef,
   MapNullableType,
