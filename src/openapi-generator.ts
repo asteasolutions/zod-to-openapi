@@ -92,8 +92,10 @@ export interface OpenApiGeneratorOptions {
 
 export type SchemaRefValue = SchemaObject | ReferenceObject | 'pending';
 
+export type SchemaRefs = Record<string, SchemaRefValue>;
+
 export class OpenAPIGenerator {
-  private schemaRefs: Record<string, SchemaRefValue> = {};
+  private schemaRefs: SchemaRefs = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
