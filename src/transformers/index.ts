@@ -20,6 +20,7 @@ import {
   OpenApiVersionSpecifics,
 } from '../openapi-generator';
 import { DateTransformer } from './date';
+import { LazyTransformer } from './lazy';
 
 export class OpenApiTransformer {
   private objectTransformer = new ObjectTransformer();
@@ -27,6 +28,7 @@ export class OpenApiTransformer {
   private numberTransformer = new NumberTransformer();
   private bigIntTransformer = new BigIntTransformer();
   private dateTransformer = new DateTransformer();
+  private lazyTransformer = new LazyTransformer();
   private literalTransformer = new LiteralTransformer();
   private enumTransformer = new EnumTransformer();
   private arrayTransformer = new ArrayTransformer();
@@ -110,6 +112,15 @@ export class OpenApiTransformer {
 
     if (isZodType(zodSchema, 'ZodBoolean')) {
       return this.versionSpecifics.mapNullableType('boolean', isNullable);
+    }
+
+    if (isZodType(zodSchema, 'ZodLazy')) {
+      return this.lazyTransformer.transform(
+        zodSchema,
+        mapItem,
+        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+        schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
+      );
     }
 
     if (isZodType(zodSchema, 'ZodLiteral')) {

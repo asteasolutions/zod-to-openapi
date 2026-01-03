@@ -605,7 +605,7 @@ const options = {
 #### Passing options for a one-off usage for a single schema:
 
 ```ts
-// Note it is valid for metadata to be undefined in both of the bellow cases:
+// Note it is valid for metadata to be undefined in both of the below cases:
 
 schema.openapi('Schema', metadata, options); // when registering a schema or
 schema.openapi(metadata, options) // when simply adding some metadata to it

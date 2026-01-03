@@ -10,6 +10,7 @@ export type ZodTypes = {
   ZodTransform: z.ZodTransform;
   ZodEnum: z.ZodEnum;
   ZodIntersection: z.ZodIntersection;
+  ZodLazy: z.ZodLazy;
   ZodLiteral: z.ZodLiteral;
   ZodNever: z.ZodNever;
   ZodNull: z.ZodNull;
@@ -41,6 +42,7 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodTransform: 'transform',
   ZodEnum: 'enum',
   ZodIntersection: 'intersection',
+  ZodLazy: 'lazy',
   ZodLiteral: 'literal',
   ZodNever: 'never',
   ZodNull: 'null',

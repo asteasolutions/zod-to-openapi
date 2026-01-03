@@ -45,6 +45,7 @@ import {
 import { Metadata } from './metadata';
 import { OpenApiTransformer } from './transformers';
 import { UnionPreferredType } from './zod-extensions';
+import { LazyTransformer } from './transformers/lazy';
 
 // List of Open API Versions. Please make sure these are in ascending order
 const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
@@ -66,6 +67,14 @@ export interface OpenApiVersionSpecifics {
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'>;
 
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ):
+    | ReferenceObject
+    | { allOf: (ReferenceObject | { nullable: boolean })[] }
+    | { oneOf: (ReferenceObject | { type: 'null' })[] };
+
   mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {
     items?: SchemaObject | ReferenceObject;
     minItems?: number;
@@ -81,8 +90,12 @@ export interface OpenApiGeneratorOptions {
   sortComponents?: 'alphabetically';
 }
 
+export type SchemaRefValue = SchemaObject | ReferenceObject | 'pending';
+
+export type SchemaRefs = Record<string, SchemaRefValue>;
+
 export class OpenAPIGenerator {
-  private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
+  private schemaRefs: SchemaRefs = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
@@ -128,7 +141,7 @@ export class OpenAPIGenerator {
 
     const allSchemas = {
       ...(rawComponents.schemas ?? {}),
-      ...this.schemaRefs,
+      ...this.filteredSchemaRefs,
     };
 
     const schemas =
@@ -149,7 +162,18 @@ export class OpenAPIGenerator {
     return { ...rawComponents, schemas, parameters };
   }
 
-  private sortObjectKeys(object: Record<string, object>) {}
+  private isNotPendingRefEntry(
+    entry: [string, SchemaRefValue]
+  ): entry is [string, SchemaObject | ReferenceObject] {
+    return entry[1] !== 'pending';
+  }
+
+  private get filteredSchemaRefs() {
+    const filtered = Object.entries(this.schemaRefs).filter(
+      this.isNotPendingRefEntry
+    );
+    return Object.fromEntries(filtered);
+  }
 
   private sortDefinitions() {
     const generationOrder: OpenAPIDefinitions['type'][] = [
@@ -398,6 +422,29 @@ export class OpenAPIGenerator {
     const innerSchema = Metadata.unwrapChained(zodSchema);
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const defaultValue = Metadata.getDefaultValue(zodSchema);
+    const refId = Metadata.getRefId(zodSchema);
+
+    // TODO: Do I need a similar implementation as bellow inside constructReferencedOpenAPISchema
+    if (refId && typeof this.schemaRefs[refId] === 'object') {
+      return this.schemaRefs[refId];
+    }
+
+    // If there is already a pending generation with this name
+    // reference it directly. This means that it is recursive
+    if (refId && this.schemaRefs[refId] === 'pending') {
+      const refSchema = { $ref: this.generateSchemaRef(refId) };
+      return this.versionSpecifics.mapNullableOfRef(
+        refSchema,
+        isNullableSchema(zodSchema)
+      );
+    }
+
+    // We start the generation by setting the ref to pending for
+    // any future recursive definition. It would get set to a proper
+    // value within `generateSchemaWithRef`
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = 'pending';
+    }
 
     const result = metadata?.type
       ? { type: metadata.type }
@@ -420,12 +467,35 @@ export class OpenAPIGenerator {
   ): SchemaObject | ReferenceObject {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const innerSchema = Metadata.unwrapChained(zodSchema);
-
     const defaultValue = Metadata.getDefaultValue(zodSchema);
     const isNullable = isNullableSchema(zodSchema);
 
     if (metadata?.type) {
       return this.versionSpecifics.mapNullableType(metadata.type, isNullable);
+    }
+
+    const refId = Metadata.getRefId(zodSchema);
+
+    if (refId && typeof this.schemaRefs[refId] === 'object') {
+      return LazyTransformer.mapRecursive(
+        this.schemaRefs[refId],
+        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+        schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
+      );
+    }
+
+    // If there is already a pending generation with this name
+    // reference it directly. This means that it is recursive
+    if (refId && this.schemaRefs[refId] === 'pending') {
+      const refSchema = { $ref: this.generateSchemaRef(refId) };
+      return this.versionSpecifics.mapNullableOfRef(refSchema, isNullable);
+    }
+
+    // We start the generation by setting the ref to pending for
+    // any future recursive definition. It would get set to a proper
+    // value within `generateSchemaWithRef`
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = 'pending';
     }
 
     return this.toOpenAPISchema(innerSchema, isNullable, defaultValue);
@@ -449,6 +519,14 @@ export class OpenAPIGenerator {
     const referenceObject: ReferenceObject = {
       $ref: this.generateSchemaRef(refId),
     };
+
+    // We are currently calculating this schema or there is nothing
+    if (this.schemaRefs[refId] === 'pending') {
+      return this.versionSpecifics.mapNullableOfRef(
+        referenceObject,
+        isNullableSchema(zodSchema)
+      );
+    }
 
     // Metadata provided from .openapi() that is new to what we had already registered
     const newMetadata = omitBy(
@@ -494,15 +572,13 @@ export class OpenAPIGenerator {
   private generateSchemaWithRef(zodSchema: ZodType) {
     const refId = Metadata.getRefId(zodSchema);
 
-    const result = this.generateSimpleSchema(zodSchema);
-
-    if (refId && this.schemaRefs[refId] === undefined) {
-      this.schemaRefs[refId] = result;
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = this.generateSimpleSchema(zodSchema);
 
       return { $ref: this.generateSchemaRef(refId) };
     }
 
-    return result;
+    return this.generateSimpleSchema(zodSchema);
   }
 
   private generateSchemaRef(refId: string) {

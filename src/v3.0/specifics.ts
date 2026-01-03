@@ -29,6 +29,18 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
     };
   }
 
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ): ReferenceObject | { allOf: (ReferenceObject | { nullable: boolean })[] } {
+    if (isNullable) {
+      return {
+        allOf: [ref, this.nullType],
+      };
+    }
+    return ref;
+  }
+
   mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
     const uniqueSchemas = uniq(schemas);
 

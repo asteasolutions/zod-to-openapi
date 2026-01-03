@@ -1,7 +1,12 @@
-import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
+import type {
+  ReferenceObject,
+  SchemaObject,
+  SchemaObjectType,
+} from 'openapi3-ts/oas31';
 import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
+import { uniq } from '../lib/lodash';
 
 export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
   get nullType() {
@@ -29,14 +34,28 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
 
     // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
     if (isNullable) {
-      return {
-        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
-      };
+      const typeArray = Array.isArray(type) ? type : [type];
+
+      // If the type already contained null we do not want to have it twice.
+      // this is possible for example in z.null usages or z.lazy recursive usages
+      const nullableType = uniq<SchemaObjectType>([...typeArray, 'null']);
+
+      return { type: nullableType };
     }
 
-    return {
-      type,
-    };
+    return { type };
+  }
+
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ): ReferenceObject | { oneOf: (ReferenceObject | { type: 'null' })[] } {
+    if (isNullable) {
+      return {
+        oneOf: [ref, this.nullType],
+      };
+    }
+    return ref;
   }
 
   mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
