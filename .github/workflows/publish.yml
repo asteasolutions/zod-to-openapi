@@ -17,13 +17,6 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-
-      - run: npm -v
-
-      - run: npm install -g npm@latest
-
-      - run: npm -v
-
       - run: npm ci
       - run: npm test
 
