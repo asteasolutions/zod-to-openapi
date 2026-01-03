@@ -11,7 +11,7 @@ describe('string formats', () => {
     ${'uuid'}     | ${z.uuid()}         | ${'uuid'}
     ${'email'}    | ${z.email()}        | ${'email'}
     ${'url'}      | ${z.url()}          | ${'uri'}
-    ${'date'}     | ${z.date()}         | ${'date'}
+    ${'date'}     | ${z.date()}         | ${'date-time'}
     ${'ipv4'}     | ${z.ipv4()}         | ${'ip'}
     ${'ipv6'}     | ${z.ipv6()}         | ${'ip'}
     ${'datetime'} | ${z.iso.datetime()} | ${'date-time'}
