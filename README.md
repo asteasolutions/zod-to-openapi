@@ -662,13 +662,6 @@ The list of all supported types as of now is:
     - `.url()`
   - adding `pattern` for `.regex()` is also supported
 
-
-    ${'emoji'}    | ${z.string().emoji()}    | ${'emoji'}
-    ${'cuid'}     | ${z.string().cuid()}     | ${'cuid'}
-    ${'cuid2'}    | ${z.string().cuid2()}    | ${'cuid2'}
-    ${'ulid'}     | ${z.string().ulid()}     | ${'ulid'}
-    ${'ip'}       | ${z.string().ip()}       | ${'ip'}
-
 - `ZodTuple`
 - `ZodUnion`
 - `ZodUnknown`

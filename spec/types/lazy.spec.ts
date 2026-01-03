@@ -492,7 +492,7 @@ describe('lazy', () => {
       expectSchema([lazyDateSchema], {
         LazyDate: {
           type: 'string',
-          format: 'date',
+          format: 'date-time',
         },
       });
     });
