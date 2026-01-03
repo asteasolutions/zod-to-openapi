@@ -8,7 +8,7 @@ import { SchemaObject } from 'src/types';
 describe('recursive schemas (new getter approach)', () => {
   describe('basic recursive functionality', () => {
     it('supports basic recursive lazy schemas with getters', () => {
-      const categorySchema = z
+      const categorySchema: z.ZodType<unknown> = z
         .object({
           name: z.string(),
           get subcategory() {
@@ -32,7 +32,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports optional recursive properties with getters', () => {
-      const nodeSchema = z
+      const nodeSchema: z.ZodType<unknown> = z
         .object({
           id: z.string(),
           value: z.number(),
@@ -58,7 +58,7 @@ describe('recursive schemas (new getter approach)', () => {
 
   describe('complex recursive scenarios with getters', () => {
     it('supports mutual recursion between schemas using getters', () => {
-      const personSchema = z
+      const personSchema: z.ZodType<unknown> = z
         .object({
           name: z.string(),
           get company() {
@@ -67,7 +67,7 @@ describe('recursive schemas (new getter approach)', () => {
         })
         .openapi('Person');
 
-      const companySchema = z
+      const companySchema: z.ZodType<unknown> = z
         .object({
           name: z.string(),
           get employees() {
@@ -100,7 +100,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports deeply nested recursive tree structures with getters', () => {
-      const treeNodeSchema = z
+      const treeNodeSchema: z.ZodType<unknown> = z
         .object({
           id: z.string(),
           value: z.number(),
@@ -131,7 +131,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports recursive schemas with unions using getters', () => {
-      const recursiveNodeSchema = z
+      const recursiveNodeSchema: z.ZodType<unknown> = z
         .object({
           id: z.string(),
           type: z.enum(['simple', 'complex']),
@@ -176,7 +176,7 @@ describe('recursive schemas (new getter approach)', () => {
 
   describe('recursive schemas with complex types and getters', () => {
     it('supports recursive schemas in arrays with getters', () => {
-      const itemSchema = z
+      const itemSchema: z.ZodType<unknown> = z
         .object({
           id: z.string(),
           value: z.number(),
@@ -211,7 +211,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports recursive schemas in unions with getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           id: z.string(),
           get nested() {
@@ -246,7 +246,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports recursive schemas in intersections with getters', () => {
-      const recursiveBaseSchema = z
+      const recursiveBaseSchema: z.ZodType<unknown> = z
         .object({
           id: z.string(),
           get child() {
@@ -293,7 +293,7 @@ describe('recursive schemas (new getter approach)', () => {
 
   describe('metadata and modifiers with recursive getters', () => {
     it('supports recursive schemas with OpenAPI metadata using getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           name: z.string(),
           get child() {
@@ -320,7 +320,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports nullable recursive schemas with getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           value: z.string(),
           get next() {
@@ -345,7 +345,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports recursive schemas with defaults using getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           name: z.string(),
           count: z.number().default(0),
@@ -378,7 +378,7 @@ describe('recursive schemas (new getter approach)', () => {
       const levels = 9;
 
       // Create a deeply nested structure using getters
-      function createRecursiveSchema(level: number): z.ZodType<any> {
+      function createRecursiveSchema(level: number): z.ZodType<unknown> {
         return z.object({
           level: z.number().default(level),
           ...(level === 0
@@ -413,7 +413,7 @@ describe('recursive schemas (new getter approach)', () => {
 
     it('handles multiple independent recursive schemas efficiently using getters', () => {
       const schemas = Array.from({ length: 10 }, (_, i) => {
-        const recursiveSchema = z
+        const recursiveSchema: z.ZodType<unknown> = z
           .object({
             id: z.string(),
             value: z.number().default(i),
@@ -451,7 +451,7 @@ describe('recursive schemas (new getter approach)', () => {
 
   describe('OpenAPI version compatibility with recursive getters', () => {
     it('supports recursive schemas with OpenAPI 3.1 using getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           value: z.string(),
           get child() {
@@ -482,7 +482,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports recursive schemas with OpenAPI 3.0 using getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           value: z.string(),
           get child() {
@@ -513,7 +513,7 @@ describe('recursive schemas (new getter approach)', () => {
 
   describe('edge cases with recursive getters', () => {
     it('handles simple recursive schema using getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           name: z.string(),
           get child() {
@@ -535,7 +535,7 @@ describe('recursive schemas (new getter approach)', () => {
     });
 
     it('supports recursive schemas in nested arrays and objects using getters', () => {
-      const recursiveSchema = z
+      const recursiveSchema: z.ZodType<unknown> = z
         .object({
           id: z.string(),
           get nested() {
