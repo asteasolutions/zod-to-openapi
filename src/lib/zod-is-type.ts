@@ -30,6 +30,7 @@ export type ZodTypes = {
   ZodUnknown: z.ZodUnknown;
   ZodVoid: z.ZodVoid;
   ZodDate: z.ZodDate;
+  ZodTemplateLiteral: z.ZodTemplateLiteral;
 };
 
 const ZodTypeKeys: Record<keyof ZodTypes, string> = {
@@ -62,6 +63,7 @@ const ZodTypeKeys: Record<keyof ZodTypes, string> = {
   ZodUnknown: 'unknown',
   ZodVoid: 'void',
   ZodDate: 'date',
+  ZodTemplateLiteral: 'template_literal',
 };
 
 export function isZodType<TypeName extends keyof ZodTypes>(
