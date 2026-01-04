@@ -6,7 +6,7 @@ import type {
 import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
-import { uniq } from '../lib/lodash';
+import { objectEquals, uniq } from '../lib/lodash';
 
 export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
   get nullType() {
@@ -17,7 +17,10 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
     objects: (SchemaObject | ReferenceObject)[],
     isNullable: boolean
   ): (SchemaObject | ReferenceObject)[] {
-    if (isNullable) {
+    if (
+      isNullable &&
+      !objects.some(object => objectEquals(object, this.nullType))
+    ) {
       return [...objects, this.nullType];
     }
     return objects;

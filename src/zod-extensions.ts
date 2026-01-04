@@ -159,10 +159,28 @@ export function extendZodWithOpenApi(zod: typeof z) {
     // See the test in metadata-overrides.spec.ts (only adds overrides for new metadata properties)
     const result = new this.constructor(this._def);
 
-    Metadata.setMetadataInRegistry(result, {
-      ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
-      ...resultMetadata,
-    } as ZodOpenApiFullMetadata);
+    function setMetadata(schema: ZodType) {
+      Metadata.setMetadataInRegistry(schema, {
+        ...(Object.keys(_internal).length > 0 ? { _internal } : undefined),
+        ...resultMetadata,
+      } as ZodOpenApiFullMetadata);
+    }
+
+    setMetadata(result);
+
+    /**
+     * In order to handle z.json() which is implemented as:
+     *
+     * const jsonSchema = lazy(() => { return union([ ... ]) });
+     * return jsonSchema;
+     *
+     * We need to not only set the metadata to the resulting schema (which would be different
+     * from `jsonSchema`), but also to the original lazy schema so that the _internal metadata (refId)
+     * is also present in the internally used `jsonSchema`.
+     */
+    if (isZodType(result, 'ZodLazy')) {
+      setMetadata(this);
+    }
 
     if (isZodType(result, 'ZodObject')) {
       const currentMetadata = Metadata.getMetadataFromRegistry(result);
