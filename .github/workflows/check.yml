@@ -1,4 +1,4 @@
-name: Check
+name: CI Check
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - '*'
 
 jobs:
-  build-and-test:
+  ci-build-and-test:
     runs-on: ubuntu-latest
 
     strategy:
