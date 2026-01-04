@@ -21,6 +21,7 @@ import {
 } from '../openapi-generator';
 import { DateTransformer } from './date';
 import { LazyTransformer } from './lazy';
+import { TemplateLiteralTransformer } from './template-literal';
 
 export class OpenApiTransformer {
   private objectTransformer = new ObjectTransformer();
@@ -30,6 +31,7 @@ export class OpenApiTransformer {
   private dateTransformer = new DateTransformer();
   private lazyTransformer = new LazyTransformer();
   private literalTransformer = new LiteralTransformer();
+  private templateLiteralTransformer = new TemplateLiteralTransformer();
   private enumTransformer = new EnumTransformer();
   private arrayTransformer = new ArrayTransformer();
   private tupleTransformer: TupleTransformer;
@@ -125,6 +127,12 @@ export class OpenApiTransformer {
 
     if (isZodType(zodSchema, 'ZodLiteral')) {
       return this.literalTransformer.transform(zodSchema, schema =>
+        this.versionSpecifics.mapNullableType(schema, isNullable)
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodTemplateLiteral')) {
+      return this.templateLiteralTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }

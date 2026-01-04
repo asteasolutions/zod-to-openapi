@@ -30,7 +30,7 @@ export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   _internal?: never;
 };
 
-interface OpenApiOptions {
+export interface OpenApiOptions {
   unionPreferredType?: UnionPreferredType;
 }
 
