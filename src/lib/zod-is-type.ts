@@ -100,6 +100,13 @@ export function isAnyZodType(schema: object): schema is z.ZodType {
 }
 
 /**
+ * Checks if a schema is void or never, which should be skipped
+ * since they don't contribute meaningful OpenAPI constraints
+ */
+export function isSkippableZodType(schema: z.ZodType): boolean {
+  return isZodType(schema, ['ZodVoid', 'ZodNever']);
+}
+/**
  * The schema.isNullable() is deprecated. This is the suggested replacement
  * as this was how isNullable operated beforehand.
  */
