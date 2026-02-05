@@ -350,9 +350,7 @@ export class OpenAPIGenerator {
           );
         }
 
-        return this.generateParameter(
-          schema.openapi({ param: { name: key, in: location } })
-        );
+        return this.generateParameter(schema, { name: key, in: location });
       });
 
       return parameters;
@@ -368,14 +366,20 @@ export class OpenAPIGenerator {
       );
     }
 
-    return [
-      this.generateParameter(zodSchema.openapi({ param: { in: location } })),
-    ];
+    return [this.generateParameter(zodSchema, { in: location })];
   }
 
-  private generateSimpleParameter(zodSchema: ZodType): BaseParameterObject {
+  private generateSimpleParameter(
+    zodSchema: ZodType,
+    externalParamMetadata?: { name?: string; in?: ParameterLocation }
+  ): BaseParameterObject {
     const metadata = Metadata.getParamMetadata(zodSchema);
     const paramMetadata = metadata?.param;
+
+    const mergedParamMetadata = {
+      ...paramMetadata,
+      ...externalParamMetadata,
+    };
 
     // TODO: Why are we not unwrapping here for isNullable as well?
     const required =
@@ -386,17 +390,22 @@ export class OpenAPIGenerator {
     return {
       schema,
       required,
-      ...(paramMetadata ? Metadata.buildParameterMetadata(paramMetadata) : {}),
+      ...(Object.keys(mergedParamMetadata).length > 0
+        ? Metadata.buildParameterMetadata(mergedParamMetadata)
+        : {}),
     };
   }
 
-  private generateParameter(zodSchema: ZodType): ParameterObject {
+  private generateParameter(
+    zodSchema: ZodType,
+    externalParamMetadata?: { name?: string; in?: ParameterLocation }
+  ): ParameterObject {
     const metadata = Metadata.getOpenApiMetadata(zodSchema);
 
     const paramMetadata = metadata?.param;
 
-    const paramName = paramMetadata?.name;
-    const paramLocation = paramMetadata?.in;
+    const paramName = externalParamMetadata?.name ?? paramMetadata?.name;
+    const paramLocation = externalParamMetadata?.in ?? paramMetadata?.in;
 
     if (!paramName) {
       throw new MissingParameterDataError({ missingField: 'name' });
@@ -409,7 +418,10 @@ export class OpenAPIGenerator {
       });
     }
 
-    const baseParameter = this.generateSimpleParameter(zodSchema);
+    const baseParameter = this.generateSimpleParameter(
+      zodSchema,
+      externalParamMetadata
+    );
 
     return {
       ...baseParameter,
