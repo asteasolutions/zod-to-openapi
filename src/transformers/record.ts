@@ -32,6 +32,7 @@ export class RecordTransformer {
       return {
         ...mapNullableType('object'),
         properties,
+        required: keys,
       };
     }
 
