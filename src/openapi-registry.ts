@@ -107,6 +107,8 @@ type ZodObjectWithEffect = ZodObject | ZodPipe;
 
 export type RouteParameter = ZodObjectWithEffect | undefined;
 
+export type StatusCode = string | number;
+
 export type RouteConfig = Omit<OperationObject, 'responses'> & {
   method: Method;
   path: string;
@@ -118,7 +120,7 @@ export type RouteConfig = Omit<OperationObject, 'responses'> & {
     headers?: RouteParameter | ZodType<unknown>[];
   };
   responses: {
-    [statusCode: string]: ResponseConfig | ReferenceObject;
+    [statusCode: StatusCode]: ResponseConfig | ReferenceObject;
   };
 };
 
