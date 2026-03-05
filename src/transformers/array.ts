@@ -1,7 +1,8 @@
 import { ZodArray } from 'zod';
 import { MapNullableType, MapSubSchema } from '../types';
 import { $ZodCheckMinLength, $ZodCheckMaxLength } from 'zod/core';
-import { isAnyZodType } from '../lib/zod-is-type';
+import { isAnyZodType, isSkippableZodType } from '../lib/zod-is-type';
+
 export class ArrayTransformer {
   transform(
     zodSchema: ZodArray,
@@ -22,7 +23,10 @@ export class ArrayTransformer {
 
     return {
       ...mapNullableType('array'),
-      items: isAnyZodType(itemType) ? mapItems(itemType) : {},
+      items:
+        isAnyZodType(itemType) && !isSkippableZodType(zodSchema)
+          ? mapItems(itemType)
+          : {},
 
       minItems,
       maxItems,
