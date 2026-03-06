@@ -251,4 +251,98 @@ describe('discriminated union', () => {
       },
     });
   });
+
+  it('supports nested discriminated unions', () => {
+    const Circle = z.object({
+      type: z.literal('circle'),
+      radius: z.number(),
+    }).openapi('Circle');
+
+    const Rectangle = z.discriminatedUnion('kind', [
+      z.object({
+        type: z.literal('rectangle'),
+        kind: z.literal('filled'),
+        color: z.string(),
+      }),
+      z.object({
+        type: z.literal('rectangle'),
+        kind: z.literal('outlined'),
+        borderWidth: z.number(),
+      }),
+    ]).openapi("Rectangle");
+
+    expectSchema(
+      [z.discriminatedUnion('type', [Circle, Rectangle]).openapi('Shape')],
+      {
+        Shape: {
+          discriminator: {
+            mapping: {
+              circle: '#/components/schemas/Circle',
+              undefined: '#/components/schemas/Rectangle',
+            },
+            propertyName: 'type',
+          },
+          oneOf: [
+            {
+              $ref: '#/components/schemas/Circle',
+            },
+            {
+              $ref: '#/components/schemas/Rectangle',
+            },
+          ],
+        },
+        Circle: {
+          properties: {
+            radius: {
+              type: 'number',
+            },
+            type: {
+              enum: ['circle'],
+              type: 'string',
+            },
+          },
+          required: ['type', 'radius'],
+          type: 'object',
+        },
+        Rectangle: {
+          oneOf: [
+            {
+              properties: {
+                color: {
+                  type: 'string',
+                },
+                kind: {
+                  enum: ['filled'],
+                  type: 'string',
+                },
+                type: {
+                  enum: ['rectangle'],
+                  type: 'string',
+                },
+              },
+              required: ['type', 'kind', 'color'],
+              type: 'object',
+            },
+            {
+              properties: {
+                borderWidth: {
+                  type: 'number',
+                },
+                kind: {
+                  enum: ['outlined'],
+                  type: 'string',
+                },
+                type: {
+                  enum: ['rectangle'],
+                  type: 'string',
+                },
+              },
+              required: ['type', 'kind', 'borderWidth'],
+              type: 'object',
+            },
+          ],
+        },
+      }
+    );
+  });
 });
