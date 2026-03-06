@@ -77,13 +77,6 @@ export class DiscriminatedUnionTransformer {
 
       const literalValue = value?.def.values[0];
 
-      // This should never happen because Zod checks the disciminator type but to keep the types happy
-      if (typeof literalValue !== 'string') {
-        throw new Error(
-          `Discriminator ${discriminator} could not be found in one of the values of a discriminated union`
-        );
-      }
-
       mapping[literalValue] = generateSchemaRef(refId);
     });
 
