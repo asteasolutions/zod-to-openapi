@@ -102,6 +102,44 @@ describe('record', () => {
       });
     });
 
+    it('supports partial records with enum keys', () => {
+      const continents = z.enum(['EUROPE', 'AFRICA']);
+
+      const countries = z.enum(['USA', 'CAN']);
+
+      const countryContent = z
+        .object({ countries: countries.array() })
+        .openapi('Content');
+
+      const Geography = z
+        .partialRecord(continents, countryContent)
+        .openapi('Geography');
+
+      expectSchema([Geography], {
+        Content: {
+          type: 'object',
+          properties: {
+            countries: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['USA', 'CAN'],
+              },
+            },
+          },
+          required: ['countries'],
+        },
+
+        Geography: {
+          type: 'object',
+          properties: {
+            EUROPE: { $ref: '#/components/schemas/Content' },
+            AFRICA: { $ref: '#/components/schemas/Content' },
+          }
+        },
+      });
+    });
+
     it('supports records with native enum keys', () => {
       enum Continents {
         EUROPE,
