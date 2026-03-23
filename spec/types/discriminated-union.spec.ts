@@ -282,7 +282,7 @@ describe('discriminated union', () => {
           discriminator: {
             mapping: {
               circle: '#/components/schemas/Circle',
-              undefined: '#/components/schemas/Rectangle',
+              rectangle: '#/components/schemas/Rectangle',
             },
             propertyName: 'type',
           },
