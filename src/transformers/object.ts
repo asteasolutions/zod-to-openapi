@@ -1,7 +1,12 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
 import { ZodObject } from 'zod';
-import { isAnyZodType, isOptionalSchema, isZodType } from '../lib/zod-is-type';
-import { mapValues, objectEquals } from '../lib/lodash';
+import {
+  isAnyZodType,
+  isOptionalSchema,
+  isSkippableZodType,
+  isZodType,
+} from '../lib/zod-is-type';
+import { mapValues, objectEquals, omitBy } from '../lib/lodash';
 import { Metadata } from '../metadata';
 
 export class ObjectTransformer {
@@ -14,7 +19,10 @@ export class ObjectTransformer {
     const extendedFrom = Metadata.getInternalMetadata(zodSchema)?.extendedFrom;
 
     const required = this.requiredKeysOf(zodSchema);
-    const properties = mapValues(zodSchema.def.shape, mapItem);
+    const shape = omitBy(zodSchema.def.shape, type =>
+      isSkippableZodType(Metadata.unwrapChained(type))
+    );
+    const properties = mapValues(shape, mapItem);
 
     if (!extendedFrom) {
       return {
@@ -35,7 +43,10 @@ export class ObjectTransformer {
     mapItem(parent);
 
     const keysRequiredByParent = this.requiredKeysOf(parent);
-    const propsOfParent = mapValues(parent?.def.shape, mapItem);
+    const parentShape = omitBy(parent?.def.shape, type =>
+      isSkippableZodType(Metadata.unwrapChained(type))
+    );
+    const propsOfParent = mapValues(parentShape, mapItem);
 
     const propertiesToAdd = Object.fromEntries(
       Object.entries(properties).filter(([key, type]) => {
@@ -90,7 +101,9 @@ export class ObjectTransformer {
 
   private requiredKeysOf(objectSchema: ZodObject) {
     return Object.entries(objectSchema.def.shape)
-      .filter(([_key, type]) => !isOptionalSchema(type))
+      .filter(
+        ([_key, type]) => !isOptionalSchema(type) && !isSkippableZodType(type)
+      )
       .map(([key, _type]) => key);
   }
 }
