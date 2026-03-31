@@ -585,12 +585,44 @@ export class OpenAPIGenerator {
     const refId = Metadata.getRefId(zodSchema);
 
     if (refId && !this.schemaRefs[refId]) {
+      const unwrapped = this.unwrapModifiers(zodSchema, refId);
+
+      if (unwrapped !== zodSchema) {
+        this.schemaRefs[refId] = this.generateSimpleSchema(unwrapped);
+        return this.generateSimpleSchema(zodSchema);
+      }
+
       this.schemaRefs[refId] = this.generateSimpleSchema(zodSchema);
 
       return { $ref: this.generateSchemaRef(refId) };
     }
 
     return this.generateSimpleSchema(zodSchema);
+  }
+
+  /**
+   * Unwraps modifier types (ZodNullable, ZodOptional, etc.) from a schema
+   * as long as the inner type carries the same refId. This distinguishes
+   * between `.openapi('Name').nullable()` (modifier applied after registration)
+   * and `.nullable().openapi('Name')` (modifier is part of the definition).
+   */
+  private unwrapModifiers(zodSchema: ZodType, refId: string): ZodType {
+    if (
+      isZodType(zodSchema, [
+        'ZodNullable',
+        'ZodOptional',
+        'ZodDefault',
+        'ZodReadonly',
+        'ZodNonOptional',
+      ]) &&
+      isAnyZodType(zodSchema._zod.def.innerType)
+    ) {
+      const innerRefId = Metadata.getRefId(zodSchema._zod.def.innerType);
+      if (innerRefId === refId) {
+        return this.unwrapModifiers(zodSchema._zod.def.innerType, refId);
+      }
+    }
+    return zodSchema;
   }
 
   private generateSchemaRef(refId: string) {
