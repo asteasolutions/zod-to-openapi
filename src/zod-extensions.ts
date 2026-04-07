@@ -139,23 +139,11 @@ export function extendZodWithOpenApi(zod: typeof z) {
     const { _internal: _ignoredInternalMetadata, ...currentMetadata } =
       allMetadata ?? {};
 
-    const baseMetadata =
-      internalMetadata?.baseMetadata ??
-      (internalMetadata?.refId && !refId
-        ? {
-            ...(Object.keys(currentMetadata).length > 0
-              ? currentMetadata
-              : undefined),
-            ...(internalMetadata
-              ? {
-                  _internal: {
-                    ...internalMetadata,
-                    baseMetadata: undefined,
-                  },
-                }
-              : undefined),
-          }
-        : undefined);
+    const baseMetadata = getBaseMetadataForOverride(
+      currentMetadata,
+      internalMetadata,
+      refId
+    );
 
     const _internal = {
       ...internalMetadata,
@@ -259,6 +247,30 @@ export function extendZodWithOpenApi(zod: typeof z) {
     };
 
     return result;
+  };
+}
+
+function getBaseMetadataForOverride(
+  currentMetadata: Omit<ZodOpenApiFullMetadata, '_internal'>,
+  internalMetadata: ZodOpenApiFullMetadata['_internal'],
+  refId: string | undefined
+) {
+  if (internalMetadata?.baseMetadata) {
+    return internalMetadata.baseMetadata;
+  }
+
+  if (!internalMetadata?.refId || refId) {
+    return undefined;
+  }
+
+  const baseInternalMetadata = {
+    ...internalMetadata,
+    baseMetadata: undefined,
+  };
+
+  return {
+    ...(Object.keys(currentMetadata).length > 0 ? currentMetadata : undefined),
+    _internal: baseInternalMetadata,
   };
 }
 
