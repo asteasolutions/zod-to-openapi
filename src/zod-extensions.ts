@@ -1,8 +1,10 @@
 import {
+  EncodingPropertyObject as EncodingPropertyObject30,
   ParameterObject as ParameterObject30,
   SchemaObject as SchemaObject30,
 } from 'openapi3-ts/oas30';
 import {
+  EncodingPropertyObject as EncodingPropertyObject31,
   ParameterObject as ParameterObject31,
   SchemaObject as SchemaObject31,
 } from 'openapi3-ts/oas31';
@@ -17,12 +19,17 @@ type ExampleValue<T> = T extends Date ? string : T;
 type ParameterObject = ParameterObject30 | ParameterObject31;
 type SchemaObject = SchemaObject30 | SchemaObject31;
 
+export type ZodMultipartContentEncoding =
+  | EncodingPropertyObject30
+  | EncodingPropertyObject31;
+
 export type UnionPreferredType = 'oneOf' | 'anyOf';
 
 export type ZodOpenAPIMetadata<T = any, E = ExampleValue<T>> = Omit<
   SchemaObject,
   'example' | 'examples' | 'default'
 > & {
+  encoding?: ZodMultipartContentEncoding;
   param?: Partial<ParameterObject> & { example?: E };
   example?: E;
   examples?: E[];
@@ -43,6 +50,7 @@ export interface OpenApiOptions {
  * method has an explicit return type of ZodOpenAPIInternalMetadata.
  */
 interface InternalUserOnlyZodOpenAPIInternalMetadata extends OpenApiOptions {
+  baseMetadata?: ZodOpenApiFullMetadataForRegistry<any>;
   refId?: string;
   extendedFrom?: { refId: string; schema: any };
 }
@@ -135,9 +143,28 @@ export function extendZodWithOpenApi(zod: typeof z) {
     const { _internal: internalMetadata, ...currentMetadata } =
       allMetadata ?? {};
 
+    const baseMetadata =
+      internalMetadata?.baseMetadata ??
+      (internalMetadata?.refId && !refId
+        ? {
+            ...(Object.keys(currentMetadata).length > 0
+              ? currentMetadata
+              : undefined),
+            ...(internalMetadata
+              ? {
+                  _internal: {
+                    ...internalMetadata,
+                    baseMetadata: undefined,
+                  },
+                }
+              : undefined),
+          }
+        : undefined);
+
     const _internal = {
       ...internalMetadata,
       ...options,
+      ...(baseMetadata ? { baseMetadata } : undefined),
       ...(refId ? { refId } : undefined),
     };
 

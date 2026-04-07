@@ -1,7 +1,11 @@
 import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
-import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
+import {
+  ReferenceObject as CommonReferenceObject,
+  SchemaObject as CommonSchemaObject,
+  ZodNumericCheck,
+} from '../types';
 import { objectEquals, uniq } from '../lib/lodash';
 
 export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
@@ -42,6 +46,15 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
       };
     }
     return ref;
+  }
+
+  composeReferenceWithMetadata(
+    ref: CommonReferenceObject,
+    metadata: CommonSchemaObject | CommonReferenceObject
+  ): CommonSchemaObject | CommonReferenceObject {
+    return {
+      allOf: [ref, metadata],
+    };
   }
 
   mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {

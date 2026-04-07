@@ -25,6 +25,7 @@ import {
   RouteConfig,
   RouteParameter,
   ZodContentObject,
+  ZodMediaTypeObject,
   ZodRequestBody,
 } from './openapi-registry';
 import {
@@ -74,6 +75,11 @@ export interface OpenApiVersionSpecifics {
     | ReferenceObject
     | { allOf: (ReferenceObject | { nullable: boolean })[] }
     | { oneOf: (ReferenceObject | { type: 'null' })[] };
+
+  composeReferenceWithMetadata(
+    ref: ReferenceObject,
+    metadata: SchemaObject | ReferenceObject
+  ): SchemaObject | ReferenceObject;
 
   mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {
     items?: SchemaObject | ReferenceObject;
@@ -205,7 +211,7 @@ export class OpenAPIGenerator {
 
   private generateSingle(definition: OpenAPIDefinitions | ZodType): void {
     if (!('type' in definition)) {
-      this.generateSchemaWithRef(definition);
+      this.generateSchemaWithRef(definition, false);
       return;
     }
 
@@ -215,7 +221,7 @@ export class OpenAPIGenerator {
         return;
 
       case 'schema':
-        this.generateSchemaWithRef(definition.schema);
+        this.generateSchemaWithRef(definition.schema, false);
         return;
 
       case 'route':
@@ -549,9 +555,10 @@ export class OpenAPIGenerator {
     // Do not calculate schema metadata overrides if type is provided in .openapi
     // https://github.com/asteasolutions/zod-to-openapi/pull/52/files/8ff707fe06e222bc573ed46cf654af8ee0b0786d#r996430801
     if (newMetadata.type) {
-      return {
-        allOf: [referenceObject, newMetadata],
-      };
+      return this.versionSpecifics.composeReferenceWithMetadata(
+        referenceObject,
+        newMetadata
+      );
     }
 
     // New metadata from zodSchema properties.
@@ -566,9 +573,10 @@ export class OpenAPIGenerator {
     );
 
     if (Object.keys(appliedMetadata).length > 0) {
-      return {
-        allOf: [referenceObject, appliedMetadata],
-      };
+      return this.versionSpecifics.composeReferenceWithMetadata(
+        referenceObject,
+        appliedMetadata
+      );
     }
 
     return referenceObject;
@@ -581,13 +589,18 @@ export class OpenAPIGenerator {
    *
    * Should be used for nested objects, arrays, etc.
    */
-  private generateSchemaWithRef(zodSchema: ZodType) {
+  private generateSchemaWithRef(zodSchema: ZodType, useBaseMetadata = true) {
     const refId = Metadata.getRefId(zodSchema);
 
     if (refId && !this.schemaRefs[refId]) {
-      this.schemaRefs[refId] = this.generateSimpleSchema(zodSchema);
+      const baseMetadata = useBaseMetadata
+        ? Metadata.getBaseMetadata(zodSchema)
+        : undefined;
+      const schemaToRegister = baseMetadata
+        ? Metadata.cloneSchemaWithMetadata(zodSchema, baseMetadata)
+        : zodSchema;
 
-      return { $ref: this.generateSchemaRef(refId) };
+      this.schemaRefs[refId] = this.generateSimpleSchema(schemaToRegister);
     }
 
     return this.generateSimpleSchema(zodSchema);
@@ -782,17 +795,74 @@ export class OpenAPIGenerator {
   }
 
   private getBodyContent(content: ZodContentObject): ContentObject {
-    return mapValues(content, config => {
-      if (!config || !isAnyZodType(config.schema)) {
-        return config;
+    return mapValues(content, config => this.getMediaTypeObject(config));
+  }
+
+  private getMediaTypeObject(
+    config: ZodMediaTypeObject | undefined
+  ): ContentObject[string] {
+    if (!config || !isAnyZodType(config.schema)) {
+      return config as ContentObject[string];
+    }
+
+    const { schema: configSchema, encoding, ...rest } = config;
+
+    const schema = this.generateSchemaWithRef(configSchema);
+    const generatedEncoding = this.getSchemaEncoding(configSchema);
+    const mergedEncoding = this.mergeEncodingObjects(generatedEncoding, encoding);
+
+    return {
+      schema,
+      ...rest,
+      ...(mergedEncoding ? { encoding: mergedEncoding } : {}),
+    };
+  }
+
+  private getSchemaEncoding(zodSchema: ZodType): ZodMediaTypeObject['encoding'] {
+    const unwrappedSchema = Metadata.unwrapChained(zodSchema);
+
+    if (!isZodType(unwrappedSchema, 'ZodObject')) {
+      return undefined;
+    }
+
+    const encoding = Object.entries(unwrappedSchema.def.shape).reduce<
+      NonNullable<ZodMediaTypeObject['encoding']>
+    >((result, [key, schema]) => {
+      const propertyEncoding = Metadata.getOpenApiMetadata(schema)?.encoding;
+
+      if (propertyEncoding) {
+        result[key] = propertyEncoding;
       }
 
-      const { schema: configSchema, ...rest } = config;
+      return result;
+    }, {});
 
-      const schema = this.generateSchemaWithRef(configSchema);
+    return Object.keys(encoding).length > 0 ? encoding : undefined;
+  }
 
-      return { schema, ...rest };
-    });
+  private mergeEncodingObjects(
+    generatedEncoding: ZodMediaTypeObject['encoding'],
+    explicitEncoding: ZodMediaTypeObject['encoding']
+  ): ZodMediaTypeObject['encoding'] {
+    if (!generatedEncoding) {
+      return explicitEncoding;
+    }
+
+    if (!explicitEncoding) {
+      return generatedEncoding;
+    }
+
+    const mergedEncoding = Object.fromEntries(
+      Object.keys({ ...generatedEncoding, ...explicitEncoding }).map(key => [
+        key,
+        {
+          ...(generatedEncoding[key] ?? {}),
+          ...(explicitEncoding[key] ?? {}),
+        },
+      ])
+    );
+
+    return Object.keys(mergedEncoding).length > 0 ? mergedEncoding : undefined;
   }
 
   private toOpenAPISchema<T>(

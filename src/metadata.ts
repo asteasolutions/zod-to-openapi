@@ -23,9 +23,18 @@ export class Metadata {
   ): ZodOpenApiFullMetadata | undefined {
     const currentMetadata = this.getMetadataFromRegistry(schema);
 
+    const {
+      baseMetadata: currentBaseMetadata,
+      ...currentInternalMetadata
+    } = currentMetadata?._internal ?? {};
+    const {
+      baseMetadata: providedBaseMetadata,
+      ...providedInternalMetadata
+    } = metadata?._internal ?? {};
+
     const _internal = {
-      ...currentMetadata?._internal,
-      ...metadata?._internal,
+      ...currentInternalMetadata,
+      ...providedInternalMetadata,
     };
 
     const param = {
@@ -113,7 +122,10 @@ export class Metadata {
    * metadata properties
    */
   static buildSchemaMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
-    return omitBy(omit(metadata, ['param', '_internal']), isUndefined);
+    return omitBy(
+      omit(metadata, ['encoding', 'param', '_internal']),
+      isUndefined
+    );
   }
 
   static buildParameterMetadata(
@@ -137,6 +149,27 @@ export class Metadata {
 
   static getRefId<T extends any>(zodSchema: ZodType<T>) {
     return this.getInternalMetadata(zodSchema)?.refId;
+  }
+
+  static getBaseMetadata<T extends any>(
+    zodSchema: ZodType<T>
+  ): ZodOpenApiFullMetadata<T> | undefined {
+    return this.getMetadataFromInternalRegistry(zodSchema)?._internal
+      ?.baseMetadata as
+      | ZodOpenApiFullMetadata<T>
+      | undefined;
+  }
+
+  static cloneSchemaWithMetadata<T extends ZodType>(
+    zodSchema: T,
+    metadata: ZodOpenApiFullMetadata
+  ): T {
+    const SchemaConstructor = zodSchema.constructor as new (def: any) => T;
+    const clone = new SchemaConstructor(zodSchema._def);
+
+    this.setMetadataInRegistry(clone, metadata);
+
+    return clone;
   }
 
   static unwrapChained(schema: ZodType): ZodType {
@@ -213,13 +246,14 @@ export class Metadata {
     }
 
     const { _internal, ...rest } = internal;
+    const { baseMetadata, ...internalMetadata } = _internal ?? {};
 
     const { id, title, ...restGeneral } = general ?? {};
 
     return {
       _internal: {
         ...(id ? { refId: id } : {}),
-        ..._internal,
+        ...internalMetadata,
       },
       ...rest,
       ...(title ? { description: title } : {}),

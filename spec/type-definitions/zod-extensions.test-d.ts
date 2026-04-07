@@ -13,6 +13,7 @@ import { expectType, expectAssignable } from 'tsd';
 import { z } from 'zod';
 import {
   extendZodWithOpenApi,
+  type ZodMultipartContentEncoding,
   type ZodOpenAPIMetadata,
   type RouteConfig,
   type ZodMediaTypeObject,
@@ -159,6 +160,17 @@ const mediaTypeObject: ZodMediaTypeObject = {
   example: { id: '1', name: 'Test', email: 'test@example.com' },
 };
 expectAssignable<ZodMediaTypeObject>(mediaTypeObject);
+
+const multipartEncoding: ZodMultipartContentEncoding = {
+  contentType: 'application/json',
+};
+expectAssignable<ZodMultipartContentEncoding>(multipartEncoding);
+
+const multipartFieldMetadata: ZodOpenAPIMetadata = {
+  description: 'JSON multipart field',
+  encoding: multipartEncoding,
+};
+expectAssignable<ZodOpenAPIMetadata>(multipartFieldMetadata);
 
 /**
  * Test: ZodRequestBody should work with our schemas

@@ -83,10 +83,8 @@ describe('nullable', () => {
           type: 'object',
           properties: {
             key: {
-              allOf: [
-                { $ref: '#/components/schemas/String' },
-                { type: ['string', 'null'] },
-              ],
+              $ref: '#/components/schemas/String',
+              type: ['string', 'null'],
             },
           },
           required: ['key'],
@@ -184,15 +182,9 @@ describe('nullable', () => {
           required: ['key'],
           properties: {
             key: {
-              allOf: [
-                {
-                  $ref: '#/components/schemas/Empty',
-                },
-                {
-                  type: ['object', 'null'],
-                  deprecated: true,
-                },
-              ],
+              $ref: '#/components/schemas/Empty',
+              type: ['object', 'null'],
+              deprecated: true,
             },
           },
         },

@@ -63,6 +63,37 @@ describe('metadata overrides', () => {
     });
   });
 
+  it('emits sibling metadata for referenced schemas in OpenAPI 3.1', () => {
+    const StringSchema = z.string().openapi('String');
+
+    const TestSchema = z
+      .object({
+        key: StringSchema.openapi({ example: 'test', deprecated: true }),
+      })
+      .openapi('Test');
+
+    expectSchema(
+      [StringSchema, TestSchema],
+      {
+        String: {
+          type: 'string',
+        },
+        Test: {
+          type: 'object',
+          properties: {
+            key: {
+              $ref: '#/components/schemas/String',
+              example: 'test',
+              deprecated: true,
+            },
+          },
+          required: ['key'],
+        },
+      },
+      { version: '3.1.0' }
+    );
+  });
+
   it('only adds overrides for new metadata properties', () => {
     const StringSchema = z.string().openapi('String', {
       description: 'old field',

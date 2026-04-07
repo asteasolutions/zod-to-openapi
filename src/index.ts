@@ -1,4 +1,8 @@
-export { ZodOpenAPIMetadata, extendZodWithOpenApi } from './zod-extensions';
+export {
+  ZodMultipartContentEncoding,
+  ZodOpenAPIMetadata,
+  extendZodWithOpenApi,
+} from './zod-extensions';
 export * from './openapi-metadata';
 export {
   OpenAPIRegistry,

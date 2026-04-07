@@ -446,6 +446,68 @@ const routeTests = ({
         },
       });
     });
+
+    it('lifts multipart field encoding from schema metadata and keeps field-local ref metadata', () => {
+      const registry = new OpenAPIRegistry();
+
+      const Profile = z
+        .object({
+          name: z.string(),
+        })
+        .openapi('Profile');
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            required: true,
+            content: {
+              'multipart/form-data': {
+                schema: z.object({
+                  file: Profile.openapi({
+                    description: 'JSON file containing the payload',
+                    encoding: {
+                      contentType: 'application/json',
+                    },
+                  }),
+                }),
+                encoding: {
+                  file: {
+                    explode: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      registry[registerFunction](route);
+
+      const document = generateDocumentWithPossibleWebhooks(
+        registry.definitions
+      );
+
+      const requestBody = document[rootDocPath]?.['/']?.get?.requestBody as any;
+
+      expect(requestBody.content['multipart/form-data']).toEqual({
+        schema: {
+          type: 'object',
+          properties: {
+            file: {
+              $ref: '#/components/schemas/Profile',
+              description: 'JSON file containing the payload',
+            },
+          },
+          required: ['file'],
+        },
+        encoding: {
+          file: {
+            contentType: 'application/json',
+            explode: true,
+          },
+        },
+      });
+    });
   });
 };
 
