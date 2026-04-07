@@ -619,7 +619,9 @@ export class OpenAPIGenerator {
 
     const { content, ...rest } = requestBody;
 
-    const requestBodyContent = this.getBodyContent(content);
+    const requestBodyContent = this.getBodyContent(content, {
+      kind: 'request',
+    });
 
     return {
       ...rest,
@@ -755,7 +757,7 @@ export class OpenAPIGenerator {
     const { content, headers, ...rest } = response;
 
     const responseContent = content
-      ? { content: this.getBodyContent(content) }
+      ? { content: this.getBodyContent(content, { kind: 'response' }) }
       : {};
 
     if (!headers) {
@@ -794,12 +796,24 @@ export class OpenAPIGenerator {
     return responseHeaders;
   }
 
-  private getBodyContent(content: ZodContentObject): ContentObject {
-    return mapValues(content, config => this.getMediaTypeObject(config));
+  private getBodyContent(
+    content: ZodContentObject,
+    context: { kind: 'request' | 'response' }
+  ): ContentObject {
+    return Object.fromEntries(
+      Object.entries(content).map(([mediaType, config]) => [
+        mediaType,
+        this.getMediaTypeObject(config, {
+          ...context,
+          mediaType,
+        }),
+      ])
+    );
   }
 
   private getMediaTypeObject(
-    config: ZodMediaTypeObject | undefined
+    config: ZodMediaTypeObject | undefined,
+    context: { kind: 'request' | 'response'; mediaType: string }
   ): ContentObject[string] {
     if (!config || !isAnyZodType(config.schema)) {
       return config as ContentObject[string];
@@ -808,8 +822,13 @@ export class OpenAPIGenerator {
     const { schema: configSchema, encoding, ...rest } = config;
 
     const schema = this.generateSchemaWithRef(configSchema);
-    const generatedEncoding = this.getSchemaEncoding(configSchema);
-    const mergedEncoding = this.mergeEncodingObjects(generatedEncoding, encoding);
+    const generatedEncoding = this.shouldGenerateEncoding(context)
+      ? this.getSchemaEncoding(configSchema)
+      : undefined;
+    const mergedEncoding = this.mergeEncodingObjects(
+      generatedEncoding,
+      encoding
+    );
 
     return {
       schema,
@@ -818,7 +837,9 @@ export class OpenAPIGenerator {
     };
   }
 
-  private getSchemaEncoding(zodSchema: ZodType): ZodMediaTypeObject['encoding'] {
+  private getSchemaEncoding(
+    zodSchema: ZodType
+  ): ZodMediaTypeObject['encoding'] {
     const unwrappedSchema = Metadata.unwrapChained(zodSchema);
 
     if (!isZodType(unwrappedSchema, 'ZodObject')) {
@@ -863,6 +884,17 @@ export class OpenAPIGenerator {
     );
 
     return Object.keys(mergedEncoding).length > 0 ? mergedEncoding : undefined;
+  }
+
+  private shouldGenerateEncoding(context: {
+    kind: 'request' | 'response';
+    mediaType: string;
+  }) {
+    return (
+      context.kind === 'request' &&
+      (context.mediaType.startsWith('multipart/') ||
+        context.mediaType === 'application/x-www-form-urlencoded')
+    );
   }
 
   private toOpenAPISchema<T>(

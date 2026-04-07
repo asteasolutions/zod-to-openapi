@@ -508,6 +508,57 @@ const routeTests = ({
         },
       });
     });
+
+    it('does not emit generated encoding for non-form request bodies', () => {
+      const registry = new OpenAPIRegistry();
+
+      const Profile = z
+        .object({
+          name: z.string(),
+        })
+        .openapi('Profile');
+
+      const route = createTestRoute({
+        request: {
+          body: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: z.object({
+                  file: Profile.openapi({
+                    description: 'JSON payload',
+                    encoding: {
+                      contentType: 'application/json',
+                    },
+                  }),
+                }),
+              },
+            },
+          },
+        },
+      });
+
+      registry[registerFunction](route);
+
+      const document = generateDocumentWithPossibleWebhooks(
+        registry.definitions
+      );
+
+      const requestBody = document[rootDocPath]?.['/']?.get?.requestBody as any;
+
+      expect(requestBody.content['application/json']).toEqual({
+        schema: {
+          type: 'object',
+          properties: {
+            file: {
+              $ref: '#/components/schemas/Profile',
+              description: 'JSON payload',
+            },
+          },
+          required: ['file'],
+        },
+      });
+    });
   });
 };
 

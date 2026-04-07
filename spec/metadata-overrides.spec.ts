@@ -94,6 +94,49 @@ describe('metadata overrides', () => {
     );
   });
 
+  it('preserves base component metadata when ref overrides are wrapped', () => {
+    const ProfileSchema = z
+      .object({
+        name: z.string(),
+      })
+      .openapi('Profile');
+
+    const TestSchema = z
+      .object({
+        key: ProfileSchema.openapi({
+          description: 'field-level description',
+        }).nullable(),
+      })
+      .openapi('Test');
+
+    expectSchema(
+      [ProfileSchema, TestSchema],
+      {
+        Profile: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+            },
+          },
+          required: ['name'],
+        },
+        Test: {
+          type: 'object',
+          properties: {
+            key: {
+              $ref: '#/components/schemas/Profile',
+              description: 'field-level description',
+              type: ['object', 'null'],
+            },
+          },
+          required: ['key'],
+        },
+      },
+      { version: '3.1.0' }
+    );
+  });
+
   it('only adds overrides for new metadata properties', () => {
     const StringSchema = z.string().openapi('String', {
       description: 'old field',
