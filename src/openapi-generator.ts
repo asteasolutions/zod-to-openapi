@@ -619,9 +619,7 @@ export class OpenAPIGenerator {
 
     const { content, ...rest } = requestBody;
 
-    const requestBodyContent = this.getBodyContent(content, {
-      kind: 'request',
-    });
+    const requestBodyContent = this.getBodyContent(content);
 
     return {
       ...rest,
@@ -757,7 +755,7 @@ export class OpenAPIGenerator {
     const { content, headers, ...rest } = response;
 
     const responseContent = content
-      ? { content: this.getBodyContent(content, { kind: 'response' }) }
+      ? { content: this.getBodyContent(content) }
       : {};
 
     if (!headers) {
@@ -796,105 +794,25 @@ export class OpenAPIGenerator {
     return responseHeaders;
   }
 
-  private getBodyContent(
-    content: ZodContentObject,
-    context: { kind: 'request' | 'response' }
-  ): ContentObject {
-    return Object.fromEntries(
-      Object.entries(content).map(([mediaType, config]) => [
-        mediaType,
-        this.getMediaTypeObject(config, {
-          ...context,
-          mediaType,
-        }),
-      ])
-    );
+  private getBodyContent(content: ZodContentObject): ContentObject {
+    return mapValues(content, config => this.getMediaTypeObject(config));
   }
 
   private getMediaTypeObject(
-    config: ZodMediaTypeObject | undefined,
-    context: { kind: 'request' | 'response'; mediaType: string }
+    config: ZodMediaTypeObject | undefined
   ): ContentObject[string] {
     if (!config || !isAnyZodType(config.schema)) {
       return config as ContentObject[string];
     }
 
-    const { schema: configSchema, encoding, ...rest } = config;
+    const { schema: configSchema, ...rest } = config;
 
     const schema = this.generateSchemaWithRef(configSchema);
-    const generatedEncoding = this.shouldGenerateEncoding(context)
-      ? this.getSchemaEncoding(configSchema)
-      : undefined;
-    const mergedEncoding = this.mergeEncodingObjects(
-      generatedEncoding,
-      encoding
-    );
 
     return {
       schema,
       ...rest,
-      ...(mergedEncoding ? { encoding: mergedEncoding } : {}),
     };
-  }
-
-  private getSchemaEncoding(
-    zodSchema: ZodType
-  ): ZodMediaTypeObject['encoding'] {
-    const unwrappedSchema = Metadata.unwrapChained(zodSchema);
-
-    if (!isZodType(unwrappedSchema, 'ZodObject')) {
-      return undefined;
-    }
-
-    const encoding = Object.entries(unwrappedSchema.def.shape).reduce<
-      NonNullable<ZodMediaTypeObject['encoding']>
-    >((result, [key, schema]) => {
-      const propertyEncoding = Metadata.getOpenApiMetadata(schema)?.encoding;
-
-      if (propertyEncoding) {
-        result[key] = propertyEncoding;
-      }
-
-      return result;
-    }, {});
-
-    return Object.keys(encoding).length > 0 ? encoding : undefined;
-  }
-
-  private mergeEncodingObjects(
-    generatedEncoding: ZodMediaTypeObject['encoding'],
-    explicitEncoding: ZodMediaTypeObject['encoding']
-  ): ZodMediaTypeObject['encoding'] {
-    if (!generatedEncoding) {
-      return explicitEncoding;
-    }
-
-    if (!explicitEncoding) {
-      return generatedEncoding;
-    }
-
-    const mergedEncoding = Object.fromEntries(
-      Object.keys({ ...generatedEncoding, ...explicitEncoding }).map(key => [
-        key,
-        {
-          ...(generatedEncoding[key] ?? {}),
-          ...(explicitEncoding[key] ?? {}),
-        },
-      ])
-    );
-
-    return Object.keys(mergedEncoding).length > 0 ? mergedEncoding : undefined;
-  }
-
-  private shouldGenerateEncoding(context: {
-    kind: 'request' | 'response';
-    mediaType: string;
-  }) {
-    return (
-      context.kind === 'request' &&
-      (context.mediaType.startsWith('multipart/') ||
-        context.mediaType === 'application/x-www-form-urlencoded')
-    );
   }
 
   private toOpenAPISchema<T>(

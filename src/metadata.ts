@@ -113,10 +113,7 @@ export class Metadata {
    * metadata properties
    */
   static buildSchemaMetadata(metadata: Partial<ZodOpenAPIMetadata>) {
-    return omitBy(
-      omit(metadata, ['encoding', 'param', '_internal']),
-      isUndefined
-    );
+    return omitBy(omit(metadata, ['param', '_internal']), isUndefined);
   }
 
   static buildParameterMetadata(
