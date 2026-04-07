@@ -107,7 +107,7 @@ function preserveMetadataFromModifier<T extends ZodType, K extends keyof T>(
   zodSchema[modifier] = function (this: T, ...args: any[]) {
     const result = zodModifier.apply(this, args);
 
-    const meta = Metadata.getMetadataFromRegistry(this);
+    const meta = Metadata.getMetadataFromInternalRegistry(this);
 
     if (meta) {
       Metadata.setMetadataInRegistry(result, meta);
@@ -133,7 +133,10 @@ export function extendZodWithOpenApi(zod: typeof z) {
     const { param, ...restOfOpenApi } = metadata ?? {};
 
     const allMetadata = Metadata.getMetadataFromRegistry(this);
-    const { _internal: internalMetadata, ...currentMetadata } =
+    const internalRegistryMetadata =
+      Metadata.getMetadataFromInternalRegistry(this);
+    const { _internal: internalMetadata } = internalRegistryMetadata ?? {};
+    const { _internal: _ignoredInternalMetadata, ...currentMetadata } =
       allMetadata ?? {};
 
     const baseMetadata =

@@ -232,13 +232,14 @@ export class Metadata {
     }
 
     const { _internal, ...rest } = internal;
+    const { baseMetadata, ...internalMetadata } = _internal ?? {};
 
     const { id, title, ...restGeneral } = general ?? {};
 
     return {
       _internal: {
         ...(id ? { refId: id } : {}),
-        ..._internal,
+        ...internalMetadata,
       },
       ...rest,
       ...(title ? { description: title } : {}),
