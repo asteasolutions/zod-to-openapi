@@ -8,6 +8,7 @@ import {
   generateDataForRoute,
   testDocConfig,
 } from '../lib/helpers';
+import { OpenApiGeneratorV3 } from '../../src/v3.0/openapi-generator';
 import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 
 // We need OpenAPIObject31 because of the webhooks property.
@@ -19,6 +20,10 @@ function generateDocumentWithPossibleWebhooks(
     ...testDocConfig,
     openapi: '3.1.0',
   });
+}
+
+function generateDocumentV30(definitions: (OpenAPIDefinitions | ZodType)[]) {
+  return new OpenApiGeneratorV3(definitions).generateDocument(testDocConfig);
 }
 
 const routeTests = ({
@@ -250,6 +255,56 @@ const routeTests = ({
       expect(response).toEqual({
         schema: {
           $ref: '#/components/schemas/Person',
+        },
+      });
+    });
+
+    it('does not emit generated encoding for response content', () => {
+      const registry = new OpenAPIRegistry();
+
+      const Profile = z
+        .object({
+          name: z.string(),
+        })
+        .openapi('Profile');
+
+      registry[registerFunction]({
+        method: 'get',
+        path: '/',
+        responses: {
+          200: {
+            description: 'Simple response',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  file: Profile.openapi({
+                    encoding: {
+                      contentType: 'application/json',
+                    },
+                  }),
+                }),
+              },
+            },
+          },
+        },
+      });
+
+      const document = generateDocumentWithPossibleWebhooks(
+        registry.definitions
+      );
+      const response = document[rootDocPath]?.['/']?.get?.responses?.[
+        '200'
+      ] as any;
+
+      expect(response.content['application/json']).toEqual({
+        schema: {
+          type: 'object',
+          properties: {
+            file: {
+              $ref: '#/components/schemas/Profile',
+            },
+          },
+          required: ['file'],
         },
       });
     });
@@ -567,3 +622,158 @@ describe.each`
   ${'Routes'}   | ${'registerPath'}    | ${'paths'}
   ${'Webhooks'} | ${'registerWebhook'} | ${'webhooks'}
 `('$type', routeTests);
+
+describe('OpenAPI 3.0 request and response encoding', () => {
+  it('lifts multipart field encoding from schema metadata for request bodies', () => {
+    const Profile = z
+      .object({
+        name: z.string(),
+      })
+      .openapi('Profile');
+
+    const { requestBody } = generateDataForRoute({
+      request: {
+        body: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: z.object({
+                file: Profile.openapi({
+                  description: 'JSON file containing the payload',
+                  encoding: {
+                    contentType: 'application/json',
+                  },
+                }),
+              }),
+              encoding: {
+                file: {
+                  explode: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(requestBody).toEqual({
+      required: true,
+      content: {
+        'multipart/form-data': {
+          schema: {
+            type: 'object',
+            properties: {
+              file: {
+                allOf: [
+                  { $ref: '#/components/schemas/Profile' },
+                  { description: 'JSON file containing the payload' },
+                ],
+              },
+            },
+            required: ['file'],
+          },
+          encoding: {
+            file: {
+              contentType: 'application/json',
+              explode: true,
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('does not emit generated encoding for non-form request bodies', () => {
+    const Profile = z
+      .object({
+        name: z.string(),
+      })
+      .openapi('Profile');
+
+    const { requestBody } = generateDataForRoute({
+      request: {
+        body: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: z.object({
+                file: Profile.openapi({
+                  description: 'JSON payload',
+                  encoding: {
+                    contentType: 'application/json',
+                  },
+                }),
+              }),
+            },
+          },
+        },
+      },
+    });
+
+    expect(requestBody).toEqual({
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              file: {
+                allOf: [
+                  { $ref: '#/components/schemas/Profile' },
+                  { description: 'JSON payload' },
+                ],
+              },
+            },
+            required: ['file'],
+          },
+        },
+      },
+    });
+  });
+
+  it('does not emit generated encoding for response content', () => {
+    const registry = new OpenAPIRegistry();
+
+    const Profile = z
+      .object({
+        name: z.string(),
+      })
+      .openapi('Profile');
+
+    registry.registerPath({
+      method: 'get',
+      path: '/',
+      responses: {
+        200: {
+          description: 'Simple response',
+          content: {
+            'application/json': {
+              schema: z.object({
+                file: Profile.openapi({
+                  encoding: {
+                    contentType: 'application/json',
+                  },
+                }),
+              }),
+            },
+          },
+        },
+      },
+    });
+
+    const document = generateDocumentV30(registry.definitions);
+    const response = document.paths['/']?.get?.responses?.['200'] as any;
+
+    expect(response.content['application/json']).toEqual({
+      schema: {
+        type: 'object',
+        properties: {
+          file: {
+            $ref: '#/components/schemas/Profile',
+          },
+        },
+        required: ['file'],
+      },
+    });
+  });
+});
