@@ -5,7 +5,7 @@ describe('record', () => {
   it('supports records', () => {
     const base = z.object({ a: z.string() });
 
-    const record = z.record(base).openapi('Record');
+    const record = z.record(z.string(), base).openapi('Record');
 
     expectSchema([base, record], {
       Record: {
@@ -24,7 +24,7 @@ describe('record', () => {
   it('supports records with refs', () => {
     const base = z.object({ a: z.string() }).openapi('Base');
 
-    const record = z.record(base).openapi('Record');
+    const record = z.record(z.string(), base).openapi('Record');
 
     expectSchema([base, record], {
       Base: {
@@ -44,7 +44,9 @@ describe('record', () => {
   });
 
   it('can automatically register record items', () => {
-    const schema = z.record(z.number().openapi('NumberId')).openapi('Record');
+    const schema = z
+      .record(z.string(), z.number().openapi('NumberId'))
+      .openapi('Record');
 
     expectSchema([schema], {
       NumberId: {

@@ -1,6 +1,10 @@
-import { ZodTypeAny } from 'zod';
-import { isNil, omitBy } from './lib/lodash';
+import { ZodType } from 'zod';
+import { isUndefined, omitBy } from './lib/lodash';
+import { Metadata } from './metadata';
+export function getOpenApiMetadata<T extends ZodType>(zodSchema: T) {
+  return omitBy(Metadata.getOpenApiMetadata(zodSchema) ?? {}, isUndefined);
+}
 
-export function getOpenApiMetadata<T extends ZodTypeAny>(zodSchema: T) {
-  return omitBy(zodSchema._def.openapi?.metadata ?? {}, isNil);
+export function getRefId(zodSchema: ZodType) {
+  return Metadata.getRefId(zodSchema);
 }

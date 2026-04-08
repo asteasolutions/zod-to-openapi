@@ -3,3 +3,5 @@
 .node-version
 .nvm
 .vscode
+.idea
+/spec/type-definitions/temp

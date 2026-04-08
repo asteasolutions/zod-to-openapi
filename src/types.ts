@@ -1,4 +1,4 @@
-import { ZodBigIntCheck, ZodNumberCheck, ZodTypeAny } from 'zod';
+import type { ZodType } from 'zod';
 import type {
   ReferenceObject as ReferenceObject30,
   ParameterObject as ParameterObject30,
@@ -29,8 +29,9 @@ import type {
   BaseParameterObject as BaseParameterObject31,
   HeadersObject as HeadersObject31,
 } from 'openapi3-ts/oas31';
+import { $ZodCheck } from 'zod/v4/core';
 
-export type ZodNumericCheck = ZodNumberCheck | ZodBigIntCheck;
+export type ZodNumericCheck = $ZodCheck<never>;
 
 export type ReferenceObject = ReferenceObject30 & ReferenceObject31;
 export type ParameterObject = ParameterObject30 & ParameterObject31;
@@ -49,6 +50,13 @@ export type HeadersObject = HeadersObject30 & HeadersObject31;
 export type MapNullableType = (
   type: NonNullable<SchemaObject['type']> | undefined
 ) => Pick<SchemaObject, 'type' | 'nullable'>;
+
+export type MapNullableRef = (
+  ref: ReferenceObject
+) =>
+  | ReferenceObject
+  | { oneOf: (ReferenceObject | { type: 'null' })[] }
+  | { allOf: (ReferenceObject | { nullable: boolean })[] };
 
 export type MapNullableTypeWithNullable = (
   type: NonNullable<SchemaObject['type']> | undefined,
@@ -72,5 +80,5 @@ export type GetNumberChecks = (
 >;
 
 export type MapSubSchema = (
-  zodSchema: ZodTypeAny
+  zodSchema: ZodType
 ) => SchemaObject | ReferenceObject;

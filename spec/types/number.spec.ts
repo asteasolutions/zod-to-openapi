@@ -58,7 +58,7 @@ describe('number', () => {
       {
         SimpleInteger: { type: 'integer', minimum: 0 },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -68,7 +68,7 @@ describe('number', () => {
       {
         SimpleInteger: { type: 'integer', exclusiveMinimum: 0 } as never,
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -78,7 +78,7 @@ describe('number', () => {
       {
         SimpleInteger: { type: 'integer', maximum: 0 },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -88,7 +88,7 @@ describe('number', () => {
       {
         SimpleInteger: { type: 'integer', exclusiveMaximum: 0 } as never,
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 });

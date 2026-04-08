@@ -1,11 +1,23 @@
-import type { AnyZodObject, ZodRawShape, ZodType, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodType } from 'zod';
 import {
   ConflictError,
   MissingParameterDataError,
   enhanceMissingParametersError,
 } from './errors';
-import { compact, isNil, mapValues, objectEquals, omitBy } from './lib/lodash';
-import { isAnyZodType, isZodType } from './lib/zod-is-type';
+import {
+  compact,
+  isUndefined,
+  mapValues,
+  objectEquals,
+  omitBy,
+  sortObjectByKeys,
+} from './lib/lodash';
+import {
+  isAnyZodType,
+  isNullableSchema,
+  isOptionalSchema,
+  isZodType,
+} from './lib/zod-is-type';
 import {
   OpenAPIComponentObject,
   OpenAPIDefinitions,
@@ -15,7 +27,6 @@ import {
   ZodContentObject,
   ZodRequestBody,
 } from './openapi-registry';
-import { ZodOpenApiFullMetadata } from './zod-extensions';
 import {
   BaseParameterObject,
   ComponentsObject,
@@ -33,6 +44,8 @@ import {
 } from './types';
 import { Metadata } from './metadata';
 import { OpenApiTransformer } from './transformers';
+import { UnionPreferredType } from './zod-extensions';
+import { LazyTransformer } from './transformers/lazy';
 
 // List of Open API Versions. Please make sure these are in ascending order
 const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
@@ -54,6 +67,14 @@ export interface OpenApiVersionSpecifics {
     isNullable: boolean
   ): Pick<SchemaObject, 'type' | 'nullable'>;
 
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ):
+    | ReferenceObject
+    | { allOf: (ReferenceObject | { nullable: boolean })[] }
+    | { oneOf: (ReferenceObject | { type: 'null' })[] };
+
   mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {
     items?: SchemaObject | ReferenceObject;
     minItems?: number;
@@ -64,8 +85,17 @@ export interface OpenApiVersionSpecifics {
   getNumberChecks(checks: ZodNumericCheck[]): any;
 }
 
+export interface OpenApiGeneratorOptions {
+  unionPreferredType?: UnionPreferredType;
+  sortComponents?: 'alphabetically';
+}
+
+export type SchemaRefValue = SchemaObject | ReferenceObject | 'pending';
+
+export type SchemaRefs = Record<string, SchemaRefValue>;
+
 export class OpenAPIGenerator {
-  private schemaRefs: Record<string, SchemaObject | ReferenceObject> = {};
+  private schemaRefs: SchemaRefs = {};
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
@@ -77,10 +107,11 @@ export class OpenAPIGenerator {
   private openApiTransformer: OpenApiTransformer;
 
   constructor(
-    private definitions: (OpenAPIDefinitions | ZodTypeAny)[],
-    private versionSpecifics: OpenApiVersionSpecifics
+    private definitions: (OpenAPIDefinitions | ZodType)[],
+    private versionSpecifics: OpenApiVersionSpecifics,
+    private options?: OpenApiGeneratorOptions
   ) {
-    this.openApiTransformer = new OpenApiTransformer(versionSpecifics);
+    this.openApiTransformer = new OpenApiTransformer(versionSpecifics, options);
     this.sortDefinitions();
   }
 
@@ -108,19 +139,40 @@ export class OpenAPIGenerator {
       rawComponents[componentType][name] = component;
     });
 
-    return {
-      ...rawComponents,
-
-      schemas: {
-        ...(rawComponents.schemas ?? {}),
-        ...this.schemaRefs,
-      },
-
-      parameters: {
-        ...(rawComponents.parameters ?? {}),
-        ...this.paramRefs,
-      },
+    const allSchemas = {
+      ...(rawComponents.schemas ?? {}),
+      ...this.filteredSchemaRefs,
     };
+
+    const schemas =
+      this.options?.sortComponents === 'alphabetically'
+        ? sortObjectByKeys(allSchemas)
+        : allSchemas;
+
+    const allParameters = {
+      ...(rawComponents.parameters ?? {}),
+      ...this.paramRefs,
+    };
+
+    const parameters =
+      this.options?.sortComponents === 'alphabetically'
+        ? sortObjectByKeys(allParameters)
+        : allParameters;
+
+    return { ...rawComponents, schemas, parameters };
+  }
+
+  private isNotPendingRefEntry(
+    entry: [string, SchemaRefValue]
+  ): entry is [string, SchemaObject | ReferenceObject] {
+    return entry[1] !== 'pending';
+  }
+
+  private get filteredSchemaRefs() {
+    const filtered = Object.entries(this.schemaRefs).filter(
+      this.isNotPendingRefEntry
+    );
+    return Object.fromEntries(filtered);
   }
 
   private sortDefinitions() {
@@ -151,7 +203,7 @@ export class OpenAPIGenerator {
     });
   }
 
-  private generateSingle(definition: OpenAPIDefinitions | ZodTypeAny): void {
+  private generateSingle(definition: OpenAPIDefinitions | ZodType): void {
     if (!('type' in definition)) {
       this.generateSchemaWithRef(definition);
       return;
@@ -177,7 +229,7 @@ export class OpenAPIGenerator {
   }
 
   private generateParameterDefinition(
-    zodSchema: ZodTypeAny
+    zodSchema: ZodType
   ): ParameterObject | ReferenceObject {
     const refId = Metadata.getRefId(zodSchema);
 
@@ -191,16 +243,19 @@ export class OpenAPIGenerator {
   }
 
   private getParameterRef(
-    schemaMetadata: ZodOpenApiFullMetadata | undefined,
+    schema: ZodType,
     external?: ParameterData
   ): ReferenceObject | undefined {
-    const parameterMetadata = schemaMetadata?.metadata?.param;
+    const metadata = Metadata.getOpenApiMetadata(schema);
+    const internalMetadata = Metadata.getInternalMetadata(schema);
 
-    const existingRef = schemaMetadata?._internal?.refId
-      ? this.paramRefs[schemaMetadata._internal?.refId]
+    const parameterMetadata = metadata?.param;
+
+    const existingRef = internalMetadata?.refId
+      ? this.paramRefs[internalMetadata.refId]
       : undefined;
 
-    if (!schemaMetadata?._internal?.refId || !existingRef) {
+    if (!internalMetadata?.refId || !existingRef) {
       return undefined;
     }
 
@@ -236,30 +291,30 @@ export class OpenAPIGenerator {
     }
 
     return {
-      $ref: `#/components/parameters/${schemaMetadata._internal?.refId}`,
+      $ref: `#/components/parameters/${internalMetadata.refId}`,
     };
   }
 
   private generateInlineParameters(
-    zodSchema: ZodTypeAny,
+    zodSchema: ZodType,
     location: ParameterLocation
   ): (ParameterObject | ReferenceObject)[] {
-    const metadata = Metadata.getMetadata(zodSchema);
-    const parameterMetadata = metadata?.metadata?.param;
+    const metadata = Metadata.getOpenApiMetadata(zodSchema);
+    const parameterMetadata = metadata?.param;
 
-    const referencedSchema = this.getParameterRef(metadata, { in: location });
+    const referencedSchema = this.getParameterRef(zodSchema, { in: location });
 
     if (referencedSchema) {
       return [referencedSchema];
     }
 
     if (isZodType(zodSchema, 'ZodObject')) {
-      const propTypes = zodSchema._def.shape() as ZodRawShape;
+      const propTypes = zodSchema.def.shape;
 
       const parameters = Object.entries(propTypes).map(([key, schema]) => {
-        const innerMetadata = Metadata.getMetadata(schema);
+        const innerMetadata = Metadata.getOpenApiMetadata(schema);
 
-        const referencedSchema = this.getParameterRef(innerMetadata, {
+        const referencedSchema = this.getParameterRef(schema, {
           in: location,
           name: key,
         });
@@ -268,7 +323,7 @@ export class OpenAPIGenerator {
           return referencedSchema;
         }
 
-        const innerParameterMetadata = innerMetadata?.metadata?.param;
+        const innerParameterMetadata = innerMetadata?.param;
 
         if (
           innerParameterMetadata?.name &&
@@ -295,9 +350,7 @@ export class OpenAPIGenerator {
           );
         }
 
-        return this.generateParameter(
-          schema.openapi({ param: { name: key, in: location } })
-        );
+        return this.generateParameter(schema, { name: key, in: location });
       });
 
       return parameters;
@@ -313,35 +366,46 @@ export class OpenAPIGenerator {
       );
     }
 
-    return [
-      this.generateParameter(zodSchema.openapi({ param: { in: location } })),
-    ];
+    return [this.generateParameter(zodSchema, { in: location })];
   }
 
-  private generateSimpleParameter(zodSchema: ZodTypeAny): BaseParameterObject {
+  private generateSimpleParameter(
+    zodSchema: ZodType,
+    externalParamMetadata?: { name?: string; in?: ParameterLocation }
+  ): BaseParameterObject {
     const metadata = Metadata.getParamMetadata(zodSchema);
-    const paramMetadata = metadata?.metadata?.param;
+    const paramMetadata = metadata?.param;
+
+    const mergedParamMetadata = {
+      ...paramMetadata,
+      ...externalParamMetadata,
+    };
 
     // TODO: Why are we not unwrapping here for isNullable as well?
     const required =
-      !Metadata.isOptionalSchema(zodSchema) && !zodSchema.isNullable();
+      !isOptionalSchema(zodSchema) && !isNullableSchema(zodSchema);
 
     const schema = this.generateSchemaWithRef(zodSchema);
 
     return {
       schema,
       required,
-      ...(paramMetadata ? Metadata.buildParameterMetadata(paramMetadata) : {}),
+      ...(Object.keys(mergedParamMetadata).length > 0
+        ? Metadata.buildParameterMetadata(mergedParamMetadata)
+        : {}),
     };
   }
 
-  private generateParameter(zodSchema: ZodTypeAny): ParameterObject {
-    const metadata = Metadata.getMetadata(zodSchema);
+  private generateParameter(
+    zodSchema: ZodType,
+    externalParamMetadata?: { name?: string; in?: ParameterLocation }
+  ): ParameterObject {
+    const metadata = Metadata.getOpenApiMetadata(zodSchema);
 
-    const paramMetadata = metadata?.metadata?.param;
+    const paramMetadata = metadata?.param;
 
-    const paramName = paramMetadata?.name;
-    const paramLocation = paramMetadata?.in;
+    const paramName = externalParamMetadata?.name ?? paramMetadata?.name;
+    const paramLocation = externalParamMetadata?.in ?? paramMetadata?.in;
 
     if (!paramName) {
       throw new MissingParameterDataError({ missingField: 'name' });
@@ -354,7 +418,10 @@ export class OpenAPIGenerator {
       });
     }
 
-    const baseParameter = this.generateSimpleParameter(zodSchema);
+    const baseParameter = this.generateSimpleParameter(
+      zodSchema,
+      externalParamMetadata
+    );
 
     return {
       ...baseParameter,
@@ -365,16 +432,43 @@ export class OpenAPIGenerator {
 
   private generateSchemaWithMetadata<T>(zodSchema: ZodType<T>) {
     const innerSchema = Metadata.unwrapChained(zodSchema);
-    const metadata = Metadata.getMetadata(zodSchema);
+    const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const defaultValue = Metadata.getDefaultValue(zodSchema);
+    const refId = Metadata.getRefId(zodSchema);
 
-    const result = metadata?.metadata?.type
-      ? { type: metadata?.metadata.type }
-      : this.toOpenAPISchema(innerSchema, zodSchema.isNullable(), defaultValue);
+    // TODO: Do I need a similar implementation as bellow inside constructReferencedOpenAPISchema
+    if (refId && typeof this.schemaRefs[refId] === 'object') {
+      return this.schemaRefs[refId];
+    }
 
-    return metadata?.metadata
-      ? Metadata.applySchemaMetadata(result, metadata.metadata)
-      : omitBy(result, isNil);
+    // If there is already a pending generation with this name
+    // reference it directly. This means that it is recursive
+    if (refId && this.schemaRefs[refId] === 'pending') {
+      const refSchema = { $ref: this.generateSchemaRef(refId) };
+      return this.versionSpecifics.mapNullableOfRef(
+        refSchema,
+        isNullableSchema(zodSchema)
+      );
+    }
+
+    // We start the generation by setting the ref to pending for
+    // any future recursive definition. It would get set to a proper
+    // value within `generateSchemaWithRef`
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = 'pending';
+    }
+
+    const result = metadata?.type
+      ? { type: metadata.type }
+      : this.toOpenAPISchema(
+          innerSchema,
+          isNullableSchema(zodSchema),
+          defaultValue
+        );
+
+    return metadata
+      ? Metadata.applySchemaMetadata(result, metadata)
+      : omitBy(result, isUndefined);
   }
 
   /**
@@ -383,20 +477,40 @@ export class OpenAPIGenerator {
   private constructReferencedOpenAPISchema<T>(
     zodSchema: ZodType<T>
   ): SchemaObject | ReferenceObject {
-    const metadata = Metadata.getMetadata(zodSchema);
+    const metadata = Metadata.getOpenApiMetadata(zodSchema);
     const innerSchema = Metadata.unwrapChained(zodSchema);
-
     const defaultValue = Metadata.getDefaultValue(zodSchema);
-    const isNullableSchema = zodSchema.isNullable();
+    const isNullable = isNullableSchema(zodSchema);
 
-    if (metadata?.metadata?.type) {
-      return this.versionSpecifics.mapNullableType(
-        metadata.metadata.type,
-        isNullableSchema
+    if (metadata?.type) {
+      return this.versionSpecifics.mapNullableType(metadata.type, isNullable);
+    }
+
+    const refId = Metadata.getRefId(zodSchema);
+
+    if (refId && typeof this.schemaRefs[refId] === 'object') {
+      return LazyTransformer.mapRecursive(
+        this.schemaRefs[refId],
+        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+        schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
       );
     }
 
-    return this.toOpenAPISchema(innerSchema, isNullableSchema, defaultValue);
+    // If there is already a pending generation with this name
+    // reference it directly. This means that it is recursive
+    if (refId && this.schemaRefs[refId] === 'pending') {
+      const refSchema = { $ref: this.generateSchemaRef(refId) };
+      return this.versionSpecifics.mapNullableOfRef(refSchema, isNullable);
+    }
+
+    // We start the generation by setting the ref to pending for
+    // any future recursive definition. It would get set to a proper
+    // value within `generateSchemaWithRef`
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = 'pending';
+    }
+
+    return this.toOpenAPISchema(innerSchema, isNullable, defaultValue);
   }
 
   /**
@@ -405,7 +519,7 @@ export class OpenAPIGenerator {
   private generateSimpleSchema<T>(
     zodSchema: ZodType<T>
   ): SchemaObject | ReferenceObject {
-    const metadata = Metadata.getMetadata(zodSchema);
+    const metadata = Metadata.getOpenApiMetadata(zodSchema);
 
     const refId = Metadata.getRefId(zodSchema);
 
@@ -418,9 +532,17 @@ export class OpenAPIGenerator {
       $ref: this.generateSchemaRef(refId),
     };
 
+    // We are currently calculating this schema or there is nothing
+    if (this.schemaRefs[refId] === 'pending') {
+      return this.versionSpecifics.mapNullableOfRef(
+        referenceObject,
+        isNullableSchema(zodSchema)
+      );
+    }
+
     // Metadata provided from .openapi() that is new to what we had already registered
     const newMetadata = omitBy(
-      Metadata.buildSchemaMetadata(metadata?.metadata ?? {}),
+      Metadata.buildSchemaMetadata(metadata ?? {}),
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
     );
 
@@ -432,7 +554,7 @@ export class OpenAPIGenerator {
       };
     }
 
-    // New metadata from ZodSchema properties.
+    // New metadata from zodSchema properties.
     const newSchemaMetadata = omitBy(
       this.constructReferencedOpenAPISchema(zodSchema),
       (value, key) => value === undefined || objectEquals(value, schemaRef[key])
@@ -459,18 +581,16 @@ export class OpenAPIGenerator {
    *
    * Should be used for nested objects, arrays, etc.
    */
-  private generateSchemaWithRef(zodSchema: ZodTypeAny) {
+  private generateSchemaWithRef(zodSchema: ZodType) {
     const refId = Metadata.getRefId(zodSchema);
 
-    const result = this.generateSimpleSchema(zodSchema);
-
-    if (refId && this.schemaRefs[refId] === undefined) {
-      this.schemaRefs[refId] = result;
+    if (refId && !this.schemaRefs[refId]) {
+      this.schemaRefs[refId] = this.generateSimpleSchema(zodSchema);
 
       return { $ref: this.generateSchemaRef(refId) };
     }
 
-    return result;
+    return this.generateSimpleSchema(zodSchema);
   }
 
   private generateSchemaRef(refId: string) {
@@ -545,14 +665,29 @@ export class OpenAPIGenerator {
     ];
   }
 
-  private cleanParameter(schema: RouteParameter): AnyZodObject | undefined {
+  private cleanParameter(schema: RouteParameter): ZodObject | undefined {
     if (!schema) {
       return undefined;
     }
 
-    return isZodType(schema, 'ZodEffects')
-      ? this.cleanParameter(schema._def.schema)
-      : schema;
+    if (isZodType(schema, 'ZodPipe')) {
+      const inSchema = schema._zod.def.in;
+      const outSchema = schema._zod.def.out;
+
+      // meaning transform
+      if (isZodType(inSchema, 'ZodObject')) {
+        return this.cleanParameter(inSchema);
+      }
+
+      // meaning preprocess
+      if (isZodType(outSchema, 'ZodObject')) {
+        return this.cleanParameter(outSchema);
+      }
+
+      return undefined;
+    }
+
+    return schema;
   }
 
   generatePath(route: RouteConfig): PathItemObject {
@@ -636,8 +771,8 @@ export class OpenAPIGenerator {
     return '$ref' in schema;
   }
 
-  private getResponseHeaders(headers: AnyZodObject): HeadersObject {
-    const schemaShape = headers._def.shape();
+  private getResponseHeaders(headers: ZodObject): HeadersObject {
+    const schemaShape = headers.def.shape;
 
     const responseHeaders = mapValues(schemaShape, _ =>
       this.generateSimpleParameter(_)
@@ -665,12 +800,14 @@ export class OpenAPIGenerator {
     isNullable: boolean,
     defaultValue?: T
   ): SchemaObject | ReferenceObject {
-    return this.openApiTransformer.transform(
+    const result = this.openApiTransformer.transform(
       zodSchema,
       isNullable,
       _ => this.generateSchemaWithRef(_),
       _ => this.generateSchemaRef(_),
       defaultValue
     );
+
+    return result;
   }
 }

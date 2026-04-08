@@ -3,6 +3,9 @@
 [![npm version](https://img.shields.io/npm/v/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
 [![npm downloads](https://img.shields.io/npm/dm/@asteasolutions/zod-to-openapi)](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi)
 
+> [!IMPORTANT]
+> **For Zod v3 support, please use the v7.3.4 version. However keep in mind that we do not intend to actively support that version going forward** Install with: `npm install @asteasolutions/zod-to-openapi@7.3.4`
+
 A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate an Open API Swagger documentation.
 
 1. [Purpose and quick example](#purpose-and-quick-example)
@@ -17,6 +20,7 @@ A library that uses [zod schemas](https://github.com/colinhacks/zod) to generate
    8. [A full example](#a-full-example)
    9. [Adding it as part of your build](#adding-it-as-part-of-your-build)
    10. [Using schemas vs a registry](#using-schemas-vs-a-registry)
+   11. [Generation options](#generation-options)
 3. [Zod schema types](#zod-schema-types)
    1. [Supported types](#supported-types)
    2. [Unsupported types](#unsupported-types)
@@ -127,6 +131,64 @@ This should be done only once in a common-entrypoint file of your project (for e
 
 It can be bit tricky to achieve this in your codebase, because *require* is synchronous and *import* is a async.
 
+#### Using zod's .meta
+Starting from v8 (and zod v4) you can also use zod's .meta to provide metadata and we will read it accordingly.
+
+With zod's new option for generating JSON schemas and maintaining registries we've added a pretty much seamless support for all metadata information coming from `.meta` calls as if that was metadata passed into `.openapi`.
+
+So the following 2 schemas produce exactly the same results:
+```ts
+const schema = z
+  .string()
+  .openapi('Schema', { description: 'Name of the user', example: 'Test' });
+
+const schema2 = z
+  .string()
+  .meta({ id: 'Schema2', description: 'Name of the user', example: 'Test' });
+```
+
+> Note: This also means that you unless you are using some of our more complicated scenarios you could even generate a schema without using `extendZodWithOpenApi` in your codebase and only rely on `.meta` to provide additional metadata information and schema names (using the `id` property).
+
+#### Scenarios that require using `extendZodWithOpenApi` and `.openapi`
+1. When extending registered schemas that are both registered and want the extended one to use `anyOf` i.e:
+
+```ts
+const schema = z.object({ name: z.string() }).openapi('Schema');
+
+const schema2 = schema.extend({ age: z.number() }).openapi('Schema2'); // this one would have anyOf and a reference to the first one
+```
+2. Defining parameter metadata. So for example when doing:
+```ts
+registry.registerPath({
+  // ...
+  request: {
+    query: z.object({
+      name: z.string().openapi({
+        description: 'Schema level description',
+        param: { description: 'Param level description' },
+      }),
+    }),
+  },
+});
+```
+
+the result would be:
+```ts
+  "parameters": [
+      {
+        "schema": {
+          "type": "string",
+          "description": "Schema level description" // comes directly from description
+        },
+        "required": true,
+        "description": "Param level description", // comes from param.description
+        "name": "name",
+        "in": "query"
+      }
+  ],
+```
+
+
 ### The basic idea
 
 ```ts
@@ -194,7 +256,7 @@ There are two generators that can be used - `OpenApiGeneratorV3` and `OpenApiGen
 For example: changing the generator from `OpenApiGeneratorV3` to `OpenApiGeneratorV31` would result in following differences:
 
 ```ts
-z.string().nullable().openapi(refId: 'name');
+z.string().nullable().openapi({refId: 'name'});
 ```
 
 ```yml
@@ -501,7 +563,7 @@ Adding a `NewSchema` into `file3.ts` and using `registry.register` would NOT req
 Using an `OpenAPIRegistry` instance is mostly useful if you would want your resulting document to contain unreferenced schemas.
 That can sometimes be useful - for example when you are slowly integrating an already existing documentation with `@asteasolutions/zod-to-openapi` and you are migrating small pieces at a time. Those pieces can then be referenced directly from an existing documentation.
 
-### Adding it as part of your build
+#### Adding it as part of your build
 
 In a file inside your project you can have a file like so:
 
@@ -519,6 +581,43 @@ You then use the exported `registry` object to register all schemas, parameters 
 
 Then you can create a script that executes the exported `generateOpenAPI` function. This script can be executed as a part of your build step so that it can write the result to some file like `openapi-docs.json`.
 
+### Generation options
+
+Schema generation can be altered in certain scenarios. This can be done by either:
+
+#### Passing a global configuration as second argument for the generator:
+
+```ts
+const generator = new OpenApiGeneratorV3(registry.definitions, options);
+```
+
+
+There list of currently supported global options is:
+```ts
+const options = {
+  unionPreferredType: 'oneOf' | 'anyOf' // configures whether oneOf or anyOf is used when generating a schema for a zod union
+  sortComponents?: 'alphabetically'; // if sortComponents is passed with the value 'alphabetically' it would sort all schemas and parameters.
+                                     // If not - they would appear in the order they were defined
+}
+```
+
+
+#### Passing options for a one-off usage for a single schema:
+
+```ts
+// Note it is valid for metadata to be undefined in both of the below cases:
+
+schema.openapi('Schema', metadata, options); // when registering a schema or
+schema.openapi(metadata, options) // when simply adding some metadata to it
+```
+
+There list of currently supported one-off options is:
+```ts
+const options = {
+  unionPreferredType: 'oneOf' | 'anyOf' // configures whether oneOf or anyOf is used when generating a schema for a zod union
+}
+```
+
 ## Zod schema types
 
 ### Supported types
@@ -531,6 +630,7 @@ The list of all supported types as of now is:
 - `ZodBoolean`
 - `ZodDate`
 - `ZodDefault`
+- `ZodPrefault`
 - `ZodDiscriminatedUnion`
   - including `discriminator` mapping when all Zod objects in the union are registered with `.register()` or contain a `refId`.
 - `ZodEffects`
@@ -562,13 +662,6 @@ The list of all supported types as of now is:
     - `.url()`
   - adding `pattern` for `.regex()` is also supported
 
-
-    ${'emoji'}    | ${z.string().emoji()}    | ${'emoji'}
-    ${'cuid'}     | ${z.string().cuid()}     | ${'cuid'}
-    ${'cuid2'}    | ${z.string().cuid2()}    | ${'cuid2'}
-    ${'ulid'}     | ${z.string().ulid()}     | ${'ulid'}
-    ${'ip'}       | ${z.string().ip()}       | ${'ip'}
-
 - `ZodTuple`
 - `ZodUnion`
 - `ZodUnknown`
@@ -590,5 +683,5 @@ You can still register such schemas on your own by providing a `type` via the `.
 ## Technologies
 
 - [Typescript](https://www.typescriptlang.org/)
-- [Zod 3.x](https://github.com/colinhacks/zod)
+- [Zod 4.x](https://github.com/colinhacks/zod)
 - [OpenAPI 3.x TS](https://github.com/metadevpro/openapi3-ts)

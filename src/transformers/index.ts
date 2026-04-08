@@ -9,32 +9,43 @@ import { DiscriminatedUnionTransformer } from './discriminated-union';
 import { EnumTransformer } from './enum';
 import { IntersectionTransformer } from './intersection';
 import { LiteralTransformer } from './literal';
-import { NativeEnumTransformer } from './native-enum';
 import { NumberTransformer } from './number';
 import { ObjectTransformer } from './object';
 import { RecordTransformer } from './record';
 import { StringTransformer } from './string';
 import { TupleTransformer } from './tuple';
 import { UnionTransformer } from './union';
-import { OpenApiVersionSpecifics } from '../openapi-generator';
+import {
+  OpenApiGeneratorOptions,
+  OpenApiVersionSpecifics,
+} from '../openapi-generator';
+import { DateTransformer } from './date';
+import { LazyTransformer } from './lazy';
+import { TemplateLiteralTransformer } from './template-literal';
 
 export class OpenApiTransformer {
   private objectTransformer = new ObjectTransformer();
   private stringTransformer = new StringTransformer();
   private numberTransformer = new NumberTransformer();
   private bigIntTransformer = new BigIntTransformer();
+  private dateTransformer = new DateTransformer();
+  private lazyTransformer = new LazyTransformer();
   private literalTransformer = new LiteralTransformer();
+  private templateLiteralTransformer = new TemplateLiteralTransformer();
   private enumTransformer = new EnumTransformer();
-  private nativeEnumTransformer = new NativeEnumTransformer();
   private arrayTransformer = new ArrayTransformer();
   private tupleTransformer: TupleTransformer;
-  private unionTransformer = new UnionTransformer();
+  private unionTransformer: UnionTransformer;
   private discriminatedUnionTransformer = new DiscriminatedUnionTransformer();
   private intersectionTransformer = new IntersectionTransformer();
   private recordTransformer = new RecordTransformer();
 
-  constructor(private versionSpecifics: OpenApiVersionSpecifics) {
+  constructor(
+    private versionSpecifics: OpenApiVersionSpecifics,
+    options?: OpenApiGeneratorOptions
+  ) {
     this.tupleTransformer = new TupleTransformer(versionSpecifics);
+    this.unionTransformer = new UnionTransformer(options);
   }
 
   transform<T>(
@@ -71,8 +82,8 @@ export class OpenApiTransformer {
     return { ...schema, default: defaultValue };
   }
 
-  private transformSchemaWithoutDefault<T>(
-    zodSchema: ZodType<T>,
+  private transformSchemaWithoutDefault(
+    zodSchema: ZodType,
     isNullable: boolean,
     mapItem: MapSubSchema,
     generateSchemaRef: (ref: string) => string
@@ -105,20 +116,29 @@ export class OpenApiTransformer {
       return this.versionSpecifics.mapNullableType('boolean', isNullable);
     }
 
+    if (isZodType(zodSchema, 'ZodLazy')) {
+      return this.lazyTransformer.transform(
+        zodSchema,
+        mapItem,
+        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+        schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
+      );
+    }
+
     if (isZodType(zodSchema, 'ZodLiteral')) {
       return this.literalTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
 
-    if (isZodType(zodSchema, 'ZodEnum')) {
-      return this.enumTransformer.transform(zodSchema, schema =>
+    if (isZodType(zodSchema, 'ZodTemplateLiteral')) {
+      return this.templateLiteralTransformer.transform(zodSchema, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
 
-    if (isZodType(zodSchema, 'ZodNativeEnum')) {
-      return this.nativeEnumTransformer.transform(zodSchema, schema =>
+    if (isZodType(zodSchema, 'ZodEnum')) {
+      return this.enumTransformer.transform(zodSchema, isNullable, schema =>
         this.versionSpecifics.mapNullableType(schema, isNullable)
       );
     }
@@ -139,14 +159,8 @@ export class OpenApiTransformer {
       );
     }
 
-    if (isZodType(zodSchema, 'ZodUnion')) {
-      return this.unionTransformer.transform(
-        zodSchema,
-        _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
-        mapItem
-      );
-    }
-
+    // Note: It is important that this goes above the union transformer
+    // because the discriminated union is still a union
     if (isZodType(zodSchema, 'ZodDiscriminatedUnion')) {
       return this.discriminatedUnionTransformer.transform(
         zodSchema,
@@ -154,6 +168,14 @@ export class OpenApiTransformer {
         _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
         mapItem,
         generateSchemaRef
+      );
+    }
+
+    if (isZodType(zodSchema, 'ZodUnion')) {
+      return this.unionTransformer.transform(
+        zodSchema,
+        _ => this.versionSpecifics.mapNullableOfArray(_, isNullable),
+        mapItem
       );
     }
 
@@ -175,13 +197,15 @@ export class OpenApiTransformer {
     }
 
     if (isZodType(zodSchema, 'ZodDate')) {
-      return this.versionSpecifics.mapNullableType('string', isNullable);
+      return this.dateTransformer.transform(_ =>
+        this.versionSpecifics.mapNullableType(_, isNullable)
+      );
     }
 
     const refId = Metadata.getRefId(zodSchema);
 
     throw new UnknownZodTypeError({
-      currentSchema: zodSchema._def,
+      currentSchema: zodSchema.def,
       schemaName: refId,
     });
   }

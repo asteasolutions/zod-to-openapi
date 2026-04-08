@@ -1,6 +1,6 @@
 import { MapNullableType, MapSubSchema, SchemaObject } from '../types';
 import { ZodRecord } from 'zod';
-import { isZodType } from '../lib/zod-is-type';
+import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 import { isString } from '../lib/lodash';
 
 export class RecordTransformer {
@@ -9,15 +9,17 @@ export class RecordTransformer {
     mapNullableType: MapNullableType,
     mapItem: MapSubSchema
   ): SchemaObject {
-    const propertiesType = zodSchema._def.valueType;
-    const keyType = zodSchema._def.keyType;
+    const propertiesType = zodSchema.valueType;
+    const keyType = zodSchema.keyType;
 
-    const propertiesSchema = mapItem(propertiesType);
+    const propertiesSchema = isAnyZodType(propertiesType)
+      ? mapItem(propertiesType)
+      : {};
 
-    if (isZodType(keyType, 'ZodEnum') || isZodType(keyType, 'ZodNativeEnum')) {
+    if (isZodType(keyType, 'ZodEnum')) {
       // Native enums have their keys as both number and strings however the number is an
       // internal representation and the string is the access point for a documentation
-      const keys = Object.values(keyType.enum).filter(isString);
+      const keys = Object.values(keyType._zod.def.entries).filter(isString);
 
       const properties = keys.reduce(
         (acc, curr) => ({

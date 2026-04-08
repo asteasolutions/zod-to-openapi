@@ -22,7 +22,7 @@ export interface MissingParameterDataErrorProps {
 export class MissingParameterDataError extends ZodToOpenAPIError {
   constructor(public data: MissingParameterDataErrorProps) {
     super(
-      `Missing parameter data, please specify \`${data.missingField}\` and other OpenAPI parameter props using the \`param\` field of \`ZodSchema.openapi\``
+      `Missing parameter data, please specify \`${data.missingField}\` and other OpenAPI parameter props using the \`param\` field of \`schema.openapi\``
     );
   }
 }
@@ -52,7 +52,7 @@ interface UnknownZodTypeErrorProps {
 export class UnknownZodTypeError extends ZodToOpenAPIError {
   constructor(private data: UnknownZodTypeErrorProps) {
     super(
-      `Unknown zod object type, please specify \`type\` and other OpenAPI props using \`ZodSchema.openapi\`.`
+      `Unknown zod object type, please specify \`type\` and other OpenAPI props using \`schema.openapi\`.`
     );
   }
 }

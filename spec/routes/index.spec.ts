@@ -1,4 +1,4 @@
-import { ZodSchema, z } from 'zod';
+import { ZodType, z } from 'zod';
 import {
   OpenAPIDefinitions,
   OpenAPIRegistry,
@@ -13,7 +13,7 @@ import { OpenApiGeneratorV31 } from '../../src/v3.1/openapi-generator';
 // We need OpenAPIObject31 because of the webhooks property.
 // All tests can probably be refactored to use generateDataForRoute instead
 function generateDocumentWithPossibleWebhooks(
-  definitions: (OpenAPIDefinitions | ZodSchema)[]
+  definitions: (OpenAPIDefinitions | ZodType)[]
 ) {
   return new OpenApiGeneratorV31(definitions).generateDocument({
     ...testDocConfig,

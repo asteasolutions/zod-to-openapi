@@ -19,7 +19,7 @@ describe('tuple', () => {
           maxItems: 3,
         },
       },
-      '3.0.0'
+      { version: '3.0.0' }
     );
   });
 
@@ -36,7 +36,7 @@ describe('tuple', () => {
           ],
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -82,7 +82,7 @@ describe('tuple', () => {
           ],
         },
       },
-      '3.1.0'
+      { version: '3.1.0' }
     );
   });
 
@@ -155,7 +155,7 @@ describe('tuple', () => {
             maxItems: 2,
           },
         },
-        '3.0.0'
+        { version: '3.0.0' }
       );
     });
 
@@ -175,7 +175,7 @@ describe('tuple', () => {
             ],
           },
         },
-        '3.1.0'
+        { version: '3.1.0' }
       );
     });
 
@@ -193,7 +193,7 @@ describe('tuple', () => {
             nullable: true,
           },
         },
-        '3.0.0'
+        { version: '3.0.0' }
       );
     });
 
@@ -206,7 +206,7 @@ describe('tuple', () => {
             prefixItems: [{ type: 'string' }, { type: 'number' }],
           },
         },
-        '3.1.0'
+        { version: '3.1.0' }
       );
     });
   });

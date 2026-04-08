@@ -1,7 +1,8 @@
 import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
+import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
-import { uniq } from '../lib/lodash';
+import { objectEquals, uniq } from '../lib/lodash';
 
 export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
   get nullType() {
@@ -12,7 +13,10 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
     objects: (SchemaObject | ReferenceObject)[],
     isNullable: boolean
   ): (SchemaObject | ReferenceObject)[] {
-    if (isNullable) {
+    if (
+      isNullable &&
+      !objects.some(object => objectEquals(object, this.nullType))
+    ) {
       return [...objects, this.nullType];
     }
     return objects;
@@ -26,6 +30,18 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
       ...(type ? { type } : undefined),
       ...(isNullable ? this.nullType : undefined),
     };
+  }
+
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ): ReferenceObject | { allOf: (ReferenceObject | { nullable: boolean })[] } {
+    if (isNullable) {
+      return {
+        allOf: [ref, this.nullType],
+      };
+    }
+    return ref;
   }
 
   mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
@@ -50,17 +66,26 @@ export class OpenApiGeneratorV30Specifics implements OpenApiVersionSpecifics {
     return Object.assign(
       {},
       ...checks.map<SchemaObject>(check => {
-        switch (check.kind) {
-          case 'min':
-            return check.inclusive
-              ? { minimum: Number(check.value) }
-              : { minimum: Number(check.value), exclusiveMinimum: true };
+        switch (check._zod.def.check) {
+          case 'greater_than': {
+            const greaterThanCheck = check as $ZodCheckGreaterThan;
 
-          case 'max':
-            return check.inclusive
-              ? { maximum: Number(check.value) }
-              : { maximum: Number(check.value), exclusiveMaximum: true };
-
+            return greaterThanCheck._zod.def.inclusive
+              ? { minimum: Number(greaterThanCheck._zod.def.value) }
+              : {
+                  minimum: Number(greaterThanCheck._zod.def.value),
+                  exclusiveMinimum: true,
+                };
+          }
+          case 'less_than': {
+            const lessThanCheck = check as $ZodCheckLessThan;
+            return lessThanCheck._zod.def.inclusive
+              ? { maximum: Number(lessThanCheck._zod.def.value) }
+              : {
+                  maximum: Number(lessThanCheck._zod.def.value),
+                  exclusiveMaximum: !lessThanCheck._zod.def.inclusive,
+                };
+          }
           default:
             return {};
         }

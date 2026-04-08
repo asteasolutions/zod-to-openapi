@@ -1,7 +1,12 @@
-import type { ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
-
+import type {
+  ReferenceObject,
+  SchemaObject,
+  SchemaObjectType,
+} from 'openapi3-ts/oas31';
+import type { $ZodCheckGreaterThan, $ZodCheckLessThan } from 'zod/core';
 import { OpenApiVersionSpecifics } from '../openapi-generator';
 import { ZodNumericCheck, SchemaObject as CommonSchemaObject } from '../types';
+import { objectEquals, uniq } from '../lib/lodash';
 
 export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
   get nullType() {
@@ -12,7 +17,10 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
     objects: (SchemaObject | ReferenceObject)[],
     isNullable: boolean
   ): (SchemaObject | ReferenceObject)[] {
-    if (isNullable) {
+    if (
+      isNullable &&
+      !objects.some(object => objectEquals(object, this.nullType))
+    ) {
       return [...objects, this.nullType];
     }
     return objects;
@@ -29,14 +37,28 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
 
     // Open API 3.1.0 made the `nullable` key invalid and instead you use type arrays
     if (isNullable) {
-      return {
-        type: Array.isArray(type) ? [...type, 'null'] : [type, 'null'],
-      };
+      const typeArray = Array.isArray(type) ? type : [type];
+
+      // If the type already contained null we do not want to have it twice.
+      // this is possible for example in z.null usages or z.lazy recursive usages
+      const nullableType = uniq<SchemaObjectType>([...typeArray, 'null']);
+
+      return { type: nullableType };
     }
 
-    return {
-      type,
-    };
+    return { type };
+  }
+
+  mapNullableOfRef(
+    ref: ReferenceObject,
+    isNullable: boolean
+  ): ReferenceObject | { oneOf: (ReferenceObject | { type: 'null' })[] } {
+    if (isNullable) {
+      return {
+        oneOf: [ref, this.nullType],
+      };
+    }
+    return ref;
   }
 
   mapTupleItems(schemas: (CommonSchemaObject | ReferenceObject)[]) {
@@ -54,17 +76,19 @@ export class OpenApiGeneratorV31Specifics implements OpenApiVersionSpecifics {
     return Object.assign(
       {},
       ...checks.map<SchemaObject>(check => {
-        switch (check.kind) {
-          case 'min':
-            return check.inclusive
-              ? { minimum: Number(check.value) }
-              : { exclusiveMinimum: Number(check.value) };
-
-          case 'max':
-            return check.inclusive
-              ? { maximum: Number(check.value) }
-              : { exclusiveMaximum: Number(check.value) };
-
+        switch (check._zod.def.check) {
+          case 'greater_than': {
+            const greaterThanCheck = check as $ZodCheckGreaterThan;
+            return greaterThanCheck._zod.def.inclusive
+              ? { minimum: Number(greaterThanCheck._zod.def.value) }
+              : { exclusiveMinimum: Number(greaterThanCheck._zod.def.value) };
+          }
+          case 'less_than': {
+            const lessThanCheck = check as $ZodCheckLessThan;
+            return lessThanCheck._zod.def.inclusive
+              ? { maximum: Number(lessThanCheck._zod.def.value) }
+              : { exclusiveMaximum: Number(lessThanCheck._zod.def.value) };
+          }
           default:
             return {};
         }
