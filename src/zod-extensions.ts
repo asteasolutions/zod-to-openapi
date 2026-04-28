@@ -237,6 +237,24 @@ export function extendZodWithOpenApi(zod: typeof z) {
 
     return result;
   };
+
+  // Mirror `.openapi` onto every concrete schema prototype. Zod v4's
+  // `$constructor` binds prototype keys onto each instance at construction
+  // time, and `ZodObject.prototype` (etc.) does NOT chain to
+  // `ZodType.prototype`, so the assignment above is unreachable from any
+  // schema constructed before this function runs. Patching each
+  // `Zod*.prototype` directly makes the extension order-independent.
+  const openapiMethod = zod.ZodType.prototype.openapi;
+  for (const [key, ctor] of Object.entries(zod) as [string, unknown][]) {
+    // `ZodError` is the only `Zod*`-prefixed export that is not a schema
+    // constructor — it extends Error, not $ZodType, and has no `_def` for
+    // `.openapi`'s `new this.constructor(this._def)` clone to consume.
+    if (key === 'ZodError') continue;
+    if (!key.startsWith('Zod') || typeof ctor !== 'function') continue;
+    const proto = (ctor as { prototype?: { openapi?: unknown } }).prototype;
+    if (!proto || typeof proto.openapi !== 'undefined') continue;
+    proto.openapi = openapiMethod;
+  }
 }
 
 function getOpenApiConfiguration(
