@@ -55,7 +55,7 @@ describe('json', () => {
             {
               type: 'array',
               items: {
-                oneOf: [
+                anyOf: [
                   { $ref: '#/components/schemas/Json' },
                   { type: 'null' },
                 ],
@@ -64,7 +64,7 @@ describe('json', () => {
             {
               type: 'object',
               additionalProperties: {
-                oneOf: [
+                anyOf: [
                   { $ref: '#/components/schemas/Json' },
                   { type: 'null' },
                 ],

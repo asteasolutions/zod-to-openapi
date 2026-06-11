@@ -472,7 +472,7 @@ describe('recursive schemas (new getter approach)', () => {
             properties: {
               value: { type: 'string' },
               child: {
-                oneOf: [
+                anyOf: [
                   { $ref: '#/components/schemas/RecursiveNullable' },
                   { type: 'null' },
                 ],
