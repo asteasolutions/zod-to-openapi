@@ -34,7 +34,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "openapi3-ts": "^4.1.2"
+    "openapi3-ts": "^4.6.0"
   },
   "peerDependencies": {
     "zod": "^4.0.0"

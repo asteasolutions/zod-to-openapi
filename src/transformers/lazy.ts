@@ -29,7 +29,10 @@ export class LazyTransformer {
     mapNullableRef: MapNullableRef
   ): SchemaObject | ReferenceObject {
     if ('$ref' in schema) {
-      return mapNullableRef(schema);
+      // openapi3-ts >= 4.2 added an optional `$ref` to SchemaObject (a valid
+      // 3.1/3.2 sibling), so `'$ref' in schema` no longer narrows the union on
+      // its own. The runtime check is unchanged; cast to keep the old behavior.
+      return mapNullableRef(schema as ReferenceObject);
     }
 
     if (schema.type) {

@@ -99,7 +99,7 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
-    componentType: keyof ComponentsObject;
+    componentType: string;
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
@@ -133,7 +133,8 @@ export class OpenAPIGenerator {
   }
 
   private buildComponents(): ComponentsObject {
-    const rawComponents: ComponentsObject = {};
+    const rawComponents = {} as ComponentsObject &
+      Record<string, Record<string, OpenAPIComponentObject>>;
     this.rawComponents.forEach(({ componentType, name, component }) => {
       rawComponents[componentType] ??= {};
       rawComponents[componentType][name] = component;
@@ -181,6 +182,7 @@ export class OpenAPIGenerator {
       'parameter',
       'component',
       'route',
+      'webhook',
     ];
 
     this.definitions.sort((left, right) => {
@@ -745,11 +747,14 @@ export class OpenAPIGenerator {
       ? { content: this.getBodyContent(content) }
       : {};
 
+    // `description` is required on 3.0/3.1 ResponseObjects but optional on the
+    // shared ResponseConfig (it is optional since OAS 3.2). Keeping it correct
+    // per target version is the user's responsibility, so we cast here.
     if (!headers) {
       return {
         ...rest,
         ...responseContent,
-      };
+      } as ResponseObject;
     }
 
     const responseHeaders = isZodType(headers, 'ZodObject')
@@ -762,7 +767,7 @@ export class OpenAPIGenerator {
       ...rest,
       headers: responseHeaders,
       ...responseContent,
-    };
+    } as ResponseObject;
   }
 
   private isReferenceObject<T extends object>(
@@ -783,15 +788,38 @@ export class OpenAPIGenerator {
 
   private getBodyContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
-      if (!config || !isAnyZodType(config.schema)) {
+      if (!config) {
         return config;
       }
 
-      const { schema: configSchema, ...rest } = config;
+      if ('$ref' in config) {
+        return config;
+      }
 
-      const schema = this.generateSchemaWithRef(configSchema);
+      const {
+        schema: configSchema,
+        itemSchema: configItemSchema,
+        ...rest
+      } = config;
 
-      return { schema, ...rest };
+      // Both `schema` and the 3.2 `itemSchema` accept either a Zod schema
+      // (converted and registered so it `$ref`s) or a raw SchemaObject /
+      // ReferenceObject (passed through untouched).
+      const schema =
+        typeof configSchema === 'object' && isAnyZodType(configSchema)
+          ? this.generateSchemaWithRef(configSchema)
+          : configSchema;
+
+      const itemSchema =
+        typeof configItemSchema === 'object' && isAnyZodType(configItemSchema)
+          ? this.generateSchemaWithRef(configItemSchema)
+          : configItemSchema;
+
+      return {
+        ...rest,
+        ...(schema !== undefined ? { schema } : {}),
+        ...(itemSchema !== undefined ? { itemSchema } : {}),
+      };
     });
   }
 

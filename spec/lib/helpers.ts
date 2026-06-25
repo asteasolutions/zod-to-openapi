@@ -122,7 +122,9 @@ export function generateDataForRoute(
     routeDefinition,
   ]).generateDocument(testDocConfig);
 
-  const routeDoc = paths[route.path]?.[route.method] as OperationObject;
+  const routeDoc = (paths[route.path] as Record<string, OperationObject>)?.[
+    route.method
+  ] as OperationObject;
 
   return {
     documentSchemas: components?.schemas,
