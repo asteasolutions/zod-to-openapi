@@ -30,10 +30,13 @@ export class OpenApiGeneratorV3 {
     return {
       ...config,
       ...baseData,
-    };
+    } as OpenAPIObject;
   }
 
   generateComponents(): Pick<OpenAPIObject, 'components'> {
-    return this.generator.generateComponents();
+    return this.generator.generateComponents() as Pick<
+      OpenAPIObject,
+      'components'
+    >;
   }
 }

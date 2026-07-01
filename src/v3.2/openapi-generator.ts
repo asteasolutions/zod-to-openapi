@@ -47,14 +47,11 @@ export class OpenApiGeneratorV32 {
       ...config,
       ...baseDocument,
       webhooks: this.webhookRefs,
-    } as OpenAPIObject;
+    };
   }
 
   generateComponents(): Pick<OpenAPIObject, 'components'> {
-    return this.generator.generateComponents() as Pick<
-      OpenAPIObject,
-      'components'
-    >;
+    return this.generator.generateComponents();
   }
 
   private generateWebhooks() {

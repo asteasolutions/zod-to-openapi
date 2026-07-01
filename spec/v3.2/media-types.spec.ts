@@ -1,39 +1,8 @@
 import { z } from 'zod';
-import { OpenAPIRegistry } from '../src/openapi-registry';
-import {
-  OpenApiGeneratorV32,
-  OpenAPIObjectConfigV32,
-} from '../src/v3.2/openapi-generator';
+import { OpenAPIRegistry } from '../../src/openapi-registry';
+import { generateV32Document } from './helpers';
 
-const testDocConfig: OpenAPIObjectConfigV32 = {
-  openapi: '3.2.0',
-  info: { version: '1.0.0', title: 'Test API' },
-};
-
-function generate(registry: OpenAPIRegistry) {
-  return new OpenApiGeneratorV32(registry.definitions).generateDocument(
-    testDocConfig
-  );
-}
-
-describe('OpenApiGeneratorV32', () => {
-  it('keeps the 3.2 openapi version supplied by the config', () => {
-    const document = generate(new OpenAPIRegistry());
-
-    expect(document.openapi).toEqual('3.2.0');
-  });
-
-  it('emits the same JSON Schema dialect as 3.1 (type arrays for nullable)', () => {
-    const registry = new OpenAPIRegistry();
-    registry.register('NullableString', z.string().nullable());
-
-    const document = generate(registry);
-
-    expect(document.components?.schemas?.['NullableString']).toEqual({
-      type: ['string', 'null'],
-    });
-  });
-
+describe('OpenAPI 3.2 media types', () => {
   describe('itemSchema', () => {
     it('converts a Zod itemSchema and registers it as a component ref', () => {
       const registry = new OpenAPIRegistry();
@@ -58,7 +27,7 @@ describe('OpenApiGeneratorV32', () => {
         },
       });
 
-      const document = generate(registry);
+      const document = generateV32Document(registry);
       const content =
         document.paths?.['/events']?.get?.responses?.['200']?.content?.[
           'text/event-stream'
@@ -92,7 +61,7 @@ describe('OpenApiGeneratorV32', () => {
         },
       });
 
-      const document = generate(registry);
+      const document = generateV32Document(registry);
       const content =
         document.paths?.['/lines']?.get?.responses?.['200']?.content?.[
           'application/jsonl'
@@ -125,7 +94,7 @@ describe('OpenApiGeneratorV32', () => {
         },
       });
 
-      const document = generate(registry);
+      const document = generateV32Document(registry);
       const content =
         document.paths?.['/raw']?.get?.responses?.['200']?.content?.[
           'application/json-seq'
@@ -153,7 +122,7 @@ describe('OpenApiGeneratorV32', () => {
         },
       });
 
-      const document = generate(registry);
+      const document = generateV32Document(registry);
       const content =
         document.paths?.['/both']?.get?.responses?.['200']?.content?.[
           'multipart/mixed'
@@ -191,7 +160,7 @@ describe('OpenApiGeneratorV32', () => {
         },
       });
 
-      const document = generate(registry);
+      const document = generateV32Document(registry);
       const content =
         document.webhooks?.['eventCreated']?.post?.responses?.['200']
           ?.content?.['application/jsonl'];
@@ -207,61 +176,8 @@ describe('OpenApiGeneratorV32', () => {
     });
   });
 
-  describe('response object', () => {
-    it('allows omitting description (optional since 3.2) and setting summary', () => {
-      const registry = new OpenAPIRegistry();
-
-      registry.registerPath({
-        method: 'get',
-        path: '/r',
-        responses: {
-          200: {
-            summary: 'A short summary',
-            content: {
-              'application/json': { schema: z.string() },
-            },
-          },
-        },
-      });
-
-      const document = generate(registry);
-      const response = document.paths?.['/r']?.get?.responses?.['200'];
-
-      expect(response).toEqual({
-        summary: 'A short summary',
-        content: { 'application/json': { schema: { type: 'string' } } },
-      });
-    });
-  });
-
-  describe('query method', () => {
-    it('emits a query operation in the path item', () => {
-      const registry = new OpenAPIRegistry();
-
-      registry.registerPath({
-        method: 'query',
-        path: '/search',
-        responses: {
-          200: {
-            description: 'Results',
-            content: { 'application/json': { schema: z.array(z.string()) } },
-          },
-        },
-      });
-
-      const document = generate(registry);
-      const pathItem = document.paths?.['/search'] as Record<string, unknown>;
-
-      expect(pathItem?.['query']).toBeDefined();
-      expect(
-        (document.paths?.['/search'] as any)?.query?.responses?.['200']
-          ?.description
-      ).toEqual('Results');
-    });
-  });
-
   describe('reusable media types', () => {
-    it('allows a 3.2 media type component to be referenced from content', () => {
+    it('allows a media type component to be referenced from content', () => {
       const registry = new OpenAPIRegistry();
 
       registry.registerComponent('mediaTypes', 'JsonLine', {
@@ -283,7 +199,7 @@ describe('OpenApiGeneratorV32', () => {
         },
       });
 
-      const document = generate(registry);
+      const document = generateV32Document(registry);
 
       expect(document.components?.mediaTypes?.['JsonLine']).toEqual({
         itemSchema: { type: 'string' },
@@ -297,7 +213,7 @@ describe('OpenApiGeneratorV32', () => {
   });
 
   describe('media type encoding', () => {
-    it('passes 3.2 itemEncoding and prefixEncoding through untouched', () => {
+    it('passes itemEncoding and prefixEncoding through untouched', () => {
       const registry = new OpenAPIRegistry();
 
       registry.registerPath({
@@ -321,13 +237,14 @@ describe('OpenApiGeneratorV32', () => {
         },
       });
 
-      const document = generate(registry);
+      const document = generateV32Document(registry);
+      const requestBody = document.paths?.['/upload']?.post?.requestBody;
 
-      expect(
-        (document.paths?.['/upload']?.post?.requestBody as any)?.content?.[
-          'multipart/mixed'
-        ]
-      ).toEqual({
+      if (!requestBody || '$ref' in requestBody) {
+        throw new Error('Expected an inline request body');
+      }
+
+      expect(requestBody.content['multipart/mixed']).toEqual({
         itemSchema: { type: 'string' },
         prefixEncoding: [{ contentType: 'text/plain' }],
         itemEncoding: { contentType: 'image/png' },

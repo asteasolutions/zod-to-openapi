@@ -4,6 +4,7 @@ import type {
   SchemasObject as SchemasObjectV30,
 } from 'openapi3-ts/oas30';
 import type { SchemasObject as SchemasObjectV31 } from 'openapi3-ts/oas31';
+import type { SchemasObject as SchemasObjectV32 } from 'openapi3-ts/oas32';
 import type { ZodType } from 'zod';
 import {
   OpenAPIDefinitions,
@@ -20,6 +21,13 @@ import {
   OpenApiVersion,
   SchemaRefs,
 } from '../../src/openapi-generator';
+import { OpenApiGeneratorV32 } from '../../src/v3.2/openapi-generator';
+
+type SchemasObjectForVersion<T extends OpenApiVersion> = T extends '3.1.0'
+  ? SchemasObjectV31
+  : T extends '3.2.0'
+  ? SchemasObjectV32
+  : SchemasObjectV30;
 
 export function createSchemas(
   zodSchemas: ZodType[],
@@ -34,10 +42,12 @@ export function createSchemas(
 
   const openApiVersion = options?.version ?? '3.0.0';
 
-  const OpenApiGenerator =
-    openApiVersion === '3.1.0' ? OpenApiGeneratorV31 : OpenApiGeneratorV3;
-
-  const generator = new OpenApiGenerator(definitions, options);
+  const generator =
+    openApiVersion === '3.2.0'
+      ? new OpenApiGeneratorV32(definitions, options)
+      : openApiVersion === '3.1.0'
+      ? new OpenApiGeneratorV31(definitions, options)
+      : new OpenApiGeneratorV3(definitions, options);
 
   const { components } = generator.generateComponents();
 
@@ -54,7 +64,7 @@ export function createSchemas(
 
 export function expectSchema<T extends OpenApiVersion = '3.0.0'>(
   zodSchemas: ZodType[],
-  openAPISchemas: T extends '3.1.0' ? SchemasObjectV31 : SchemasObjectV30,
+  openAPISchemas: SchemasObjectForVersion<T>,
   options?: OpenApiGeneratorOptions & {
     version?: T;
   }

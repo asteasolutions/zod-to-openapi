@@ -21,6 +21,7 @@ import {
 import {
   OpenAPIComponentObject,
   OpenAPIDefinitions,
+  ComponentTypeKey,
   ResponseConfig,
   RouteConfig,
   RouteParameter,
@@ -48,7 +49,14 @@ import { UnionPreferredType } from './zod-extensions';
 import { LazyTransformer } from './transformers/lazy';
 
 // List of Open API Versions. Please make sure these are in ascending order
-const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
+const openApiVersions = [
+  '3.0.0',
+  '3.0.1',
+  '3.0.2',
+  '3.0.3',
+  '3.1.0',
+  '3.2.0',
+] as const;
 
 export type OpenApiVersion = typeof openApiVersions[number];
 
@@ -99,7 +107,7 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
-    componentType: string;
+    componentType: ComponentTypeKey;
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
@@ -133,17 +141,19 @@ export class OpenAPIGenerator {
   }
 
   private buildComponents(): ComponentsObject {
-    const rawComponents = {} as ComponentsObject &
-      Record<string, Record<string, OpenAPIComponentObject>>;
+    const rawComponents: Record<
+      string,
+      Record<string, OpenAPIComponentObject>
+    > = {};
     this.rawComponents.forEach(({ componentType, name, component }) => {
       rawComponents[componentType] ??= {};
       rawComponents[componentType][name] = component;
     });
 
     const allSchemas = {
-      ...(rawComponents.schemas ?? {}),
+      ...(rawComponents['schemas'] ?? {}),
       ...this.filteredSchemaRefs,
-    };
+    } as Record<string, SchemaObject | ReferenceObject>;
 
     const schemas =
       this.options?.sortComponents === 'alphabetically'
@@ -151,16 +161,16 @@ export class OpenAPIGenerator {
         : allSchemas;
 
     const allParameters = {
-      ...(rawComponents.parameters ?? {}),
+      ...(rawComponents['parameters'] ?? {}),
       ...this.paramRefs,
-    };
+    } as Record<string, ParameterObject | ReferenceObject>;
 
     const parameters =
       this.options?.sortComponents === 'alphabetically'
         ? sortObjectByKeys(allParameters)
         : allParameters;
 
-    return { ...rawComponents, schemas, parameters };
+    return { ...rawComponents, schemas, parameters } as ComponentsObject;
   }
 
   private isNotPendingRefEntry(
@@ -747,14 +757,11 @@ export class OpenAPIGenerator {
       ? { content: this.getBodyContent(content) }
       : {};
 
-    // `description` is required on 3.0/3.1 ResponseObjects but optional on the
-    // shared ResponseConfig (it is optional since OAS 3.2). Keeping it correct
-    // per target version is the user's responsibility, so we cast here.
     if (!headers) {
       return {
         ...rest,
         ...responseContent,
-      } as ResponseObject;
+      };
     }
 
     const responseHeaders = isZodType(headers, 'ZodObject')
@@ -767,7 +774,7 @@ export class OpenAPIGenerator {
       ...rest,
       headers: responseHeaders,
       ...responseContent,
-    } as ResponseObject;
+    };
   }
 
   private isReferenceObject<T extends object>(

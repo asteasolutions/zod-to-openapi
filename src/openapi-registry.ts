@@ -1,6 +1,5 @@
 import {
   CallbackObject as CallbackObject30,
-  ComponentsObject as ComponentsObject30,
   EncodingObject as EncodingObject30,
   ExampleObject as ExampleObject30,
   ExamplesObject as ExamplesObject30,
@@ -20,7 +19,6 @@ import {
 
 import {
   CallbackObject as CallbackObject31,
-  ComponentsObject as ComponentsObject31,
   EncodingObject as EncodingObject31,
   ExampleObject as ExampleObject31,
   ExamplesObject as ExamplesObject31,
@@ -41,7 +39,6 @@ import {
 
 import {
   CallbackObject as CallbackObject32,
-  ComponentsObject as ComponentsObject32,
   EncodingObject as EncodingObject32,
   EncodingPropertyObject,
   ExampleObject as ExampleObject32,
@@ -58,15 +55,11 @@ import {
   ReferenceObject as ReferenceObject32,
   RequestBodyObject as RequestBodyObject32,
   ResponseObject as ResponseObject32,
-  SchemaObject as SchemaObject32,
+  SchemaObjectValue as SchemaObject32,
   SecuritySchemeObject as SecuritySchemeObject32,
 } from 'openapi3-ts/oas32';
 
 type CallbackObject = CallbackObject30 | CallbackObject31 | CallbackObject32;
-type ComponentsObject =
-  | ComponentsObject30
-  | ComponentsObject31
-  | ComponentsObject32;
 type EncodingObject = EncodingObject30 | EncodingObject31 | EncodingObject32;
 type ExampleObject = ExampleObject30 | ExampleObject31 | ExampleObject32;
 type ExamplesObject = ExamplesObject30 | ExamplesObject31 | ExamplesObject32;
@@ -102,6 +95,22 @@ type SecuritySchemeObject =
   | SecuritySchemeObject30
   | SecuritySchemeObject31
   | SecuritySchemeObject32;
+
+type ComponentTypeMap = {
+  schemas: SchemaObject | ReferenceObject;
+  responses: ResponseObject | ReferenceObject;
+  parameters: ParameterObject | ReferenceObject;
+  examples: ExampleObject | ReferenceObject;
+  requestBodies: RequestBodyObject | ReferenceObject;
+  headers: HeaderObject | ReferenceObject;
+  securitySchemes: SecuritySchemeObject | ReferenceObject;
+  links: LinkObject | ReferenceObject;
+  callbacks: CallbackObject | ReferenceObject;
+  /** @since OAS 3.1 */
+  pathItems: PathItemObject | ReferenceObject;
+  /** @since OAS 3.2 */
+  mediaTypes: MediaTypeObject | ReferenceObject;
+};
 
 import type { ZodObject, ZodPipe, ZodType } from 'zod';
 import { Metadata } from './metadata';
@@ -185,34 +194,11 @@ export type RouteConfig = Omit<OperationObject, 'responses'> & {
 };
 
 export type OpenAPIComponentObject =
-  | SchemaObject
-  | ResponseObject
-  | ParameterObject
-  | ExampleObject
-  | RequestBodyObject
-  | HeaderObject
-  | SecuritySchemeObject
-  | PathItemObject
-  | MediaTypeObject
-  | LinkObject
-  | CallbackObject
+  | ComponentTypeMap[keyof ComponentTypeMap]
   | ISpecificationExtension;
 
-type KeysOfUnion<T> = T extends unknown ? keyof T : never;
-
-type ComponentValue<T, K extends PropertyKey> = T extends unknown
-  ? K extends keyof T
-    ? NonNullable<T[K]> extends Record<string, infer V>
-      ? V
-      : never
-    : never
-  : never;
-
-export type ComponentTypeKey = Exclude<KeysOfUnion<ComponentsObject>, number>;
-export type ComponentTypeOf<K extends ComponentTypeKey> = ComponentValue<
-  ComponentsObject,
-  K
->;
+export type ComponentTypeKey = keyof ComponentTypeMap;
+export type ComponentTypeOf<K extends ComponentTypeKey> = ComponentTypeMap[K];
 
 export type WebhookDefinition = { type: 'webhook'; webhook: RouteConfig };
 
@@ -312,7 +298,7 @@ export class OpenAPIRegistry {
       type: 'component',
       componentType: type,
       name,
-      component: component as OpenAPIComponentObject,
+      component,
     });
 
     return {
