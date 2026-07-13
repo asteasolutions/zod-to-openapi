@@ -141,36 +141,47 @@ export class OpenAPIGenerator {
   }
 
   private buildComponents(): ComponentsObject {
-    const rawComponents: Record<
-      string,
-      Record<string, OpenAPIComponentObject>
-    > = {};
+    type RawComponent = Record<string, OpenAPIComponentObject>;
+
+    const rawComponents: Record<string, RawComponent> = {};
     this.rawComponents.forEach(({ componentType, name, component }) => {
       rawComponents[componentType] ??= {};
       rawComponents[componentType][name] = component;
     });
 
+    // This is entirely based on the user's control so it is okay to cast it.
+    const rawSchemas = (rawComponents['schemas'] ?? {}) as Record<
+      string,
+      SchemaObject | ReferenceObject
+    >;
+
     const allSchemas = {
-      ...(rawComponents['schemas'] ?? {}),
+      ...rawSchemas,
       ...this.filteredSchemaRefs,
-    } as Record<string, SchemaObject | ReferenceObject>;
+    };
 
     const schemas =
       this.options?.sortComponents === 'alphabetically'
         ? sortObjectByKeys(allSchemas)
         : allSchemas;
 
+    // This is entirely based on the user's control so it is okay to cast it.
+    const rawParameters = (rawComponents['parameters'] ?? {}) as Record<
+      string,
+      ParameterObject | ReferenceObject
+    >;
+
     const allParameters = {
-      ...(rawComponents['parameters'] ?? {}),
+      ...rawParameters,
       ...this.paramRefs,
-    } as Record<string, ParameterObject | ReferenceObject>;
+    };
 
     const parameters =
       this.options?.sortComponents === 'alphabetically'
         ? sortObjectByKeys(allParameters)
         : allParameters;
 
-    return { ...rawComponents, schemas, parameters } as ComponentsObject;
+    return { ...rawComponents, schemas, parameters };
   }
 
   private isNotPendingRefEntry(
