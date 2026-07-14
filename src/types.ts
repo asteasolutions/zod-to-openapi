@@ -29,23 +29,59 @@ import type {
   BaseParameterObject as BaseParameterObject31,
   HeadersObject as HeadersObject31,
 } from 'openapi3-ts/oas31';
+import type {
+  ReferenceObject as ReferenceObject32,
+  ParameterObject as ParameterObject32,
+  RequestBodyObject as RequestBodyObject32,
+  PathItemObject as PathItemObject32,
+  OpenAPIObject as OpenAPIObject32,
+  ComponentsObject as ComponentsObject32,
+  ParameterLocation as ParameterLocation32,
+  ResponseObject as ResponseObject32,
+  ContentObject as ContentObject32,
+  DiscriminatorObject as DiscriminatorObject32,
+  SchemaObjectValue as SchemaObject32,
+  BaseParameterObject as BaseParameterObject32,
+  HeadersObject as HeadersObject32,
+} from 'openapi3-ts/oas32';
 import { $ZodCheck } from 'zod/v4/core';
 
 export type ZodNumericCheck = $ZodCheck<never>;
 
-export type ReferenceObject = ReferenceObject30 & ReferenceObject31;
-export type ParameterObject = ParameterObject30 & ParameterObject31;
-export type RequestBodyObject = RequestBodyObject30 & RequestBodyObject31;
-export type PathItemObject = PathItemObject30 & PathItemObject31;
-export type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31;
-export type ComponentsObject = ComponentsObject30 & ComponentsObject31;
-export type ParameterLocation = ParameterLocation30 & ParameterLocation31;
-export type ResponseObject = ResponseObject30 & ResponseObject31;
-export type ContentObject = ContentObject30 & ContentObject31;
-export type DiscriminatorObject = DiscriminatorObject30 & DiscriminatorObject31;
-export type SchemaObject = SchemaObject30 & SchemaObject31;
-export type BaseParameterObject = BaseParameterObject30 & BaseParameterObject31;
-export type HeadersObject = HeadersObject30 & HeadersObject31;
+export type ReferenceObject = ReferenceObject30 &
+  ReferenceObject31 &
+  ReferenceObject32;
+export type ParameterObject = ParameterObject30 &
+  ParameterObject31 &
+  ParameterObject32;
+export type RequestBodyObject = RequestBodyObject30 &
+  RequestBodyObject31 &
+  RequestBodyObject32;
+export type PathItemObject = PathItemObject30 &
+  PathItemObject31 &
+  PathItemObject32;
+export type ComponentsObject = ComponentsObject30 &
+  ComponentsObject31 &
+  ComponentsObject32;
+export type OpenAPIObject = OpenAPIObject30 & OpenAPIObject31 & OpenAPIObject32;
+export type ParameterLocation = ParameterLocation30 &
+  ParameterLocation31 &
+  Exclude<ParameterLocation32, 'querystring'>;
+export type ResponseObject = Omit<
+  ResponseObject30 & ResponseObject31 & ResponseObject32,
+  'description'
+> & {
+  description?: string;
+};
+export type ContentObject = ContentObject30 & ContentObject31 & ContentObject32;
+export type DiscriminatorObject = DiscriminatorObject30 &
+  DiscriminatorObject31 &
+  DiscriminatorObject32;
+export type SchemaObject = SchemaObject30 & SchemaObject31 & SchemaObject32;
+export type BaseParameterObject = BaseParameterObject30 &
+  BaseParameterObject31 &
+  BaseParameterObject32;
+export type HeadersObject = HeadersObject30 & HeadersObject31 & HeadersObject32;
 
 export type MapNullableType = (
   type: NonNullable<SchemaObject['type']> | undefined

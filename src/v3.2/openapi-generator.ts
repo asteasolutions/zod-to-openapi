@@ -1,11 +1,14 @@
-import type { OpenAPIObject, PathItemObject } from 'openapi3-ts/oas31';
+import type { OpenAPIObject, PathItemObject } from 'openapi3-ts/oas32';
 
 import {
   OpenAPIGenerator,
   OpenApiGeneratorOptions,
 } from '../openapi-generator';
 import { ZodType } from 'zod';
-import { OpenApiGeneratorV31Specifics } from './specifics';
+// OAS 3.2 uses the same JSON Schema dialect (2020-12) as 3.1, so the schema
+// generation rules are identical. We reuse the 3.1 specifics rather than
+// duplicating them.
+import { OpenApiGeneratorV31Specifics } from '../v3.1/specifics';
 import {
   OpenAPIDefinitions,
   RouteConfig,
@@ -18,12 +21,12 @@ function isWebhookDefinition(
   return 'type' in definition && definition.type === 'webhook';
 }
 
-export type OpenAPIObjectConfigV31 = Omit<
+export type OpenAPIObjectConfigV32 = Omit<
   OpenAPIObject,
   'paths' | 'components' | 'webhooks'
 >;
 
-export class OpenApiGeneratorV31 {
+export class OpenApiGeneratorV32 {
   private generator;
   private webhookRefs: Record<string, PathItemObject> = {};
 
@@ -35,7 +38,7 @@ export class OpenApiGeneratorV31 {
     this.generator = new OpenAPIGenerator(this.definitions, specifics, options);
   }
 
-  generateDocument(config: OpenAPIObjectConfigV31): OpenAPIObject {
+  generateDocument(config: OpenAPIObjectConfigV32): OpenAPIObject {
     this.generateWebhooks();
 
     const baseDocument = this.generator.generateDocumentData();

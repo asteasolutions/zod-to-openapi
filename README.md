@@ -251,7 +251,9 @@ return generator.generateComponents();
 
 ### The Generator
 
-There are two generators that can be used - `OpenApiGeneratorV3` and `OpenApiGeneratorV31`. They share the same interface but internally generate schemas that correctly follow the data format for the specific Open API version - `3.0.x` or `3.1.x`. The Open API version affects how some components are generated.
+There are three generators that can be used - `OpenApiGeneratorV3`, `OpenApiGeneratorV31` and `OpenApiGeneratorV32`. They share the same interface but internally generate schemas that correctly follow the data format for the specific Open API version - `3.0.x`, `3.1.x` or `3.2.x`. The Open API version affects how some components are generated.
+
+`OpenApiGeneratorV32` uses the same JSON Schema dialect as 3.1 (2020-12), so schemas are generated identically. It additionally accepts the document-structure fields that were added in 3.2 - see [OpenAPI 3.2 support](#openapi-32-support).
 
 For example: changing the generator from `OpenApiGeneratorV3` to `OpenApiGeneratorV31` would result in following differences:
 
@@ -480,6 +482,45 @@ return generator.generateDocument({
   servers: [{ url: 'v1' }],
 });
 ```
+
+### OpenAPI 3.2 support
+
+`OpenApiGeneratorV32` generates `3.2.x` documents. The JSON Schema dialect is unchanged from 3.1, so schema generation is identical - the generator only adds the document-structure fields introduced in 3.2.
+
+The main addition is `itemSchema` on a media type, used to describe each item of a sequential stream such as `text/event-stream`, `application/jsonl` or `application/json-seq`. A Zod schema is converted and registered exactly like `schema` (so it `$ref`s a component); a raw `SchemaObject`/`ReferenceObject` is passed through untouched.
+
+```ts
+const Event = registry.register('Event', z.object({ message: z.string() }));
+
+registry.registerPath({
+  method: 'get',
+  path: '/events',
+  responses: {
+    200: {
+      description: 'Event stream',
+      content: {
+        'text/event-stream': {
+          itemSchema: Event,
+        },
+      },
+    },
+  },
+});
+```
+
+```yml
+/events:
+  get:
+    responses:
+      '200':
+        description: Event stream
+        content:
+          text/event-stream:
+            itemSchema:
+              $ref: '#/components/schemas/Event'
+```
+
+Other 3.2 fields are accepted on the relevant configs: `summary` and an optional `description` on responses, the `query` HTTP method on routes, and `itemEncoding`/`prefixEncoding` on media types.
 
 ### Defining custom components
 

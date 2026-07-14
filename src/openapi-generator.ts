@@ -21,6 +21,7 @@ import {
 import {
   OpenAPIComponentObject,
   OpenAPIDefinitions,
+  ComponentTypeKey,
   ResponseConfig,
   RouteConfig,
   RouteParameter,
@@ -48,7 +49,14 @@ import { UnionPreferredType } from './zod-extensions';
 import { LazyTransformer } from './transformers/lazy';
 
 // List of Open API Versions. Please make sure these are in ascending order
-const openApiVersions = ['3.0.0', '3.0.1', '3.0.2', '3.0.3', '3.1.0'] as const;
+const openApiVersions = [
+  '3.0.0',
+  '3.0.1',
+  '3.0.2',
+  '3.0.3',
+  '3.1.0',
+  '3.2.0',
+] as const;
 
 export type OpenApiVersion = typeof openApiVersions[number];
 
@@ -99,7 +107,7 @@ export class OpenAPIGenerator {
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
-    componentType: keyof ComponentsObject;
+    componentType: ComponentTypeKey;
     name: string;
     component: OpenAPIComponentObject;
   }[] = [];
@@ -133,14 +141,22 @@ export class OpenAPIGenerator {
   }
 
   private buildComponents(): ComponentsObject {
-    const rawComponents: ComponentsObject = {};
+    type RawComponent = Record<string, OpenAPIComponentObject>;
+
+    const rawComponents: Record<string, RawComponent> = {};
     this.rawComponents.forEach(({ componentType, name, component }) => {
       rawComponents[componentType] ??= {};
       rawComponents[componentType][name] = component;
     });
 
+    // This is entirely based on the user's control so it is okay to cast it.
+    const rawSchemas = (rawComponents['schemas'] ?? {}) as Record<
+      string,
+      SchemaObject | ReferenceObject
+    >;
+
     const allSchemas = {
-      ...(rawComponents.schemas ?? {}),
+      ...rawSchemas,
       ...this.filteredSchemaRefs,
     };
 
@@ -149,8 +165,14 @@ export class OpenAPIGenerator {
         ? sortObjectByKeys(allSchemas)
         : allSchemas;
 
+    // This is entirely based on the user's control so it is okay to cast it.
+    const rawParameters = (rawComponents['parameters'] ?? {}) as Record<
+      string,
+      ParameterObject | ReferenceObject
+    >;
+
     const allParameters = {
-      ...(rawComponents.parameters ?? {}),
+      ...rawParameters,
       ...this.paramRefs,
     };
 
@@ -181,6 +203,7 @@ export class OpenAPIGenerator {
       'parameter',
       'component',
       'route',
+      'webhook',
     ];
 
     this.definitions.sort((left, right) => {
@@ -783,15 +806,38 @@ export class OpenAPIGenerator {
 
   private getBodyContent(content: ZodContentObject): ContentObject {
     return mapValues(content, config => {
-      if (!config || !isAnyZodType(config.schema)) {
+      if (!config) {
         return config;
       }
 
-      const { schema: configSchema, ...rest } = config;
+      if ('$ref' in config) {
+        return config;
+      }
 
-      const schema = this.generateSchemaWithRef(configSchema);
+      const {
+        schema: configSchema,
+        itemSchema: configItemSchema,
+        ...rest
+      } = config;
 
-      return { schema, ...rest };
+      // Both `schema` and the 3.2 `itemSchema` accept either a Zod schema
+      // (converted and registered so it `$ref`s) or a raw SchemaObject /
+      // ReferenceObject (passed through untouched).
+      const schema =
+        typeof configSchema === 'object' && isAnyZodType(configSchema)
+          ? this.generateSchemaWithRef(configSchema)
+          : configSchema;
+
+      const itemSchema =
+        typeof configItemSchema === 'object' && isAnyZodType(configItemSchema)
+          ? this.generateSchemaWithRef(configItemSchema)
+          : configItemSchema;
+
+      return {
+        ...rest,
+        ...(schema !== undefined ? { schema } : {}),
+        ...(itemSchema !== undefined ? { itemSchema } : {}),
+      };
     });
   }
 
