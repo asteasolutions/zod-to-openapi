@@ -1,4 +1,4 @@
-import { ZodDiscriminatedUnion, ZodObject } from 'zod';
+import { ZodDiscriminatedUnion, ZodObject, ZodTypeAny } from 'zod';
 import {
   DiscriminatorObject,
   MapNullableOfArrayWithNullable,
@@ -16,7 +16,7 @@ export class DiscriminatedUnionTransformer {
     mapItem: MapSubSchema,
     generateSchemaRef: (schema: string) => string
   ) {
-    const options = [...zodSchema.def.options] as ZodObject[];
+    const options = [...zodSchema.def.options] as ZodTypeAny[];
 
     const optionSchema = options.map(mapItem);
 
@@ -49,40 +49,72 @@ export class DiscriminatedUnionTransformer {
   }
 
   private mapDiscriminator(
-    zodObjects: ZodObject[],
+    schemas: ZodTypeAny[],
     discriminator: string,
     generateSchemaRef: (schema: string) => string
   ): DiscriminatorObject | undefined {
     // All schemas must be registered to use a discriminator
-    if (zodObjects.some(obj => Metadata.getRefId(obj) === undefined)) {
+    if (schemas.some(schema => Metadata.getRefId(schema) === undefined)) {
       return undefined;
     }
 
     const mapping: Record<string, string> = {};
-    zodObjects.forEach(obj => {
-      const refId = Metadata.getRefId(obj) as string; // type-checked earlier
-      const value = obj.def.shape?.[discriminator];
 
-      if (isZodType(value, 'ZodEnum')) {
-        // Native enums have their keys as both number and strings however the number is an
-        // internal representation and the string is the access point for a documentation
-        const keys = Object.values(value._zod.def.entries).filter(isString);
+    for (const schema of schemas) {
+      const refId = Metadata.getRefId(schema) as string;
+      const values = this.getDiscriminatorValues(schema, discriminator);
 
-        keys.forEach((enumValue: string) => {
-          mapping[enumValue] = generateSchemaRef(refId);
-        });
-
-        return;
+      for (const value of values) {
+        mapping[value] = generateSchemaRef(refId);
       }
-
-      const literalValue = value?.def.values[0];
-
-      mapping[literalValue] = generateSchemaRef(refId);
-    });
+    }
 
     return {
       propertyName: discriminator,
       mapping,
     };
+  }
+
+  private getDiscriminatorValues(
+    schema: ZodTypeAny,
+    discriminator: string
+  ): string[] {
+    // Plain object: discriminator lives on the shape
+    if (isZodType(schema, 'ZodObject')) {
+      const value = schema.def.shape?.[discriminator];
+
+      if (!value) {
+        return [];
+      }
+
+      if (isZodType(value, 'ZodEnum')) {
+        // Multiple possible values
+        return Object.values(value._zod.def.entries).filter(isString);
+      }
+
+      if (isZodType(value, 'ZodLiteral')) {
+        // Single fixed value
+        return value.def.values.filter(isString);
+      }
+
+      // Unsupported discriminator types (such as unions, transforms, ...)
+      return [];
+    }
+
+    // Nested discriminated union: collect values recursively
+    if (isZodType(schema, 'ZodDiscriminatedUnion')) {
+      const nestedOptions = [...schema.def.options] as ZodTypeAny[];
+
+      return [
+        ...new Set(
+          nestedOptions.flatMap(option =>
+            this.getDiscriminatorValues(option, discriminator)
+          )
+        ),
+      ];
+    }
+
+    // Other schema types cannot provide discriminator values
+    return [];
   }
 }
