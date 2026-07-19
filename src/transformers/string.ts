@@ -52,18 +52,26 @@ export class StringTransformer {
   /**
    * Attempts to map Zod strings to known formats
    * https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
+   * New mappings should use values from the OpenAPI format registry:
+   * https://spec.openapis.org/registry/format/
    */
   private mapStringFormat(zodString: ZodString): string | undefined {
     if (zodString.format === 'uuid') return 'uuid';
+    if (zodString.format === 'guid') return 'uuid';
     if (zodString.format === 'email') return 'email';
     if (zodString.format === 'url') return 'uri';
     if (zodString.format === 'date') return 'date';
     if (zodString.format === 'datetime') return 'date-time';
+    if (zodString.format === 'time') return 'time';
+    if (zodString.format === 'duration') return 'duration';
     if (zodString.format === 'cuid') return 'cuid';
     if (zodString.format === 'cuid2') return 'cuid2';
     if (zodString.format === 'ulid') return 'ulid';
     if (zodString.format === 'ipv4') return 'ip';
     if (zodString.format === 'ipv6') return 'ip';
+    if (zodString.format === 'cidrv4') return 'ipv4-cidr';
+    if (zodString.format === 'cidrv6') return 'ipv6-cidr';
+    if (zodString.format === 'base64url') return 'base64url';
     if (zodString.format === 'emoji') return 'emoji';
 
     return undefined;

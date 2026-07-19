@@ -696,9 +696,13 @@ The list of all supported types as of now is:
     - `.cuid2()`
     - `.ulid()`
     - `.ip()`
+    - `.cidrv4()` / `.cidrv6()`
+    - `.base64url()`
     - `.date()`
     - `.datetime()`
-    - `.uuid()`
+    - `.time()`
+    - `.duration()`
+    - `.uuid()` / `.guid()`
     - `.email()`
     - `.url()`
   - adding `pattern` for `.regex()` is also supported
