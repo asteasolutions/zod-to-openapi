@@ -349,4 +349,197 @@ describe('discriminated union', () => {
       }
     );
   });
+
+  it('resolves enum discriminator values from within a nested discriminated union', () => {
+    const Circle = z
+      .object({ type: z.literal('circle'), radius: z.number() })
+      .openapi('Circle');
+
+    const Quadrilateral = z
+      .discriminatedUnion('kind', [
+        z.object({
+          type: z.enum(['square', 'rectangle']),
+          kind: z.literal('filled'),
+          color: z.string(),
+        }),
+        z.object({
+          type: z.enum(['square', 'rectangle']),
+          kind: z.literal('outlined'),
+          borderWidth: z.number(),
+        }),
+      ])
+      .openapi('Quadrilateral');
+
+    expectSchema(
+      [z.discriminatedUnion('type', [Circle, Quadrilateral]).openapi('Shape')],
+      {
+        Shape: {
+          discriminator: {
+            propertyName: 'type',
+            mapping: {
+              circle: '#/components/schemas/Circle',
+              square: '#/components/schemas/Quadrilateral',
+              rectangle: '#/components/schemas/Quadrilateral',
+            },
+          },
+          oneOf: [
+            { $ref: '#/components/schemas/Circle' },
+            { $ref: '#/components/schemas/Quadrilateral' },
+          ],
+        },
+        Circle: {
+          type: 'object',
+          required: ['type', 'radius'],
+          properties: {
+            type: { type: 'string', enum: ['circle'] },
+            radius: { type: 'number' },
+          },
+        },
+        Quadrilateral: {
+          oneOf: [
+            {
+              type: 'object',
+              required: ['type', 'kind', 'color'],
+              properties: {
+                type: { type: 'string', enum: ['square', 'rectangle'] },
+                kind: { type: 'string', enum: ['filled'] },
+                color: { type: 'string' },
+              },
+            },
+            {
+              type: 'object',
+              required: ['type', 'kind', 'borderWidth'],
+              properties: {
+                type: { type: 'string', enum: ['square', 'rectangle'] },
+                kind: { type: 'string', enum: ['outlined'] },
+                borderWidth: { type: 'number' },
+              },
+            },
+          ],
+        },
+      }
+    );
+  });
+
+  it('resolves discriminator values through two levels of nested discriminated unions', () => {
+    const Circle = z.object({ type: z.literal('circle') }).openapi('Circle');
+
+    const Rectangle = z
+      .discriminatedUnion('kind', [
+        z.discriminatedUnion('shade', [
+          z.object({
+            type: z.literal('rectangle'),
+            kind: z.literal('filled'),
+            shade: z.literal('solid'),
+          }),
+          z.object({
+            type: z.literal('rectangle'),
+            kind: z.literal('filled'),
+            shade: z.literal('gradient'),
+          }),
+        ]),
+        z.object({
+          type: z.literal('rectangle'),
+          kind: z.literal('outlined'),
+        }),
+      ])
+      .openapi('Rectangle');
+
+    expectSchema(
+      [z.discriminatedUnion('type', [Circle, Rectangle]).openapi('Shape')],
+      {
+        Shape: {
+          discriminator: {
+            propertyName: 'type',
+            mapping: {
+              circle: '#/components/schemas/Circle',
+              rectangle: '#/components/schemas/Rectangle',
+            },
+          },
+          oneOf: [
+            { $ref: '#/components/schemas/Circle' },
+            { $ref: '#/components/schemas/Rectangle' },
+          ],
+        },
+        Circle: {
+          type: 'object',
+          required: ['type'],
+          properties: {
+            type: { type: 'string', enum: ['circle'] },
+          },
+        },
+        Rectangle: {
+          oneOf: [
+            {
+              oneOf: [
+                {
+                  type: 'object',
+                  required: ['type', 'kind', 'shade'],
+                  properties: {
+                    type: { type: 'string', enum: ['rectangle'] },
+                    kind: { type: 'string', enum: ['filled'] },
+                    shade: { type: 'string', enum: ['solid'] },
+                  },
+                },
+                {
+                  type: 'object',
+                  required: ['type', 'kind', 'shade'],
+                  properties: {
+                    type: { type: 'string', enum: ['rectangle'] },
+                    kind: { type: 'string', enum: ['filled'] },
+                    shade: { type: 'string', enum: ['gradient'] },
+                  },
+                },
+              ],
+            },
+            {
+              type: 'object',
+              required: ['type', 'kind'],
+              properties: {
+                type: { type: 'string', enum: ['rectangle'] },
+                kind: { type: 'string', enum: ['outlined'] },
+              },
+            },
+          ],
+        },
+      }
+    );
+  });
+
+  it('omits mapping entries for non-string discriminator values', () => {
+    const Text = z.object({ type: z.literal('text') }).openapi('obj1');
+    const Version = z.object({ type: z.literal(1) }).openapi('obj2');
+
+    expectSchema(
+      [z.discriminatedUnion('type', [Text, Version]).openapi('Test')],
+      {
+        Test: {
+          discriminator: {
+            propertyName: 'type',
+            mapping: {
+              text: '#/components/schemas/obj1',
+            },
+          },
+          oneOf: [
+            { $ref: '#/components/schemas/obj1' },
+            { $ref: '#/components/schemas/obj2' },
+          ],
+        },
+        obj1: {
+          type: 'object',
+          required: ['type'],
+          properties: {
+            type: { type: 'string', enum: ['text'] },
+          },
+        },
+        obj2: {
+          type: 'object',
+          required: ['type'],
+          properties: {
+            type: { type: 'number', enum: [1] },
+          },
+        },
+      }
+    );
+  });
 });

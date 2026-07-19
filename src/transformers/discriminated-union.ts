@@ -1,11 +1,11 @@
-import { ZodDiscriminatedUnion, ZodObject, ZodTypeAny } from 'zod';
+import { ZodDiscriminatedUnion, ZodType } from 'zod';
 import {
   DiscriminatorObject,
   MapNullableOfArrayWithNullable,
   MapSubSchema,
 } from '../types';
 import { isString } from '../lib/lodash';
-import { isZodType } from '../lib/zod-is-type';
+import { isAnyZodType, isZodType } from '../lib/zod-is-type';
 import { Metadata } from '../metadata';
 
 export class DiscriminatedUnionTransformer {
@@ -16,7 +16,7 @@ export class DiscriminatedUnionTransformer {
     mapItem: MapSubSchema,
     generateSchemaRef: (schema: string) => string
   ) {
-    const options = [...zodSchema.def.options] as ZodTypeAny[];
+    const options = zodSchema.def.options.filter(isAnyZodType);
 
     const optionSchema = options.map(mapItem);
 
@@ -49,7 +49,7 @@ export class DiscriminatedUnionTransformer {
   }
 
   private mapDiscriminator(
-    schemas: ZodTypeAny[],
+    schemas: ZodType[],
     discriminator: string,
     generateSchemaRef: (schema: string) => string
   ): DiscriminatorObject | undefined {
@@ -76,10 +76,9 @@ export class DiscriminatedUnionTransformer {
   }
 
   private getDiscriminatorValues(
-    schema: ZodTypeAny,
+    schema: ZodType,
     discriminator: string
   ): string[] {
-    // Plain object: discriminator lives on the shape
     if (isZodType(schema, 'ZodObject')) {
       const value = schema.def.shape?.[discriminator];
 
@@ -88,12 +87,10 @@ export class DiscriminatedUnionTransformer {
       }
 
       if (isZodType(value, 'ZodEnum')) {
-        // Multiple possible values
         return Object.values(value._zod.def.entries).filter(isString);
       }
 
       if (isZodType(value, 'ZodLiteral')) {
-        // Single fixed value
         return value.def.values.filter(isString);
       }
 
@@ -101,9 +98,8 @@ export class DiscriminatedUnionTransformer {
       return [];
     }
 
-    // Nested discriminated union: collect values recursively
     if (isZodType(schema, 'ZodDiscriminatedUnion')) {
-      const nestedOptions = [...schema.def.options] as ZodTypeAny[];
+      const nestedOptions = schema.def.options.filter(isAnyZodType);
 
       return [
         ...new Set(
