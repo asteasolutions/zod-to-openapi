@@ -81,7 +81,7 @@ export interface OpenApiVersionSpecifics {
   ):
     | ReferenceObject
     | { allOf: (ReferenceObject | { nullable: boolean })[] }
-    | { oneOf: (ReferenceObject | { type: 'null' })[] };
+    | { anyOf: (ReferenceObject | { type: 'null' })[] };
 
   mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {
     items?: SchemaObject | ReferenceObject;
@@ -554,12 +554,13 @@ export class OpenAPIGenerator {
     const referenceObject: ReferenceObject = {
       $ref: this.generateSchemaRef(refId),
     };
+    const isNullable = isNullableSchema(zodSchema);
 
     // We are currently calculating this schema or there is nothing
     if (this.schemaRefs[refId] === 'pending') {
       return this.versionSpecifics.mapNullableOfRef(
         referenceObject,
-        isNullableSchema(zodSchema)
+        isNullable
       );
     }
 
@@ -575,6 +576,19 @@ export class OpenAPIGenerator {
       return {
         allOf: [referenceObject, newMetadata],
       };
+    }
+
+    const nullableReferenceObject = this.versionSpecifics.mapNullableOfRef(
+      referenceObject,
+      isNullable
+    );
+
+    if (
+      isNullable &&
+      !('allOf' in nullableReferenceObject) &&
+      !this.schemaRefAlreadyAcceptsNull(schemaRef)
+    ) {
+      return Metadata.applySchemaMetadata(nullableReferenceObject, newMetadata);
     }
 
     // New metadata from zodSchema properties.
@@ -595,6 +609,20 @@ export class OpenAPIGenerator {
     }
 
     return referenceObject;
+  }
+
+  private schemaRefAlreadyAcceptsNull(
+    schemaRef: SchemaObject | ReferenceObject
+  ) {
+    if ('$ref' in schemaRef) {
+      return false;
+    }
+
+    if (schemaRef.nullable) {
+      return true;
+    }
+
+    return Array.isArray(schemaRef.type) && schemaRef.type.includes('null');
   }
 
   /**

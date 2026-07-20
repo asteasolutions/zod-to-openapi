@@ -83,13 +83,62 @@ describe('nullable', () => {
           type: 'object',
           properties: {
             key: {
-              allOf: [
+              anyOf: [
                 { $ref: '#/components/schemas/String' },
-                { type: ['string', 'null'] },
+                { type: 'null' },
               ],
             },
           },
           required: ['key'],
+        },
+      },
+      { version: '3.1.0' }
+    );
+  });
+
+  it('supports nullable registered object schemas as refs in open api 3.1.0', () => {
+    const ObjectSchema = z
+      .object({
+        id: z.string().uuid(),
+        name: z.enum(['A', 'B', 'C']),
+      })
+      .openapi('Object');
+
+    const DetailSchema = z
+      .object({
+        nullableObject: ObjectSchema.nullable(),
+        unionObject: z.union([ObjectSchema, z.null()]),
+      })
+      .openapi('Detail');
+
+    expectSchema(
+      [ObjectSchema, DetailSchema],
+      {
+        Object: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string', enum: ['A', 'B', 'C'] },
+          },
+          required: ['id', 'name'],
+        },
+        Detail: {
+          type: 'object',
+          properties: {
+            nullableObject: {
+              anyOf: [
+                { $ref: '#/components/schemas/Object' },
+                { type: 'null' },
+              ],
+            },
+            unionObject: {
+              anyOf: [
+                { $ref: '#/components/schemas/Object' },
+                { type: 'null' },
+              ],
+            },
+          },
+          required: ['nullableObject', 'unionObject'],
         },
       },
       { version: '3.1.0' }
@@ -184,15 +233,15 @@ describe('nullable', () => {
           required: ['key'],
           properties: {
             key: {
-              allOf: [
+              anyOf: [
                 {
                   $ref: '#/components/schemas/Empty',
                 },
                 {
-                  type: ['object', 'null'],
-                  deprecated: true,
+                  type: 'null',
                 },
               ],
+              deprecated: true,
             },
           },
         },
