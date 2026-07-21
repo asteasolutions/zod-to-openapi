@@ -29,10 +29,17 @@ export class RecordTransformer {
         {} as SchemaObject['properties']
       );
 
-      return {
+      const schema: SchemaObject = {
         ...mapNullableType('object'),
-        properties,
+        properties
       };
+
+      // Check for partialRecord
+      if (keyType._zod.values !== undefined) {
+        schema.required = keys;
+      }
+
+      return schema;
     }
 
     return {

@@ -51,7 +51,7 @@
     "tsd": "^0.32.0",
     "typescript": "^5.5.4",
     "yaml": "^2.2.2",
-    "zod": "^4.0.5"
+    "zod": "^4.1.13"
   },
   "author": "Astea Solutions <info@asteasolutions.com>",
   "license": "MIT"
