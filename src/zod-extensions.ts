@@ -70,24 +70,26 @@ export interface ZodOpenApiFullMetadata<T = any>
   _internal?: ZodOpenAPIInternalMetadata;
 }
 
-declare module 'zod' {
-  // Note: This should always perfectly match the zod type definition instead in terms of generics
-  interface ZodType<
-    out Output = unknown,
-    out Input = unknown,
-    out Internals extends core.$ZodTypeInternals<
-      Output,
-      Input
-    > = core.$ZodTypeInternals<Output, Input>
-  > extends core.$ZodType<Output, Input, Internals> {
+// Alias resolved through 'zod' to avoid module identity splits under
+// moduleResolution: "node".
+type _$ZodTypeInternals<O = unknown, I = unknown> = core.$ZodTypeInternals<O, I>;
+
+declare module 'zod/v4/core' {
+  // Augment $ZodType instead of ZodType to avoid merge conflicts when
+  // third-party packages cause both 'zod' and 'zod/v4' to be loaded.
+  interface $ZodType<
+    O = unknown,
+    I = unknown,
+    Internals extends _$ZodTypeInternals<O, I> = _$ZodTypeInternals<O, I>,
+  > {
     openapi(
-      metadata: Partial<ZodOpenAPIMetadata<Input>>,
+      metadata: Partial<ZodOpenAPIMetadata<I>>,
       options?: OpenApiOptions
     ): this;
 
     openapi(
       refId: string,
-      metadata?: Partial<ZodOpenAPIMetadata<Input>>,
+      metadata?: Partial<ZodOpenAPIMetadata<I>>,
       options?: OpenApiOptions
     ): this;
   }
