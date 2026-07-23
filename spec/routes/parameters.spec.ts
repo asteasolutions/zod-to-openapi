@@ -226,6 +226,24 @@ describe('parameters', () => {
         },
       ]);
     });
+
+    it('generates required: true for path parameters with z.coerce.number() (Zod 4 compatibility)', () => {
+      const { parameters } = generateDataForRoute({
+        request: { params: z.object({ id: z.coerce.number() }) },
+      });
+
+      expect(parameters).toEqual([
+        {
+          in: 'path',
+          name: 'id',
+          required: true,
+          schema: {
+            type: 'number',
+            nullable: true,
+          },
+        },
+      ]);
+    });
   });
 
   describe('cookies', () => {

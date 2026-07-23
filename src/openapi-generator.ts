@@ -446,6 +446,10 @@ export class OpenAPIGenerator {
       externalParamMetadata
     );
 
+    if (paramLocation === 'path') {
+      baseParameter.required = true;
+    }
+
     return {
       ...baseParameter,
       in: paramLocation,
