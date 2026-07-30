@@ -206,7 +206,10 @@ export class Metadata {
 
   static getMetadataFromRegistry(zodSchema: ZodType): any {
     const internal = this.getMetadataFromInternalRegistry(zodSchema);
-    const general = zodSchema.meta();
+    // Read through zod's core registry rather than the classic `.meta()` method. They are
+    // equivalent for `zod` schemas -- `.meta()` reads this same registry -- but `zod/mini`
+    // schemas expose no `.meta()` method, so calling it threw for them.
+    const general = z.core.globalRegistry.get(zodSchema);
 
     if (!internal) {
       return general;
