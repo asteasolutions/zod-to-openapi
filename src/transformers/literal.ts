@@ -6,25 +6,29 @@ export class LiteralTransformer {
   private bigIntTransformer = new BigIntTransformer();
 
   transform(zodSchema: ZodLiteral, mapNullableType: MapNullableType) {
-    const type = typeof zodSchema.def.values[0];
+    // Since Zod 4 a literal can hold multiple values: z.literal([1, 2])
+    const values = zodSchema.def.values;
 
-    if (
-      type === 'boolean' ||
-      type === 'number' ||
-      type === 'string' ||
-      type === 'object'
-    ) {
-      return {
-        ...mapNullableType(type),
-        enum: [zodSchema.def.values[0]],
-      };
-    }
+    // `null` is expressed through the nullable mapping instead of a type
+    const types = new Set(
+      values.filter(value => value !== null).map(value => typeof value)
+    );
 
-    if (type === 'bigint') {
+    if (types.has('bigint')) {
       return this.bigIntTransformer.transform(mapNullableType);
     }
 
-    // Zod doesn't really support anything else anyways
-    return mapNullableType('null');
+    // The type is omitted when the values do not share one: z.literal([1, 'a'])
+    const type = types.size === 1 ? [...types][0] : undefined;
+
+    if (type && type !== 'boolean' && type !== 'number' && type !== 'string') {
+      // Zod doesn't really support anything else anyways
+      return mapNullableType('null');
+    }
+
+    return {
+      ...mapNullableType(type),
+      enum: [...values],
+    };
   }
 }
