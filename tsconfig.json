@@ -49,7 +49,8 @@
     "baseUrl": "./" /* Base directory to resolve non-absolute module names. */,
     "paths": {
       /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
-      "zod/core": ["./node_modules/zod/v4/core/index.d.ts"]
+      "zod/core": ["./node_modules/zod/v4/core/index.d.ts"],
+      "zod/v4": ["./node_modules/zod/v4/index.d.ts"]
     },
     "rootDirs": [
       "./src"
