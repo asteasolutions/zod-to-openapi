@@ -8,9 +8,14 @@ import {
 } from 'openapi3-ts/oas31';
 import type { ZodObject, ZodType } from 'zod';
 import { z } from 'zod';
-import type { core } from 'zod';
 import { isZodType } from './lib/zod-is-type';
 import { Metadata } from './metadata';
+
+// TypeScript does not load a module that is only referenced by a
+// `declare module` augmentation, so this forces `zod/v4` into every consuming
+// compilation. It is preserved in the emitted declaration file and exports
+// nothing, so it has no runtime or API surface cost.
+export type {} from 'zod/v4';
 
 type ExampleValue<T> = T extends Date ? string : T;
 
@@ -70,16 +75,39 @@ export interface ZodOpenApiFullMetadata<T = any>
   _internal?: ZodOpenAPIInternalMetadata;
 }
 
+// ZodType is augmented through both the 'zod' and the 'zod/v4' module paths.
+// The two specifiers re-export the same interface, but which declaration file
+// a compilation associates with each specifier depends on the consumer's
+// moduleResolution mode and TypeScript version, so both paths are covered.
+// The 'zod/v4' block is what keeps `.openapi()` alive when another package
+// (e.g. @langchain/langgraph) augments ZodType through 'zod/v4' in the same
+// compilation.
+//
+// The declarations deliberately do NOT restate the constraint, default and
+// heritage clause of zod's own ZodType declaration. TypeScript only requires
+// an augmenting declaration to restate constraints and defaults identically
+// when both sides declare them; restating them makes the interface merge fail
+// with TS2428 as soon as the same interface is merged through more than one
+// module path. The type parameter names, however, must keep matching zod's
+// declaration positionally (Output, Input), since TS2428 compares them by
+// name.
 declare module 'zod' {
-  // Note: This should always perfectly match the zod type definition instead in terms of generics
-  interface ZodType<
-    out Output = unknown,
-    out Input = unknown,
-    out Internals extends core.$ZodTypeInternals<
-      Output,
-      Input
-    > = core.$ZodTypeInternals<Output, Input>
-  > extends core.$ZodType<Output, Input, Internals> {
+  interface ZodType<out Output, out Input> {
+    openapi(
+      metadata: Partial<ZodOpenAPIMetadata<Input>>,
+      options?: OpenApiOptions
+    ): this;
+
+    openapi(
+      refId: string,
+      metadata?: Partial<ZodOpenAPIMetadata<Input>>,
+      options?: OpenApiOptions
+    ): this;
+  }
+}
+
+declare module 'zod/v4' {
+  interface ZodType<out Output, out Input> {
     openapi(
       metadata: Partial<ZodOpenAPIMetadata<Input>>,
       options?: OpenApiOptions
