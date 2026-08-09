@@ -4,7 +4,7 @@ import { expectSchema } from '../lib/helpers';
 describe('nullable', () => {
   it('supports nullable', () => {
     expectSchema([z.string().openapi('NullableString').nullable()], {
-      NullableString: { type: 'string', nullable: true },
+      NullableString: { type: 'string' },
     });
   });
 
@@ -44,12 +44,16 @@ describe('nullable', () => {
     expectSchema([StringSchema, TestSchema], {
       String: {
         type: 'string',
-        nullable: true,
       },
       Test: {
         type: 'object',
         properties: {
-          key: { $ref: '#/components/schemas/String' },
+          key: {
+            allOf: [
+              { $ref: '#/components/schemas/String' },
+              { nullable: true },
+            ],
+          },
         },
         required: ['key'],
       },

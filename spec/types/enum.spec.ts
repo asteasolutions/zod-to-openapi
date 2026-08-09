@@ -31,4 +31,101 @@ describe('enum', () => {
       },
     });
   });
+
+  it('does not pollute registered enum component when used as nullable', () => {
+    const Brand = z.enum(['Ford', 'Toyota', 'Tesla']).openapi('Brand');
+
+    const Car = z
+      .object({
+        brand: Brand.nullable(),
+        model: z.string(),
+      })
+      .openapi('Car');
+
+    expectSchema([Brand, Car], {
+      Brand: {
+        type: 'string',
+        enum: ['Ford', 'Toyota', 'Tesla'],
+      },
+      Car: {
+        type: 'object',
+        properties: {
+          brand: {
+            allOf: [
+              { $ref: '#/components/schemas/Brand' },
+              { nullable: true },
+            ],
+          },
+          model: { type: 'string' },
+        },
+        required: ['brand', 'model'],
+      },
+    });
+  });
+
+  it('does not pollute registered enum component when used as nullable in 3.1.0', () => {
+    const Brand = z.enum(['Ford', 'Toyota', 'Tesla']).openapi('Brand');
+
+    const Car = z
+      .object({
+        brand: Brand.nullable(),
+        model: z.string(),
+      })
+      .openapi('Car');
+
+    expectSchema(
+      [Brand, Car],
+      {
+        Brand: {
+          type: 'string',
+          enum: ['Ford', 'Toyota', 'Tesla'],
+        },
+        Car: {
+          type: 'object',
+          properties: {
+            brand: {
+              allOf: [
+                { $ref: '#/components/schemas/Brand' },
+                { type: ['string', 'null'] },
+              ],
+            },
+            model: { type: 'string' },
+          },
+          required: ['brand', 'model'],
+        },
+      },
+      { version: '3.1.0' }
+    );
+  });
+
+  it('does not pollute enum component when first discovered through nullable usage', () => {
+    const Brand = z.enum(['Ford', 'Toyota', 'Tesla']).openapi('Brand');
+
+    const Car = z
+      .object({
+        brand: Brand.nullable(),
+        model: z.string(),
+      })
+      .openapi('Car');
+
+    expectSchema([Car], {
+      Brand: {
+        type: 'string',
+        enum: ['Ford', 'Toyota', 'Tesla'],
+      },
+      Car: {
+        type: 'object',
+        properties: {
+          brand: {
+            allOf: [
+              { $ref: '#/components/schemas/Brand' },
+              { nullable: true },
+            ],
+          },
+          model: { type: 'string' },
+        },
+        required: ['brand', 'model'],
+      },
+    });
+  });
 });
