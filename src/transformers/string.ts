@@ -23,10 +23,7 @@ function isZodCheckRegex(check: $ZodCheck<string>): check is $ZodCheckRegex {
 export class StringTransformer {
   transform(zodSchema: ZodString, mapNullableType: MapNullableType) {
     const regexCheck = zodSchema.def.checks?.find(isZodCheckRegex);
-    // toString generates an additional / at the beginning and end of the pattern
-    const pattern = regexCheck?._zod.def.pattern
-      .toString()
-      .replace(/^\/|\/$/g, '');
+    const pattern = regexCheck?._zod.def.pattern.source;
 
     const check = zodSchema.def.checks?.find(isZodCheckLengthEquals);
     const length = check?._zod.def.length;
