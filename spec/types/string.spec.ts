@@ -52,4 +52,18 @@ describe('string', () => {
       }
     );
   });
+
+  it('maps a ZodString regex with flags to a pattern without the flags', () => {
+    expectSchema(
+      [
+        z
+          .string()
+          .regex(/^\p{Lu}+$/u)
+          .openapi('UnicodeRegexString'),
+      ],
+      {
+        UnicodeRegexString: { type: 'string', pattern: '^\\p{Lu}+$' },
+      }
+    );
+  });
 });
