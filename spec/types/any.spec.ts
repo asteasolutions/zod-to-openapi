@@ -6,7 +6,7 @@ import { expectSchema } from '../lib/helpers';
 describe('any', () => {
   it('supports any for 3.0.0 ', () => {
     expectSchema([z.any().openapi('Any', { description: 'Something' })], {
-      Any: { description: 'Something', nullable: true },
+      Any: { description: 'Something' },
     });
   });
 

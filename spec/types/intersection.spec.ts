@@ -94,7 +94,7 @@ describe('intersection', () => {
                 },
               ],
             },
-            { nullable: true },
+            { type: 'string', nullable: true, enum: [null] },
           ],
         },
       }
@@ -174,7 +174,7 @@ describe('intersection', () => {
                 },
               ],
             },
-            { nullable: true },
+            { type: 'string', nullable: true, enum: [null] },
           ],
           default: {
             name: 'hello',

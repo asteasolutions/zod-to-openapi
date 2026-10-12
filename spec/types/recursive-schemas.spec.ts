@@ -335,9 +335,9 @@ describe('recursive schemas (new getter approach)', () => {
           properties: {
             value: { type: 'string' },
             next: {
-              allOf: [
+              anyOf: [
                 { $ref: '#/components/schemas/NullableRecursive' },
-                { nullable: true },
+                { type: 'string', nullable: true, enum: [null] },
               ],
             },
           },
@@ -503,9 +503,9 @@ describe('recursive schemas (new getter approach)', () => {
             properties: {
               value: { type: 'string' },
               child: {
-                allOf: [
+                anyOf: [
                   { $ref: '#/components/schemas/RecursiveNullable' },
-                  { nullable: true },
+                  { type: 'string', nullable: true, enum: [null] },
                 ],
               },
             },
