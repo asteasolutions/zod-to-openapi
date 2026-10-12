@@ -9,7 +9,9 @@ describe('null', () => {
       [schema],
       {
         Null: {
+          type: 'string',
           nullable: true,
+          enum: [null],
         },
       },
       { version: '3.0.0' }

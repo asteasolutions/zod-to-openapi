@@ -13,22 +13,22 @@ describe('json', () => {
             { type: 'string' },
             { type: 'number' },
             { type: 'boolean' },
-            { nullable: true },
+            { type: 'string', nullable: true, enum: [null] },
             {
               type: 'array',
               items: {
-                allOf: [
+                anyOf: [
                   { $ref: '#/components/schemas/Json' },
-                  { nullable: true },
+                  { type: 'string', nullable: true, enum: [null] },
                 ],
               },
             },
             {
               type: 'object',
               additionalProperties: {
-                allOf: [
+                anyOf: [
                   { $ref: '#/components/schemas/Json' },
-                  { nullable: true },
+                  { type: 'string', nullable: true, enum: [null] },
                 ],
               },
             },

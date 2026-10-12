@@ -8,7 +8,7 @@ describe('unknown', () => {
     expectSchema(
       [z.unknown().openapi('Unknown', { description: 'Something unknown' })],
       {
-        Unknown: { description: 'Something unknown', nullable: true },
+        Unknown: { description: 'Something unknown' },
       }
     );
   });

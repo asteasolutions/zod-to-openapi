@@ -149,7 +149,7 @@ describe('discriminated union', () => {
           oneOf: [
             { $ref: '#/components/schemas/obj1' },
             { $ref: '#/components/schemas/obj2' },
-            { nullable: true },
+            { type: 'string', nullable: true, enum: [null] },
           ],
         },
         obj1: {

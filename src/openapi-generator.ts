@@ -33,6 +33,7 @@ import {
   ComponentsObject,
   ContentObject,
   HeadersObject,
+  NullSchemaObject30,
   OpenAPIObject,
   ParameterLocation,
   ParameterObject,
@@ -80,7 +81,7 @@ export interface OpenApiVersionSpecifics {
     isNullable: boolean
   ):
     | ReferenceObject
-    | { allOf: (ReferenceObject | { nullable: boolean })[] }
+    | { anyOf: (ReferenceObject | NullSchemaObject30)[] }
     | { oneOf: (ReferenceObject | { type: 'null' })[] };
 
   mapTupleItems(schemas: (SchemaObject | ReferenceObject)[]): {

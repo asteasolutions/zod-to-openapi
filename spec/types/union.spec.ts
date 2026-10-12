@@ -49,7 +49,11 @@ describe('union', () => {
   it('supports nullable union types', () => {
     expectSchema([z.string().or(z.number()).nullable().openapi('Test')], {
       Test: {
-        anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
+        anyOf: [
+          { type: 'string' },
+          { type: 'number' },
+          { type: 'string', nullable: true, enum: [null] },
+        ],
       },
     });
   });
@@ -74,7 +78,11 @@ describe('union', () => {
 
     expectSchema([test], {
       Test: {
-        anyOf: [{ type: 'string' }, { type: 'number' }, { nullable: true }],
+        anyOf: [
+          { type: 'string' },
+          { type: 'number' },
+          { type: 'string', nullable: true, enum: [null] },
+        ],
       },
     });
   });
