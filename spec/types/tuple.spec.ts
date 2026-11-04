@@ -40,6 +40,55 @@ describe('tuple', () => {
     );
   });
 
+  it('supports nullable enums in tuples in 3.0.0', () => {
+    expectSchema(
+      [z.tuple([z.enum(['a', 'b']).nullable()]).openapi('Test')],
+      {
+        Test: {
+          type: 'array',
+          items: {
+            type: 'string',
+            nullable: true,
+            enum: ['a', 'b', null],
+          },
+          minItems: 1,
+          maxItems: 1,
+        },
+      },
+      { version: '3.0.0' }
+    );
+  });
+
+  it('supports objects with nullable enums in tuples in 3.0.0', () => {
+    expectSchema(
+      [
+        z
+          .tuple([
+            z.object({ value: z.enum(['a', 'b']).nullable().optional() }),
+          ])
+          .openapi('Test'),
+      ],
+      {
+        Test: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              value: {
+                type: 'string',
+                nullable: true,
+                enum: ['a', 'b', null],
+              },
+            },
+          },
+          minItems: 1,
+          maxItems: 1,
+        },
+      },
+      { version: '3.0.0' }
+    );
+  });
+
   it('supports tuples of the same single type', () => {
     expectSchema([z.tuple([z.string(), z.string()]).openapi('Test')], {
       Test: {

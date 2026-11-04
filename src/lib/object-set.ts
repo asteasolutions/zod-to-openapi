@@ -98,7 +98,7 @@ export class ObjectSet<V> {
       return object;
     }
 
-    if (typeof object === 'object') {
+    if (typeof object === 'object' && object !== null) {
       for (const [key, value] of Object.entries(object)) {
         hashCode ^= this.hashCodeOf(key) + this.hashCodeOf(value ?? '');
       }
