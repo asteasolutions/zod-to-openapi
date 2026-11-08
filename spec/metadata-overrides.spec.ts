@@ -188,4 +188,95 @@ describe('metadata overrides', () => {
       },
     });
   });
+
+  it('keeps checks chained onto registered schemas', () => {
+    const TagsSchema = z.array(z.string()).openapi('Tags');
+    const NameSchema = z.string().openapi('Name');
+    const AgeSchema = z.number().openapi('Age');
+
+    const TestSchema = z
+      .object({
+        tags: TagsSchema.max(5),
+        name: NameSchema.min(2),
+        age: AgeSchema.max(120),
+      })
+      .openapi('Test');
+
+    expectSchema([TagsSchema, NameSchema, AgeSchema, TestSchema], {
+      Tags: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+      Name: {
+        type: 'string',
+      },
+      Age: {
+        type: 'number',
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          tags: {
+            allOf: [{ $ref: '#/components/schemas/Tags' }, { maxItems: 5 }],
+          },
+          name: {
+            allOf: [{ $ref: '#/components/schemas/Name' }, { minLength: 2 }],
+          },
+          age: {
+            allOf: [{ $ref: '#/components/schemas/Age' }, { maximum: 120 }],
+          },
+        },
+        required: ['tags', 'name', 'age'],
+      },
+    });
+  });
+
+  it('keeps checks chained onto registered recursive schemas', () => {
+    const CategorySchema: z.ZodType<any> = z
+      .lazy(() =>
+        z.object({
+          name: z.string(),
+          children: z.array(CategorySchema),
+        })
+      )
+      .openapi('Category');
+
+    const TestSchema = z
+      .object({
+        categories: z.array(CategorySchema).openapi('Categories'),
+        topCategories: z.array(CategorySchema).openapi('Categories').max(3),
+      })
+      .openapi('Test');
+
+    expectSchema([CategorySchema, TestSchema], {
+      Category: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          children: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/Category' },
+          },
+        },
+        required: ['name', 'children'],
+      },
+      Categories: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/Category' },
+      },
+      Test: {
+        type: 'object',
+        properties: {
+          categories: { $ref: '#/components/schemas/Categories' },
+          topCategories: {
+            allOf: [
+              { $ref: '#/components/schemas/Categories' },
+              { maxItems: 3 },
+            ],
+          },
+        },
+        required: ['categories', 'topCategories'],
+      },
+    });
+  });
 });

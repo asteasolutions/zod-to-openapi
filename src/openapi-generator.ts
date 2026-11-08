@@ -104,6 +104,12 @@ export type SchemaRefs = Record<string, SchemaRefValue>;
 
 export class OpenAPIGenerator {
   private schemaRefs: SchemaRefs = {};
+  /**
+   * Ref ids of registered schemas that are currently being regenerated
+   * within `constructReferencedOpenAPISchema`. Used to stop the recursion
+   * for recursive schemas.
+   */
+  private schemaRefsInConstruction = new Set<string>();
   private paramRefs: Record<string, ParameterObject> = {};
   private pathRefs: Record<string, PathItemObject> = {};
   private rawComponents: {
@@ -512,11 +518,24 @@ export class OpenAPIGenerator {
     const refId = Metadata.getRefId(zodSchema);
 
     if (refId && typeof this.schemaRefs[refId] === 'object') {
-      return LazyTransformer.mapRecursive(
-        this.schemaRefs[refId],
-        schema => this.versionSpecifics.mapNullableType(schema, isNullable),
-        schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
-      );
+      // The schema is already registered. It is generated again so that
+      // any checks chained onto it (e.g. `Registered.max(5)`) can be compared
+      // against the registered version. If we are already generating it
+      // (i.e. it is recursive), we use the registered version to stop the recursion.
+      if (this.schemaRefsInConstruction.has(refId)) {
+        return LazyTransformer.mapRecursive(
+          this.schemaRefs[refId],
+          schema => this.versionSpecifics.mapNullableType(schema, isNullable),
+          schema => this.versionSpecifics.mapNullableOfRef(schema, isNullable)
+        );
+      }
+
+      this.schemaRefsInConstruction.add(refId);
+      try {
+        return this.toOpenAPISchema(innerSchema, isNullable, defaultValue);
+      } finally {
+        this.schemaRefsInConstruction.delete(refId);
+      }
     }
 
     // If there is already a pending generation with this name
