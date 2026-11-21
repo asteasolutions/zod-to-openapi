@@ -1,6 +1,10 @@
 import { ZodArray } from 'zod';
 import { MapNullableType, MapSubSchema } from '../types';
-import { $ZodCheckMinLength, $ZodCheckMaxLength } from 'zod/core';
+import {
+  $ZodCheckLengthEquals,
+  $ZodCheckMinLength,
+  $ZodCheckMaxLength,
+} from 'zod/core';
 import { isAnyZodType } from '../lib/zod-is-type';
 export class ArrayTransformer {
   transform(
@@ -10,15 +14,25 @@ export class ArrayTransformer {
   ) {
     const itemType = zodSchema.def.element;
 
-    const minItems = zodSchema.def.checks?.find(
-      (check): check is $ZodCheckMinLength =>
-        check._zod.def.check === 'min_length'
-    )?._zod.def.minimum;
-
-    const maxItems = zodSchema.def.checks?.find(
-      (check): check is $ZodCheckMaxLength =>
-        check._zod.def.check === 'max_length'
-    )?._zod.def.maximum;
+    let minItems: number | undefined;
+    let maxItems: number | undefined;
+    for (const check of zodSchema.def.checks ?? []) {
+      const def = check._zod.def as (
+        | $ZodCheckLengthEquals
+        | $ZodCheckMinLength
+        | $ZodCheckMaxLength
+      )['_zod']['def'];
+      if (def.check === 'length_equals' || def.check === 'min_length') {
+        const minimum =
+          def.check === 'length_equals' ? def.length : def.minimum;
+        minItems = Math.max(minItems ?? minimum, minimum);
+      }
+      if (def.check === 'length_equals' || def.check === 'max_length') {
+        const maximum =
+          def.check === 'length_equals' ? def.length : def.maximum;
+        maxItems = Math.min(maxItems ?? maximum, maximum);
+      }
+    }
 
     return {
       ...mapNullableType('array'),
